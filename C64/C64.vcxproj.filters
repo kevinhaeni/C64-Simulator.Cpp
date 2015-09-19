@@ -13,43 +13,52 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\cpu">
-      <UniqueIdentifier>{28182635-332b-4139-8dea-e6c9ede6fef5}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\cpu">
-      <UniqueIdentifier>{db7f164f-5522-42f5-a946-3dda059f4cd4}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\util">
       <UniqueIdentifier>{5df2483a-0a41-461d-a86c-ba67a05d48e6}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\util">
       <UniqueIdentifier>{364983f1-b198-457b-b741-3eef6dbb7852}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\c64">
-      <UniqueIdentifier>{6494d9d0-5482-402f-b413-23abac9c4a4d}</UniqueIdentifier>
+    <Filter Include="Header Files\SID">
+      <UniqueIdentifier>{bf1c7738-a3ca-47ec-a959-b15d57ecd1b1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\c64">
+    <Filter Include="Source Files\SID">
+      <UniqueIdentifier>{a72c0c33-9813-4b49-9b8a-96a08f56deca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\CPU">
+      <UniqueIdentifier>{db7f164f-5522-42f5-a946-3dda059f4cd4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\CPU">
+      <UniqueIdentifier>{28182635-332b-4139-8dea-e6c9ede6fef5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\C64">
       <UniqueIdentifier>{b81a0f53-0dff-449c-94b7-07f98f9bfcab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\C64">
+      <UniqueIdentifier>{6494d9d0-5482-402f-b413-23abac9c4a4d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CPU/CPU.h">
-      <Filter>Header Files\cpu</Filter>
+      <Filter>Header Files\CPU</Filter>
     </ClInclude>
     <ClInclude Include="CPU/Flag.h">
-      <Filter>Header Files\cpu</Filter>
+      <Filter>Header Files\CPU</Filter>
     </ClInclude>
     <ClInclude Include="CPU/Instruction.h">
-      <Filter>Header Files\cpu</Filter>
+      <Filter>Header Files\CPU</Filter>
     </ClInclude>
     <ClInclude Include="CPU/Memory.h">
-      <Filter>Header Files\cpu</Filter>
+      <Filter>Header Files\CPU</Filter>
     </ClInclude>
     <ClInclude Include="c64/C64.h">
-      <Filter>Header Files\c64</Filter>
+      <Filter>Header Files\C64</Filter>
     </ClInclude>
     <ClInclude Include="util/Utils.h">
       <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="SID\SID.h">
+      <Filter>Header Files\SID</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -57,19 +66,22 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CPU/CPU.cpp">
-      <Filter>Source Files\cpu</Filter>
+      <Filter>Source Files\CPU</Filter>
     </ClCompile>
     <ClCompile Include="CPU/Flag.cpp">
-      <Filter>Source Files\cpu</Filter>
+      <Filter>Source Files\CPU</Filter>
     </ClCompile>
     <ClCompile Include="CPU/Instruction.cpp">
-      <Filter>Source Files\cpu</Filter>
+      <Filter>Source Files\CPU</Filter>
     </ClCompile>
     <ClCompile Include="CPU/Memory.cpp">
-      <Filter>Source Files\cpu</Filter>
+      <Filter>Source Files\CPU</Filter>
     </ClCompile>
     <ClCompile Include="c64/C64.cpp">
-      <Filter>Source Files\c64</Filter>
+      <Filter>Source Files\C64</Filter>
+    </ClCompile>
+    <ClCompile Include="SID\SID.cpp">
+      <Filter>Source Files\SID</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

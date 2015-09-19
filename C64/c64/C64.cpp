@@ -4,6 +4,7 @@ C64::C64(){
 	// initialize the components
 	this->ram = new Memory(65535);
 	this->cpu = new CPU(this->ram);
+	this->sid = new SID(this->cpu);
 }
 
 void C64::doSomeThings(){

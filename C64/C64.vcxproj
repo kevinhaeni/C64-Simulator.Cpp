@@ -81,6 +81,7 @@
     <ClInclude Include="CPU/Flag.h" />
     <ClInclude Include="CPU/Instruction.h" />
     <ClInclude Include="CPU/Memory.h" />
+    <ClInclude Include="SID\SID.h" />
     <ClInclude Include="util/Utils.h" />
   </ItemGroup>
   <ItemGroup>
@@ -90,6 +91,7 @@
     <ClCompile Include="CPU/Flag.cpp" />
     <ClCompile Include="CPU/Instruction.cpp" />
     <ClCompile Include="CPU/Memory.cpp" />
+    <ClCompile Include="SID\SID.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
