@@ -9,14 +9,19 @@ class CPU;
 class Instruction
 {
 private:	
-
-public:
-	std::string mnemonic;
+	char mnemonic[4];
 	uint8_t opcode;
 	int cycles;
+public:
+	// ctor
+	Instruction(int opcode, char *mnemonic, int numOfCycles, std::function<void(CPU*)> func);
 
-	Instruction(int opcode, std::function<void(CPU*)> func);
+	// getter
+	uint8_t getOpcode();
+	int getNumberOfCycles();
+	char* getMnemonicCode();
 
+	// methods
 	std::pair<int, Instruction*> getPair();
 	std::function<void(CPU*)> execute;
 

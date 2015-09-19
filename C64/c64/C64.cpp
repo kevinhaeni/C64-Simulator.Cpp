@@ -20,15 +20,20 @@ void C64::doSomeThings(){
 	//cpu.memory->dump("c:\\temp\\memdump.txt", true);
 
 	// decode and execute an instruction:
+	cpu->Registers.PC = 0x1000;
+	cpu->memory->write_byte(0x1001, 0xfa);
 
-	Instruction* i = cpu->decodeInstruction(169);
+	Instruction* i = cpu->decodeInstruction(0xA9);
 	if (i != nullptr)
 		i->execute(cpu);
 
-	i = cpu->decodeInstruction(150);
+	cpu->Registers.dump();
+
+	i = cpu->decodeInstruction(0x8D);
 	if (i != nullptr)
 		i->execute(cpu);
 
+	// invalid opcode example
 	i = cpu->decodeInstruction(155);
 	if (i != nullptr)
 		i->execute(cpu);

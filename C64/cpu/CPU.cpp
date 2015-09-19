@@ -24,7 +24,7 @@ void CPU::resetCPU(){
 	
 	this->Registers.SP = 0x00FF;
 
-	this->clockCycleCounter = 0;
+	this->cycleCounter = 0;
 }
 
 /*
@@ -74,18 +74,19 @@ void CPU::Registers::dump(){
 }
 
 void CPU::doCycle(){
-	clockCycleCounter--;
+	cycleCounter--;
 
-	if (clockCycleCounter <= 0){
+	// Check if there are cycles left of the previous instruction
+	if (cycleCounter <= 0){
 
-		// get OPCode from program counter
-		word opcode = this->memory->read_byte(this->Registers.PC);
+		// get OP-Code from program counter
+		byte opcode = this->memory->read_byte(this->Registers.PC);
 
 		// decode instruction
 		Instruction* inst = this->decodeInstruction(opcode);
 		if (inst != nullptr){
-			// check how many cycles the next instruction will take
-			clockCycleCounter = inst->cycles;
+			// remember how many cycles the next instruction will require
+			cycleCounter = inst->getNumberOfCycles();
 
 			// execute instruction
 			inst->execute(this);
@@ -95,25 +96,42 @@ void CPU::doCycle(){
 		}
 
 	}
+	else
+		wasteCycle();
+}
+
+void CPU::wasteCycle(){
+	// NOP
 }
 
 /*
 	Initialize the InstructionTable
 */
 void CPU::loadInstructionSet(){
-	// LDA
-	instructionTable.insert((new Instruction(169,
-		[](CPU* cpu) {
-		std::cout << "execute LDA" << std::endl;
-	}
-	))->getPair());
+	/*
+		Instruction construction:
+		1. parameter: OP-Code (8bit hex)
+		2. parameter: Mnemonic code (3 characters max)
+		3. parameter: Number of cycles requires
+		4. parameter: Lambda-expression function which performs the actual command. A pointer to the CPU is provided
+		getPair() returns a OP-Code + Instruction Object pair ready to be stored in the hashmap
+	*/
+
+	// LDA immediate
+	instructionTable.insert(
+		(new Instruction(0xA9, "LDA", 3, [](CPU* cpu) {
+			// read the byte after opcode and load it into RegA
+			byte data = cpu->memory->read_byte(++(cpu->Registers.PC));
+			cpu->Registers.A = data;
+		}))->getPair());
 
 	// STA
-	instructionTable.insert((new Instruction(150,
-		[](CPU* cpu) {
-		std::cout << "execute STA" << std::endl;
-	}
-	))->getPair());
+	instructionTable.insert(
+		(new Instruction(0x8D, "STA", 4, [](CPU* cpu) {
+			
+			std::cout << "execute STA" << std::endl;
+
+		}))->getPair());
 
 
 }

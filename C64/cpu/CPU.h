@@ -21,8 +21,7 @@ class CPU
   public:
 	Memory* memory;
 	std::unordered_map<int, Instruction*> instructionTable;
-
-	uint8_t clockCycleCounter;
+	uint8_t cycleCounter;
 
 	// ctor
 	CPU(Memory* memory);
@@ -31,6 +30,7 @@ class CPU
 	Instruction* decodeInstruction(int opcode);
 	
 	void doCycle();
+	void wasteCycle();
 
 	// Flags
 	struct Flags 
