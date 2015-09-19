@@ -22,6 +22,8 @@ class CPU
 	Memory* memory;
 	std::unordered_map<int, Instruction*> instructionTable;
 
+	uint8_t clockCycleCounter;
+
 	// ctor
 	CPU(Memory* memory);
 	void resetCPU();

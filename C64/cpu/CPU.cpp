@@ -9,21 +9,22 @@
 /*
 	Constructor
 */
-CPU::CPU(Memory* memory){
-	// init flags
-	this->Flags.reset();
-	// init registers
-	this->Registers.reset();
-
+CPU::CPU(Memory* memory)
+	:memory(memory)
+{
 	this->loadInstructionSet();
+	this->resetCPU();
 
-	this->memory = memory;
 }
 
 
 void CPU::resetCPU(){
 	this->Flags.reset();
 	this->Registers.reset();
+	
+	this->Registers.SP = 0x00FF;
+
+	this->clockCycleCounter = 0;
 }
 
 /*
@@ -73,17 +74,27 @@ void CPU::Registers::dump(){
 }
 
 void CPU::doCycle(){
-	// get OPCode from program counter
-	this->Registers.PC++;
-	word opcode = this->memory->read_byte(this->Registers.PC);
-	
-	// decode instruction
-	Instruction* inst = this->decodeInstruction(opcode);
-	if (inst != nullptr){
-		// execute instruction
-		inst->execute(this);
-	}
+	clockCycleCounter--;
 
+	if (clockCycleCounter <= 0){
+
+		// get OPCode from program counter
+		word opcode = this->memory->read_byte(this->Registers.PC);
+
+		// decode instruction
+		Instruction* inst = this->decodeInstruction(opcode);
+		if (inst != nullptr){
+			// check how many cycles the next instruction will take
+			clockCycleCounter = inst->cycles;
+
+			// execute instruction
+			inst->execute(this);
+
+			// increase PC
+			this->Registers.PC++;
+		}
+
+	}
 }
 
 /*
