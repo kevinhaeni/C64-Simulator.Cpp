@@ -5,6 +5,7 @@
 #include <iostream>
 #include <algorithm>    // std::find_if
 
+#define INTERRUPT_INTERVAL 8
 
 CPU::CPU()
 	: mem(65535)
@@ -271,30 +272,30 @@ Instruction* CPU::decodeInstruction(int opcode){
 
 // Emulate a CPU Cycle
 void CPU::doCycle(){
-	cycleCounter--;
 
-	// Check if there are cycles left of the previous instruction
-	if (cycleCounter <= 0){
+	// get OP-Code from program counter
+	byte opcode = fetchPCByte();
 
-		// get OP-Code from program counter
-		byte opcode = fetchPCByte();
+	// decode instruction
+	Instruction* inst = this->decodeInstruction(opcode);
+	if (inst != nullptr){
+		// remember how many cycles the next instruction will require
+		cycleCounter - inst->getNumberOfCycles();
 
-		// decode instruction
-		Instruction* inst = this->decodeInstruction(opcode);
-		if (inst != nullptr){
-			// remember how many cycles the next instruction will require
-			cycleCounter = inst->getNumberOfCycles();
+		// execute instruction
+		inst->execute();
 
-			// execute instruction
-			inst->execute();
-
-			// increase PC
-			this->Registers.PC++;
-		}
-
+		// increase PC
+		this->Registers.PC++;
 	}
-	else
-		wasteCycle();
+
+	if (cycleCounter <= INTERRUPT_INTERVAL){
+		// interrupt check
+
+		cycleCounter = INTERRUPT_INTERVAL;
+	}
+
+
 }
 
 void CPU::wasteCycle(){

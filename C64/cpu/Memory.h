@@ -19,6 +19,8 @@ public:
 	void write_byte(uint16_t adr, uint8_t val);
 
 	void dump(std::string filePath, bool showAdr);
+	void save(std::string filePath);
+	void load(std::string filePath);
 
 };
 

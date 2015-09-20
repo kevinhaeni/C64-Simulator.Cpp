@@ -34,13 +34,9 @@ void C64::doSomeThings(){
 	cpu->mem.write_byte(0x1002, 0xA5); // LDA zp
 	cpu->mem.write_byte(0x1003, 0x50);
 	
-	byte val = cpu->mem.read_byte(0x0050);
-	cpu->doCycle();
-	cpu->doCycle();
 	cpu->doCycle();
 	cpu->Registers.A = 0x00;
 	cpu->doCycle();
-	cpu->doCycle();
-	cpu->doCycle();
 	cpu->Registers.dump();
+	cpu->mem.save("c:\\test\\mem.dump");
 }

@@ -2,6 +2,7 @@
 #include "../util/Utils.h"
 #include <exception>
 #include <fstream>
+#include <vector>
 
 /*
 	Constructor
@@ -59,4 +60,36 @@ void Memory::dump(std::string filePath, bool showAdr){
 		}
 	}	
 	myfile.close();
+}
+
+
+void Memory::save(std::string filePath){
+	// write memory content to file
+	std::cout << "Save memory...";
+
+	std::ofstream myfile;
+	myfile.open(filePath);
+	for (uint16_t adr = 0; adr < this->memsize; adr++){
+	
+		myfile << _mem[adr];
+	}
+	myfile.close();
+}
+
+
+void Memory::load(std::string filePath){
+	// write memory content to file
+	std::cout << "Load memory...";
+	std::ifstream ifs(filePath, std::ios::binary | std::ios::ate);
+	std::ifstream::pos_type pos = ifs.tellg();
+
+	std::vector<char> result(pos);
+
+	ifs.seekg(0, std::ios::beg);
+	ifs.read(&result[0], pos);
+
+	for (uint16_t adr = 0; adr < this->memsize; adr++){
+
+		_mem[adr] = result[adr];
+	}
 }
