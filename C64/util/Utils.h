@@ -19,6 +19,8 @@ namespace Utils
 			<< std::hex << (int)val;
 		return stream.str();
 	}
+
+	uint16_t makeWord(uint8_t lsb, uint8_t msb);
 };
 
 #endif

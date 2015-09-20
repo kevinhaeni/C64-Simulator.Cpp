@@ -4,8 +4,8 @@
 /*
 Constructor
 */
-Instruction::Instruction(int opcode, char *mnemonic, int numOfCycles, std::function<void(CPU*)> func)
-	: opcode(opcode), cycles(numOfCycles), execute(func)
+Instruction::Instruction(int opcode, char *mnemonic, int numOfCycles, std::function<void(CPU*)> func, CPU* cpu)
+	: opcode(opcode), cycles(numOfCycles), func(func), theCPU(cpu)
 
 {
 	strcpy_s(this->mnemonic, mnemonic);
@@ -36,3 +36,10 @@ std::pair<int, Instruction*> Instruction::getPair(){
 }
 
 
+void Instruction::execute(){
+	if (this->func != nullptr){
+		this->func(this->theCPU);
+	}
+	else{	
+	}
+}

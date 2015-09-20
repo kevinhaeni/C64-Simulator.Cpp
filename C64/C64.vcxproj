@@ -92,6 +92,7 @@
     <ClCompile Include="CPU/Instruction.cpp" />
     <ClCompile Include="CPU/Memory.cpp" />
     <ClCompile Include="SID\SID.cpp" />
+    <ClCompile Include="util\Utils.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -2,8 +2,7 @@
 
 C64::C64(){
 	// initialize the components
-	this->ram = new Memory(65535);
-	this->cpu = new CPU(this->ram);
+	this->cpu = new CPU();
 	this->sid = new SID(this->cpu);
 }
 
@@ -13,29 +12,35 @@ void C64::doSomeThings(){
 	cpu->Flags.dump();
 
 	// How to write to registers
-	cpu->Registers.A = 0x05;
-	cpu->Registers.dump();
+	//cpu->Registers.A = 0x05;
+	//cpu->Registers.dump();
 
 	// how to write to RAM:
-	//cpu.memory->write(1, 5);
-	//cpu.memory->dump("c:\\temp\\memdump.txt", true);
+	//cpu.mem.write(1, 5);
+	//cpu.mem.dump("c:\\temp\\memdump.txt", true);
 
-	// decode and execute an instruction:
+	// decode and execute an instruction:	
+	//Instruction* i = cpu->decodeInstruction(0x85);
+	//if (i != nullptr)
+	//	i->execute();
+
+
+	// LDA zeropage Write and Read test
+
+	cpu->Registers.A = 7;
 	cpu->Registers.PC = 0x1000;
-	cpu->memory->write_byte(0x1001, 0xfa);
-
-	Instruction* i = cpu->decodeInstruction(0xA9);
-	if (i != nullptr)
-		i->execute(cpu);
-
+	cpu->mem.write_byte(0x1000, 0x85); // STA zp
+	cpu->mem.write_byte(0x1001, 0x50);	
+	cpu->mem.write_byte(0x1002, 0xA5); // LDA zp
+	cpu->mem.write_byte(0x1003, 0x50);
+	
+	byte val = cpu->mem.read_byte(0x0050);
+	cpu->doCycle();
+	cpu->doCycle();
+	cpu->doCycle();
+	cpu->Registers.A = 0x00;
+	cpu->doCycle();
+	cpu->doCycle();
+	cpu->doCycle();
 	cpu->Registers.dump();
-
-	i = cpu->decodeInstruction(0x8D);
-	if (i != nullptr)
-		i->execute(cpu);
-
-	// invalid opcode example
-	i = cpu->decodeInstruction(155);
-	if (i != nullptr)
-		i->execute(cpu);
 }

@@ -18,22 +18,18 @@ typedef uint16_t word;
 */
 class CPU
 {
-  public:
-	Memory* memory;
+private:
 	std::unordered_map<int, Instruction*> instructionTable;
-	uint8_t cycleCounter;
+	int cycleCounter;
 
-	// ctor
-	CPU(Memory* memory);
-	void resetCPU();
-	void loadInstructionSet();
-	Instruction* decodeInstruction(int opcode);
-	
-	void doCycle();
-	void wasteCycle();
+public:
+
+	CPU();
+
+	Memory mem;
 
 	// Flags
-	struct Flags 
+	struct Flags
 	{
 	public:
 		Flag O;		// Overflow
@@ -52,12 +48,43 @@ class CPU
 		uint8_t Y;		// index Y
 		uint8_t SP;		// stack pointer
 		uint16_t PC;	// program counter
-		
+
 		void reset();
 		void dump();
 
+		uint8_t getPCHigh();
+		uint8_t getPCLow();		
+
 	} Registers;
+
+
+	void resetCPU();
 	
+	byte fetchPCByte();
+	byte fetchByteAfterPC();
+	word fetchPCWord();
+	byte Immediate_Read();
+	byte Absolute_Read();
+	void Absolute_Write(byte data);
+	byte AbsoluteX_Read();
+	void AbsoluteX_Write(byte data);
+	byte AbsoluteY_Read();
+	void AbsoluteY_Write(byte data);
+	byte ZeroPage_Read();
+	void ZeroPage_Write(byte data);
+	byte ZeroPageX_Read();
+	void ZeroPageX_Write(byte data);
+	byte IndirectX_Read();
+	void IndirectX_Write(byte data);
+	byte IndirectY_Read();
+	void IndirectY_Write(byte data);
+
+	void loadInstructionSet();
+	Instruction* decodeInstruction(int opcode);
+	
+	void doCycle();
+	void wasteCycle();
+
 };
 
 #endif

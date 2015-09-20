@@ -83,5 +83,8 @@
     <ClCompile Include="SID\SID.cpp">
       <Filter>Source Files\SID</Filter>
     </ClCompile>
+    <ClCompile Include="util\Utils.cpp">
+      <Filter>Source Files\util</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
