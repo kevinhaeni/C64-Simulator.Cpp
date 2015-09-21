@@ -8,14 +8,16 @@
 class C64
 {
 private:
-	Memory *ram;
-	CPU *cpu;
+	CPU cpu;
 	SID *sid;
 
 public:
 	C64();
 
-	void doSomeThings();
+	void run();
+	void reset();
+
+	void test();
 };
 
 #endif

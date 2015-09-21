@@ -22,6 +22,25 @@ private:
 	std::unordered_map<int, Instruction*> instructionTable;
 	int cycleCounter;
 
+	byte fetchPCByte();
+	byte fetchByteAfterPC();
+	word fetchPCWord();
+	byte Immediate_Read();
+	byte Absolute_Read();
+	void Absolute_Write(byte data);
+	byte AbsoluteX_Read();
+	void AbsoluteX_Write(byte data);
+	byte AbsoluteY_Read();
+	void AbsoluteY_Write(byte data);
+	byte ZeroPage_Read();
+	void ZeroPage_Write(byte data);
+	byte ZeroPageX_Read();
+	void ZeroPageX_Write(byte data);
+	byte IndirectX_Read();
+	void IndirectX_Write(byte data);
+	byte IndirectY_Read();
+	void IndirectY_Write(byte data);
+
 public:
 
 	CPU();
@@ -57,33 +76,30 @@ public:
 
 	} Registers;
 
+	struct Interrupts{
+	public:
+		bool CIA1;
+		bool CIA2;
+
+		bool NMI;
+		bool IRQ;
+
+		void reset();
+	} Interrupts;
+
 
 	void resetCPU();
 	
-	byte fetchPCByte();
-	byte fetchByteAfterPC();
-	word fetchPCWord();
-	byte Immediate_Read();
-	byte Absolute_Read();
-	void Absolute_Write(byte data);
-	byte AbsoluteX_Read();
-	void AbsoluteX_Write(byte data);
-	byte AbsoluteY_Read();
-	void AbsoluteY_Write(byte data);
-	byte ZeroPage_Read();
-	void ZeroPage_Write(byte data);
-	byte ZeroPageX_Read();
-	void ZeroPageX_Write(byte data);
-	byte IndirectX_Read();
-	void IndirectX_Write(byte data);
-	byte IndirectY_Read();
-	void IndirectY_Write(byte data);
-
 	void loadInstructionSet();
 	Instruction* decodeInstruction(int opcode);
 	
-	void doCycle();
+	int emulateCycles(int cyclesToExecute);
 	void wasteCycle();
+
+	void triggerCIA1Interrupt();
+	void triggerCIA2Interrupt();
+	void triggerNMIInterrupt();
+	void triggerIRQInterrupt();
 
 };
 

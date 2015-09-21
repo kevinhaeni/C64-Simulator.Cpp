@@ -10,7 +10,7 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 
 	C64 theC64;
-	theC64.doSomeThings();
+	theC64.test();
 
 	int a;
 	std::cin >> a;

@@ -271,33 +271,62 @@ Instruction* CPU::decodeInstruction(int opcode){
 }
 
 // Emulate a CPU Cycle
-void CPU::doCycle(){
+int CPU::emulateCycles(int cyclesToExecute){
 
-	// get OP-Code from program counter
-	byte opcode = fetchPCByte();
+	int cycleCounter = cyclesToExecute;
 
-	// decode instruction
-	Instruction* inst = this->decodeInstruction(opcode);
-	if (inst != nullptr){
-		// remember how many cycles the next instruction will require
-		cycleCounter - inst->getNumberOfCycles();
+	do{
+		// get OP-Code from program counter
+		byte opcode = fetchPCByte();
 
-		// execute instruction
-		inst->execute();
+		// decode instruction
+		Instruction* inst = this->decodeInstruction(opcode);
+		if (inst != nullptr){
+			// remember how many cycles the next instruction will require
+			cycleCounter -= inst->getNumberOfCycles();
 
-		// increase PC
-		this->Registers.PC++;
-	}
+			// execute instruction
+			inst->execute();
 
-	if (cycleCounter <= INTERRUPT_INTERVAL){
-		// interrupt check
-
-		cycleCounter = INTERRUPT_INTERVAL;
-	}
-
+			// increase PC
+			this->Registers.PC++;
+		}
+	} while (cycleCounter > 0);
+	
+	return (cyclesToExecute - cycleCounter);
 
 }
 
 void CPU::wasteCycle(){
 	// NOP
 }
+
+void CPU::triggerCIA1Interrupt(){
+	this->Interrupts.CIA1 = true;
+
+	/*
+	 Each of the two CIA chips has five possible sources for interrupts: 
+	 underflow of timer A or B, Time of day ALARM (for example, you can set an alarm to occur at 1 p.m. provided that you have set the current time in the CIA chip in the TOD registers), serial port full/empty and FLAG (I'm not sure what FLAG is). The operating system uses one of the timers of one of the two CIA chips to give an IRQ 50 or 60 times per second (depending on if you have a PAL or an NTSC C64). This is necessary for doing such things as checking if a key has been pressed or flashing the cursor. 
+
+	*/
+}
+
+void CPU::triggerCIA2Interrupt(){
+	this->Interrupts.CIA2 = true;
+}
+
+void CPU::triggerNMIInterrupt(){
+	this->Interrupts.NMI = true;
+}
+
+void CPU::triggerIRQInterrupt(){
+	this->Interrupts.IRQ = true;
+}
+
+void CPU::Interrupts::reset(){
+	CIA1 = false;
+	CIA2 = false;
+	NMI = false;
+	IRQ = false;
+}
+
