@@ -31,22 +31,6 @@ private:
 
 	byte read(word address);
 
-	byte FetchImmediate();
-	byte FetchAbsolute();
-	void WriteAbsolute(byte data);
-	byte FetchAbsoluteX();
-	void WriteAbsoluteX(byte data);
-	byte FetchAbsoluteY();
-	void WriteAbsoluteY(byte data);
-	byte FetchZeroPage();
-	void WriteZeroPage(byte data);
-	byte FetchZeroPageX();
-	void WriteZeroPageX(byte data);
-	byte FetchIndirectX();
-	void WriteIndirectX(byte data);
-	byte FetchIndirectY();
-	void WriteIndirectY(byte data);
-
 public:
 	Memory* mem;
 	SID* sid;
@@ -99,6 +83,8 @@ public:
 	void triggerIRQInterrupt();
 
 	void fetchDecodeExecute();
+
+	void NI();
 
 	void NOP();
 	void LDA_i();

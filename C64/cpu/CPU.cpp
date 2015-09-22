@@ -83,134 +83,126 @@ uint8_t CPU::read(word adr) {
 	else
 		return mem->read_byte(adr);
 }
-
-/////////////////////////////////////////////////////////////////////////////////////
-// Immediate addressing
-/////////////////////////////////////////////////////////////////////////////////////
-
-// Returns the value at PC+1
-byte CPU::FetchImmediate()
-{
-	const byte data = fetchByteAfterPC();
-	cycleCounter += 1;
-	return data;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////
-// Absolute addressing
-/////////////////////////////////////////////////////////////////////////////////////
-
-// Reads the memory of address found in PC + PC+1
-byte CPU::FetchAbsolute()
-{
-	word absoluteAddress = fetchPCWord(); 
-	byte data = mem->read_byte(absoluteAddress);
-	return data;
-}
-
-void CPU::WriteAbsolute(byte data)
-{
-	word absoluteAddress = fetchPCWord();
-	mem->write_byte(absoluteAddress, data);
-}
-
-byte CPU::FetchAbsoluteX()
-{
-	word absoluteAddress = fetchPCWord() + Registers.X;
-	byte data = mem->read_byte(absoluteAddress);
-	return data;
-}
-
-void CPU::WriteAbsoluteX(byte data)
-{
-	word absoluteAddress = fetchPCWord() + Registers.X;
-	mem->write_byte(absoluteAddress, data);
-}
-
-
-byte CPU::FetchAbsoluteY()
-{
-	word absoluteAddress = fetchPCWord() + Registers.Y;
-	byte data = mem->read_byte(absoluteAddress);
-	return data;
-}
-
-void CPU::WriteAbsoluteY(byte data)
-{
-	word absoluteAddress = fetchPCWord() + Registers.Y;
-	mem->write_byte(absoluteAddress, data);
-}
-/////////////////////////////////////////////////////////////////////////////////////
-// Zeropage addressing
-/////////////////////////////////////////////////////////////////////////////////////
-
-byte CPU::FetchZeroPage()
-{
-	byte loAddress = fetchByteAfterPC();
-	byte data = mem->read_byte(Utils::makeWord(loAddress, 0x00));
-	return data;
-}
-
-void CPU::WriteZeroPage(byte data)
-{
-	byte loAddress = fetchByteAfterPC();
-	mem->write_byte(Utils::makeWord(loAddress, 0x00), data);	
-}
-
-
-byte CPU::FetchZeroPageX()
-{
-	byte loAddress = fetchByteAfterPC() + Registers.X;
-	byte data = mem->read_byte(Utils::makeWord(loAddress, 0x00));
-	return data;
-}
-
-void CPU::WriteZeroPageX(byte data)
-{
-	byte loAddress = fetchByteAfterPC() + Registers.X;
-	mem->write_byte(Utils::makeWord(loAddress, 0x00), data);
-}
-
-
-/////////////////////////////////////////////////////////////////////////////////////
-// Indirect addressing
-/////////////////////////////////////////////////////////////////////////////////////
-
-byte CPU::FetchIndirectX()
-{
-	byte data = fetchByteAfterPC() + Registers.X;
-	word zpAddress = Utils::makeWord(data, 0x00);
-	word effAddress = Utils::makeWord(mem->read_byte(zpAddress), mem->read_byte(zpAddress + 1));
-	data = mem->read_byte(effAddress);
-	return data;
-}
-
-void CPU::WriteIndirectX(byte data)
-{
-	byte adr = fetchByteAfterPC() + Registers.X;
-	word zpAddress = Utils::makeWord(adr, 0x00);
-	word effAddress = Utils::makeWord(mem->read_byte(zpAddress), mem->read_byte(zpAddress + 1)); // TODO: little / big endian????
-	mem->write_byte(effAddress, data);
-}
-
-
-byte CPU::FetchIndirectY()
-{
-	byte data = fetchByteAfterPC();
-	word zpAddress = Utils::makeWord(data, 0x00);
-	word effAddress = Utils::makeWord(mem->read_byte(zpAddress), mem->read_byte(zpAddress + 1)); // TODO: little / big endian????
-	data = mem->read_byte(effAddress+Registers.Y);
-	return data;
-}
-
-void CPU::WriteIndirectY(byte data)
-{
-	byte adr = fetchByteAfterPC() + Registers.X;
-	word zpAddress = Utils::makeWord(adr, 0x00);
-	word effAddress = Utils::makeWord(mem->read_byte(zpAddress), mem->read_byte(zpAddress + 1));
-	mem->write_byte(effAddress + Registers.Y, data);
-}
-
+//
+///////////////////////////////////////////////////////////////////////////////////////
+//// Immediate addressing
+///////////////////////////////////////////////////////////////////////////////////////
+//
+//// Returns the value at PC+1
+//byte CPU::FetchImmediate()
+//{
+//	const byte data = fetchByteAfterPC();
+//	return data;
+//}
+//
+//// Reads the memory of address found in PC + PC+1
+//byte CPU::FetchAbsolute()
+//{
+//	word absoluteAddress = fetchPCWord(); 
+//	byte data = mem->read_byte(absoluteAddress);
+//	return data;
+//}
+//
+//void CPU::WriteAbsolute(byte data)
+//{
+//	word absoluteAddress = fetchPCWord();
+//	mem->write_byte(absoluteAddress, data);
+//}
+//
+//byte CPU::FetchAbsoluteX()
+//{
+//	word absoluteAddress = fetchPCWord() + Registers.X;
+//	byte data = mem->read_byte(absoluteAddress);
+//	return data;
+//}
+//
+//void CPU::WriteAbsoluteX(byte data)
+//{
+//	word absoluteAddress = fetchPCWord() + Registers.X;
+//	mem->write_byte(absoluteAddress, data);
+//}
+//
+//
+//byte CPU::FetchAbsoluteY()
+//{
+//	word absoluteAddress = fetchPCWord() + Registers.Y;
+//	byte data = mem->read_byte(absoluteAddress);
+//	return data;
+//}
+//
+//void CPU::WriteAbsoluteY(byte data)
+//{
+//	word absoluteAddress = fetchPCWord() + Registers.Y;
+//	mem->write_byte(absoluteAddress, data);
+//}
+//
+//byte CPU::FetchZeroPage()
+//{
+//	byte loAddress = fetchByteAfterPC();
+//	byte data = mem->read_byte(Utils::makeWord(loAddress, 0x00));
+//	return data;
+//}
+//
+//void CPU::WriteZeroPage(byte data)
+//{
+//	byte loAddress = fetchByteAfterPC();
+//	mem->write_byte(Utils::makeWord(loAddress, 0x00), data);	
+//}
+//
+//
+//byte CPU::FetchZeroPageX()
+//{
+//	byte loAddress = fetchByteAfterPC() + Registers.X;
+//	byte data = mem->read_byte(Utils::makeWord(loAddress, 0x00));
+//	return data;
+//}
+//
+//void CPU::WriteZeroPageX(byte data)
+//{
+//	byte loAddress = fetchByteAfterPC() + Registers.X;
+//	mem->write_byte(Utils::makeWord(loAddress, 0x00), data);
+//}
+//
+//
+///////////////////////////////////////////////////////////////////////////////////////
+//// Indirect addressing
+///////////////////////////////////////////////////////////////////////////////////////
+//
+//byte CPU::FetchIndirectX()
+//{
+//	byte data = fetchByteAfterPC() + Registers.X;
+//	word zpAddress = Utils::makeWord(data, 0x00);
+//	word effAddress = Utils::makeWord(mem->read_byte(zpAddress), mem->read_byte(zpAddress + 1));
+//	data = mem->read_byte(effAddress);
+//	return data;
+//}
+//
+//void CPU::WriteIndirectX(byte data)
+//{
+//	byte adr = fetchByteAfterPC() + Registers.X;
+//	word zpAddress = Utils::makeWord(adr, 0x00);
+//	word effAddress = Utils::makeWord(mem->read_byte(zpAddress), mem->read_byte(zpAddress + 1)); // TODO: little / big endian????
+//	mem->write_byte(effAddress, data);
+//}
+//
+//
+//byte CPU::FetchIndirectY()
+//{
+//	byte data = fetchByteAfterPC();
+//	word zpAddress = Utils::makeWord(data, 0x00);
+//	word effAddress = Utils::makeWord(mem->read_byte(zpAddress), mem->read_byte(zpAddress + 1)); // TODO: little / big endian????
+//	data = mem->read_byte(effAddress+Registers.Y);
+//	return data;
+//}
+//
+//void CPU::WriteIndirectY(byte data)
+//{
+//	byte adr = fetchByteAfterPC() + Registers.X;
+//	word zpAddress = Utils::makeWord(adr, 0x00);
+//	word effAddress = Utils::makeWord(mem->read_byte(zpAddress), mem->read_byte(zpAddress + 1));
+//	mem->write_byte(effAddress + Registers.Y, data);
+//}
+//
 
 // Emulate a CPU Cycle
 int CPU::emulateCycles(int cyclesToExecute){
@@ -263,40 +255,54 @@ void CPU::fetchDecodeExecute(){
 */
 void CPU::NOP()
 {
-	// NOP
+
+}
+
+
+void CPU::NI()
+{
+// Not implemented!!
+	std::cout << "Instruction not implemented!" << std::endl;
 }
 
 void CPU::LDA_i()
 {
-	Registers.A = FetchImmediate();
+	Registers.A = fetchByteAfterPC();
+	cycleCounter += 2;
 }
 
 void CPU::LDA_zp(){
-	Registers.A = FetchZeroPage();
+	byte loAddress = fetchByteAfterPC();
+	byte data = mem->read_byte(Utils::makeWord(loAddress, 0x00));
+	Registers.A = data;
+
+	cycleCounter += 2;
 }
 
 void CPU::STA_zp(){
-	WriteZeroPage(Registers.A);
+	byte loAddress = fetchByteAfterPC();
+	mem->write_byte(Utils::makeWord(loAddress, 0x00), Registers.A);	
+	cycleCounter += 3;
 }
 
 void (CPU::*const CPU::opcodeMap[0x100])() =
 {
 //    0        1        2        3        4        5        6        7        8        9        A        B        C        D        E        F
-	&NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    // 0x00 - 0x0F
-	&NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    // 0x10 - 0x1F
-	&NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    // 0x20 - 0x2F
-	&NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    // 0x30 - 0x3F
-	&NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    // 0x40 - 0x4F
-	&NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    // 0x50 - 0x5F
-	&NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    // 0x60 - 0x6F
-	&NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    // 0x70 - 0x7F
-	&NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &STA_zp, &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    // 0x80 - 0x8F
-	&NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    // 0x90 - 0x9F
-	&NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &LDA_zp, &NOP,    &NOP,    &NOP,    &LDA_i,  &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    // 0xA0 - 0xAF
-	&NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    // 0xB0 - 0xBF
-	&NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    // 0xC0 - 0xCF
-	&NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    // 0xD0 - 0xDF
-	&NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    // 0xE0 - 0xEF
-	&NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    &NOP,    // 0xF0 - 0xFF
+	&NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     // 0x00 - 0x0F
+	&NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     // 0x10 - 0x1F
+	&NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     // 0x20 - 0x2F
+	&NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     // 0x30 - 0x3F
+	&NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     // 0x40 - 0x4F
+	&NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     // 0x50 - 0x5F
+	&NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     // 0x60 - 0x6F
+	&NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     // 0x70 - 0x7F
+	&NI,     &NI,     &NI,     &NI,     &NI,     &STA_zp, &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     // 0x80 - 0x8F
+	&NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     // 0x90 - 0x9F
+	&NI,     &NI,     &NI,     &NI,     &NI,     &LDA_zp, &NI,     &NI,     &NI,     &LDA_i,  &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     // 0xA0 - 0xAF
+	&NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     // 0xB0 - 0xBF
+	&NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     // 0xC0 - 0xCF
+	&NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     // 0xD0 - 0xDF
+	&NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     // 0xE0 - 0xEF
+	&NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     &NI,     // 0xF0 - 0xFF
 
 };
