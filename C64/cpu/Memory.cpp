@@ -15,7 +15,7 @@ Memory::Memory(uint16_t size){
 }
 
 /*
-	Set every byte to 0x00
+	Reset: Set every byte to 0x00
 */
 void Memory::reset(){
 	for (uint16_t i = 0; i < this->memsize; i++){
@@ -24,7 +24,7 @@ void Memory::reset(){
 }
 
 /*
-	Fetch data
+	Memory Access (read)
 */
 uint8_t Memory::read_byte(uint16_t adr){
 	if (adr <= this->memsize && adr >= 0)
@@ -35,7 +35,7 @@ uint8_t Memory::read_byte(uint16_t adr){
 
 
 /*
-	Write data
+	Memory Access (write)
 */
 void Memory::write_byte(uint16_t adr, uint8_t val){
 	if (adr <= this->memsize && adr >= 0)

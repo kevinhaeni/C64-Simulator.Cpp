@@ -5,6 +5,8 @@
 #include "Instruction.h"
 #include "Flag.h"
 #include "Memory.h"
+#include "../util/Utils.h"
+#include "../SID/SID.h"
 
 /*
 	Type definitions
@@ -12,6 +14,7 @@
 typedef uint8_t byte;
 typedef uint16_t word;
 
+#define SID_ADDRESS 0x0DFF
 
 /*
 	CPU Class
@@ -25,27 +28,28 @@ private:
 	byte fetchPCByte();
 	byte fetchByteAfterPC();
 	word fetchPCWord();
-	byte Immediate_Read();
-	byte Absolute_Read();
-	void Absolute_Write(byte data);
-	byte AbsoluteX_Read();
-	void AbsoluteX_Write(byte data);
-	byte AbsoluteY_Read();
-	void AbsoluteY_Write(byte data);
-	byte ZeroPage_Read();
-	void ZeroPage_Write(byte data);
-	byte ZeroPageX_Read();
-	void ZeroPageX_Write(byte data);
-	byte IndirectX_Read();
-	void IndirectX_Write(byte data);
-	byte IndirectY_Read();
-	void IndirectY_Write(byte data);
+
+	byte read(word address);
+
+	byte FetchImmediate();
+	byte FetchAbsolute();
+	void WriteAbsolute(byte data);
+	byte FetchAbsoluteX();
+	void WriteAbsoluteX(byte data);
+	byte FetchAbsoluteY();
+	void WriteAbsoluteY(byte data);
+	byte FetchZeroPage();
+	void WriteZeroPage(byte data);
+	byte FetchZeroPageX();
+	void WriteZeroPageX(byte data);
+	byte FetchIndirectX();
+	void WriteIndirectX(byte data);
+	byte FetchIndirectY();
+	void WriteIndirectY(byte data);
 
 public:
-
-	CPU();
-
-	Memory mem;
+	Memory* mem;
+	SID* sid;
 
 	// Flags
 	struct Flags
@@ -69,10 +73,7 @@ public:
 		uint16_t PC;	// program counter
 
 		void reset();
-		void dump();
-
-		uint8_t getPCHigh();
-		uint8_t getPCLow();		
+		void dump();	
 
 	} Registers;
 
@@ -87,19 +88,25 @@ public:
 		void reset();
 	} Interrupts;
 
-
-	void resetCPU();
-	
-	void loadInstructionSet();
-	Instruction* decodeInstruction(int opcode);
+	CPU(Memory* mem, SID* sid);
+	void resetCPU();	
 	
 	int emulateCycles(int cyclesToExecute);
-	void wasteCycle();
 
 	void triggerCIA1Interrupt();
 	void triggerCIA2Interrupt();
 	void triggerNMIInterrupt();
 	void triggerIRQInterrupt();
+
+	void fetchDecodeExecute();
+
+	void NOP();
+	void LDA_i();
+	void LDA_zp();
+	void STA_zp();
+
+	static void (CPU::*const opcodeMap[0x100])();
+	
 
 };
 

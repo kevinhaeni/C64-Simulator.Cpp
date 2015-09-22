@@ -1,7 +1,10 @@
 #include "SID.h"
 
-SID::SID(CPU* cpu)
-	: cpu(cpu)
+SID::SID()
 {
 
+}
+
+uint8_t SID::read_byte(uint16_t adr){
+	return regs[adr];
 }

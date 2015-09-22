@@ -5,19 +5,24 @@
 #include "../CPU/CPU.h"
 #include "../SID/SID.h"
 
-class C64
-{
-private:
-	CPU cpu;
-	SID *sid;
 
-public:
-	C64();
+	class C64
+	{
+	private:
+		Memory *mem;
+		CPU *cpu;
+		SID *sid;
 
-	void run();
-	void reset();
+	public:
+		C64();
 
-	void test();
-};
+		uint8_t Read(int adr);
+
+		void run();
+		void reset();
+
+		void test();
+	};
+
 
 #endif

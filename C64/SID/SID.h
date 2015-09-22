@@ -1,7 +1,7 @@
 #ifndef SID_H
 #define SID_H
 #include <cstdint>
-#include "../CPU/CPU.h"
+
 
 /*
 SID Class
@@ -9,11 +9,13 @@ SID Class
 class SID
 {
 private:
-	CPU *cpu;
+	uint8_t regs[29];
 
 public:
 
-	SID(CPU* cpu);
+	SID();
+
+	uint8_t read_byte(uint16_t adr);
 };
 
 #endif
