@@ -8,14 +8,16 @@
 	}
 
 	void C64::run(){
-		int cycles = 10;
+		// CLOCK_PAL  =  985248 Hz
+		// Considering an average of approx. 3 cycles per instruction, we need 1/3 * 985248 = 328416 iterations per second
+		// in order to reach the PAL clock frequency.
+		
 		int previousCycles = 0;
-
 		do{
-			// VIC.doCycles();
-			// SID.doCycles();
-			// Interrupts...
-			previousCycles = cpu->emulateCycles(cycles + previousCycles);
+			// Check for interrupts...
+			// VIC.emulateCycles();
+			sid->emulateCycles();			
+			previousCycles = cpu->emulateCycles(10 + previousCycles);
 
 		} while (true);
 
@@ -34,20 +36,22 @@
 		cpu->Registers.A = 7; //hack
 
 		// Load test program to memory
-		cpu->mem->write_byte(0x1000, 0x85); // STA zp
-		cpu->mem->write_byte(0x1001, 0x50);
-		cpu->mem->write_byte(0x1002, 0xA5); // LDA zp
-		cpu->mem->write_byte(0x1003, 0x50);
+		cpu->writeMemory(0x1000, 0x85); // STA zp
+		cpu->writeMemory(0x1001, 0x50);
+		cpu->writeMemory(0x1002, 0xA5); // LDA zp
+		cpu->writeMemory(0x1003, 0x50);
 
 		cpu->emulateCycles(0);
 		cpu->Registers.A = 0x00; // hack
 		cpu->emulateCycles(0);
 
+		cpu->Registers.dump();
+		cpu->Flags.dump();
+
+		cpu->LSR_a();
 
 		cpu->Registers.dump();
-
-
-
-		cpu->mem->save("c:\\test\\mem->dump");
+		cpu->Flags.dump();
+//		cpu->mem->save("c:\\test\\mem->dump");
 	}
 

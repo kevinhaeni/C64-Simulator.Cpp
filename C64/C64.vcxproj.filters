@@ -42,12 +42,6 @@
     <ClInclude Include="CPU/CPU.h">
       <Filter>Header Files\CPU</Filter>
     </ClInclude>
-    <ClInclude Include="CPU/Flag.h">
-      <Filter>Header Files\CPU</Filter>
-    </ClInclude>
-    <ClInclude Include="CPU/Instruction.h">
-      <Filter>Header Files\CPU</Filter>
-    </ClInclude>
     <ClInclude Include="CPU/Memory.h">
       <Filter>Header Files\CPU</Filter>
     </ClInclude>
@@ -60,18 +54,15 @@
     <ClInclude Include="SID\SID.h">
       <Filter>Header Files\SID</Filter>
     </ClInclude>
+    <ClInclude Include="CPU\Flag.h">
+      <Filter>Header Files\CPU</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="C64Sim.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="CPU/CPU.cpp">
-      <Filter>Source Files\CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="CPU/Flag.cpp">
-      <Filter>Source Files\CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="CPU/Instruction.cpp">
       <Filter>Source Files\CPU</Filter>
     </ClCompile>
     <ClCompile Include="CPU/Memory.cpp">
@@ -85,6 +76,9 @@
     </ClCompile>
     <ClCompile Include="util\Utils.cpp">
       <Filter>Source Files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="CPU\Flag.cpp">
+      <Filter>Source Files\CPU</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

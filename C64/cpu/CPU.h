@@ -2,7 +2,6 @@
 #define CPU_H
 #include <cstdint>
 #include <unordered_map>
-#include "Instruction.h"
 #include "Flag.h"
 #include "Memory.h"
 #include "../util/Utils.h"
@@ -14,7 +13,8 @@
 typedef uint8_t byte;
 typedef uint16_t word;
 
-#define SID_ADDRESS 0x0DFF
+#define SID_ADDRESS_SPACE 0x0DFF
+#define SID_ADDRESS_SPACE_SIZE 29
 
 /*
 	CPU Class
@@ -22,26 +22,53 @@ typedef uint16_t word;
 class CPU
 {
 private:
-	std::unordered_map<int, Instruction*> instructionTable;
+	Memory* mem;
 	int cycleCounter;
-
+	
+	/* Memory Addressing and ALU functions */
 	byte fetchPCByte();
 	byte fetchByteAfterPC();
 	word fetchPCWord();
 
-	byte read(word address);
+	byte FetchImmediate();
+	
+	byte FetchAbsolute();	
+	void WriteAbsolute(byte data);
+
+	byte FetchAbsoluteX();
+	void WriteAbsoluteX(byte data);	
+
+	byte FetchAbsoluteY();
+	void WriteAbsoluteY(byte data);
+
+	byte FetchZeroPage();
+	void WriteZeroPage(byte data);
+
+	byte FetchZeroPageX();
+	void WriteZeroPageX(byte data);
+	byte FetchZeroPageY();
+	void WriteZeroPageY(byte data);
+
+	byte FetchIndirectX();	
+	void WriteIndirectX(byte data);
+
+	byte FetchIndirectY();
+	void WriteIndirectY(byte data);
 
 public:
-	Memory* mem;
 	SID* sid;
 
 	// Flags
 	struct Flags
 	{
 	public:
-		Flag O;		// Overflow
-		Flag S;		// Sign
-		Flag Z;		// Zero
+		bool C;		// Carry
+		bool I;		// Interrupt
+		bool B;		// Break
+		bool D;		// Decimal
+		bool V;		// Overflow
+		byte Z;		// Zero
+		byte N;		// Null
 
 		void reset();
 		void dump();
@@ -82,13 +109,48 @@ public:
 	void triggerNMIInterrupt();
 	void triggerIRQInterrupt();
 
-	void fetchDecodeExecute();
+	byte readMemory(word address);
+	void writeMemory(word address, byte data);
 
-	void NI();
+	void fetchDecodeExecute();			// Fetch PC, decode function pointer and execute function
 
-	void NOP();
+	//////////////////////////////////////////////////
+	// INSTRUCTIONS
+	//////////////////////////////////////////////////
+	
+	void NI();							// Not Implemented placeholder
+	void NOP();	
+
+	/* LDA */
 	void LDA_i();
 	void LDA_zp();
+	void LDA_zpx();
+	void LDA_zpy();
+	void LDA_abs();
+	void LDA_absx();
+	void LDA_absy();
+	void LDA_idx();
+	void LDA_idy();
+	/* LDX */
+	void LDX_i();
+	void LDX_zp();
+	void LDX_zpy();
+	void LDX_abs();
+	void LDX_absy();
+	/* LDY */
+	void LDY_i();
+	void LDY_zp();
+	void LDY_zpx();
+	void LDY_abs();
+	void LDY_absx();
+	/* LSR */
+	void LSR_a();
+	void LSR_zp();
+	void LSR_zpx();
+	void LSR_abs();
+	void LSR_absx();
+
+	/* STA */
 	void STA_zp();
 
 	static void (CPU::*const opcodeMap[0x100])();

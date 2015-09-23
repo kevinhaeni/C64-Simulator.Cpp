@@ -16,6 +16,9 @@ public:
 	SID();
 
 	uint8_t read_byte(uint16_t adr);
+	void write_byte(uint16_t adr, uint8_t data);
+
+	void emulateCycles();
 };
 
 #endif

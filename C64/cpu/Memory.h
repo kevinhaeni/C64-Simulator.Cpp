@@ -2,12 +2,19 @@
 #define MEMORY_H
 #include <cstdint>
 #include <string>
+#include "Flag.h"
 
 class Memory
 {
 private:
 	uint8_t *_mem;
 	uint16_t memsize;
+
+	uint16_t addressBus;
+	uint8_t dataBus;
+	Flag rw;
+
+	void memoryAccess();
 
 public:	
 

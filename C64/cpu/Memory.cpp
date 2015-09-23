@@ -21,16 +21,36 @@ void Memory::reset(){
 	for (uint16_t i = 0; i < this->memsize; i++){
 		_mem[i] = 0x00;
 	}
+
+	rw.clear();
+	dataBus = 0x00;
+	addressBus = 0x00;
+}
+
+void Memory::memoryAccess(){
+	if (rw.get()){
+		if (addressBus <= this->memsize && addressBus >= 0)
+			_mem[addressBus] = dataBus;
+		else
+			throw std::exception("Invalid memory address");
+	}
+	else{
+		// read access
+		if (addressBus <= this->memsize && addressBus >= 0)
+			dataBus = _mem[addressBus];
+		else
+			throw std::exception("Invalid memory address");
+	}
 }
 
 /*
 	Memory Access (read)
 */
 uint8_t Memory::read_byte(uint16_t adr){
-	if (adr <= this->memsize && adr >= 0)
-		return _mem[adr];
-	else
-		throw std::exception("Invalid memory address");
+	addressBus = adr;
+	rw.clear();
+	memoryAccess();
+	return dataBus;
 }
 
 
@@ -38,10 +58,10 @@ uint8_t Memory::read_byte(uint16_t adr){
 	Memory Access (write)
 */
 void Memory::write_byte(uint16_t adr, uint8_t val){
-	if (adr <= this->memsize && adr >= 0)
-		_mem[adr] = val;
-	else
-		throw std::exception("Invalid memory address");
+	addressBus = adr;	
+	dataBus = val;
+	rw.set();
+	memoryAccess();
 }
 
 
