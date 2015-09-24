@@ -77,18 +77,20 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="c64/C64.h" />
+    <ClInclude Include="c64\Memory.h" />
     <ClInclude Include="CPU/CPU.h" />
-    <ClInclude Include="CPU/Memory.h" />
     <ClInclude Include="CPU\Flag.h" />
+    <ClInclude Include="cpu\Instruction.h" />
     <ClInclude Include="SID\SID.h" />
     <ClInclude Include="util/Utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="c64/C64.cpp" />
     <ClCompile Include="C64Sim.cpp" />
+    <ClCompile Include="c64\Memory.cpp" />
     <ClCompile Include="CPU/CPU.cpp" />
-    <ClCompile Include="CPU/Memory.cpp" />
     <ClCompile Include="CPU\Flag.cpp" />
+    <ClCompile Include="cpu\Instruction.cpp" />
     <ClCompile Include="SID\SID.cpp" />
     <ClCompile Include="util\Utils.cpp" />
   </ItemGroup>

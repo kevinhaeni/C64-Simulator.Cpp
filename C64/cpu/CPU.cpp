@@ -2,10 +2,12 @@
 #include <string>
 #include <iostream>
 #include <algorithm>    // std::find_if
+#include "../C64/c64.h"
 
-CPU::CPU(Memory* mem, SID* sid)
-	: mem(mem), sid(sid)
+CPU::CPU(C64* c64, SID* sid)
+	: c64(c64), sid(sid)
 {
+	this->loadInstructionSet();
 	this->resetCPU();
 }
 
@@ -19,9 +21,9 @@ void CPU::resetCPU(){
 	this->cycleCounter = 0;
 }
 
-/////////////////////////////////////////////////////////////////////////////////////
-// Flags
-/////////////////////////////////////////////////////////////////////////////////////
+/* 
+	Flags
+*/
 void CPU::Flags::reset(){
 	C = I = D = B = V = false;
 	Z = 0x00;
@@ -42,9 +44,9 @@ void CPU::Flags::dump(){
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////////
-// Registers
-/////////////////////////////////////////////////////////////////////////////////////
+/*
+    Registers
+*/
 void CPU::Registers::reset(){
 	this->A = 0x00;
 	this->X = 0x00;
@@ -68,178 +70,26 @@ void CPU::Registers::dump(){
 }
 
 
-byte CPU::fetchPCByte(){
-	return readMemory(Registers.PC);
-}
-byte CPU::fetchByteAfterPC(){
-	return readMemory(++(Registers.PC));
-}
-word CPU::fetchPCWord(){
-	return fetchPCByte() & fetchByteAfterPC();
-}
-
-uint8_t CPU::readMemory(word address) {
-	// if address shows to SID's address space --> redirect the read/write to the SID chip
-	if (address >= SID_ADDRESS_SPACE && address < SID_ADDRESS_SPACE + SID_ADDRESS_SPACE_SIZE)
-		return sid->read_byte(address);
-	else
-		// otherwise read/write from/to the memory
-		return mem->read_byte(address);
-}
-
-void CPU::writeMemory(word address, byte data){
-	// if address shows to SID's address space --> redirect the read/write to the SID chip
-	if (address >= SID_ADDRESS_SPACE && address < SID_ADDRESS_SPACE + SID_ADDRESS_SPACE_SIZE)
-		sid->write_byte(address, data);
-	else
-		// otherwise read/write from/to the memory
-		mem->write_byte(address, data);
-}
-
-
-/////////////////////////////////////////////////////////////////////////////////////
-// Immediate addressing
-/////////////////////////////////////////////////////////////////////////////////////
-
-// Returns the value at PC+1
-byte CPU::FetchImmediate()
-{
-	const byte data = fetchByteAfterPC();
-	cycleCounter += 1;
-	return data;
-}
-
-// Reads the memory of address found in PC + PC+1
-byte CPU::FetchAbsolute()
-{
-	word absoluteAddress = fetchPCWord(); 
-	byte data = mem->read_byte(absoluteAddress);
-	return data;
-
-}
-
-void CPU::WriteAbsolute(byte data)
-{
-	word absoluteAddress = fetchPCWord();
-	mem->write_byte(absoluteAddress, data);
-}
-
-byte CPU::FetchAbsoluteX()
-{
-	word absoluteAddress = fetchPCWord() + Registers.X;
-	byte data = mem->read_byte(absoluteAddress);
-	return data;
-}
-
-void CPU::WriteAbsoluteX(byte data)
-{
-	word absoluteAddress = fetchPCWord() + Registers.X;
-	mem->write_byte(absoluteAddress, data);
-}
-
-
-byte CPU::FetchAbsoluteY()
-{
-	word absoluteAddress = fetchPCWord() + Registers.Y;
-	byte data = mem->read_byte(absoluteAddress);
-	return data;
-}
-
-void CPU::WriteAbsoluteY(byte data)
-{
-	word absoluteAddress = fetchPCWord() + Registers.Y;
-	mem->write_byte(absoluteAddress, data);
-}
-
-byte CPU::FetchZeroPage()
-{
-	byte loAddress = fetchByteAfterPC();
-	byte data = mem->read_byte(Utils::makeWord(loAddress, 0x00));
-	return data;
-}
-
-void CPU::WriteZeroPage(byte data)
-{
-	byte loAddress = fetchByteAfterPC();
-	mem->write_byte(Utils::makeWord(loAddress, 0x00), data);	
-}
-
-
-byte CPU::FetchZeroPageX()
-{
-	byte loAddress = fetchByteAfterPC() + Registers.X;
-	byte data = mem->read_byte(Utils::makeWord(loAddress, 0x00));
-	return data;
-}
-
-void CPU::WriteZeroPageX(byte data)
-{
-	byte loAddress = fetchByteAfterPC() + Registers.X;
-	mem->write_byte(Utils::makeWord(loAddress, 0x00), data);
-}
-
-byte CPU::FetchZeroPageY()
-{
-	byte loAddress = fetchByteAfterPC() + Registers.Y;
-	byte data = mem->read_byte(Utils::makeWord(loAddress, 0x00));
-	return data;
-}
-
-void CPU::WriteZeroPageY(byte data)
-{
-	byte loAddress = fetchByteAfterPC() + Registers.Y;
-	mem->write_byte(Utils::makeWord(loAddress, 0x00), data);
-}
-
-
-/////////////////////////////////////////////////////////////////////////////////////
-// Indirect addressing
-/////////////////////////////////////////////////////////////////////////////////////
-
-byte CPU::FetchIndirectX()
-{
-	byte data = fetchByteAfterPC() + Registers.X;
-	word zpAddress = Utils::makeWord(data, 0x00);
-	word effAddress = Utils::makeWord(mem->read_byte(zpAddress), mem->read_byte(zpAddress + 1));
-	data = mem->read_byte(effAddress);
-	return data;
-}
-
-void CPU::WriteIndirectX(byte data)
-{
-	byte adr = fetchByteAfterPC() + Registers.X;
-	word zpAddress = Utils::makeWord(adr, 0x00);
-	word effAddress = Utils::makeWord(mem->read_byte(zpAddress), mem->read_byte(zpAddress + 1)); // TODO: little / big endian????
-	mem->write_byte(effAddress, data);
-}
-
-
-byte CPU::FetchIndirectY()
-{
-	byte data = fetchByteAfterPC();
-	word zpAddress = Utils::makeWord(data, 0x00);
-	word effAddress = Utils::makeWord(mem->read_byte(zpAddress), mem->read_byte(zpAddress + 1)); // TODO: little / big endian????
-	data = mem->read_byte(effAddress+Registers.Y);
-	return data;
-}
-
-void CPU::WriteIndirectY(byte data)
-{
-	byte adr = fetchByteAfterPC() + Registers.X;
-	word zpAddress = Utils::makeWord(adr, 0x00);
-	word effAddress = Utils::makeWord(mem->read_byte(zpAddress), mem->read_byte(zpAddress + 1));
-	mem->write_byte(effAddress + Registers.Y, data);
-}
-
-
-
 // Emulate a CPU Cycle
 int CPU::emulateCycles(int cyclesToExecute){
 
 	int cycleCounter = cyclesToExecute;
 
-	fetchDecodeExecute();
-	this->Registers.PC++;
+	// get OP-Code from program counter
+	byte opcode = fetchPCByte();
+
+	// decode instruction
+	Instruction* inst = this->decodeInstruction(opcode);
+	if (inst != nullptr){
+		// remember how many cycles the next instruction will require
+		cycleCounter -= inst->getNumberOfCycles();
+
+		// execute instruction
+		inst->execute();
+
+		// increase PC
+		this->Registers.PC++;
+	}
 	
 	return (cyclesToExecute - cycleCounter);
 
@@ -274,240 +124,199 @@ void CPU::Interrupts::reset(){
 	IRQ = false;
 }
 
-void CPU::fetchDecodeExecute(){
-	// lookup the instruction function in the functionPointerLookupTable
-	(*this.*opcodeMap[fetchPCByte()])();
+/*
+Lookup of opcode within the instruction table
+returns nullptr if the OP-Code does not exist
+*/
+Instruction* CPU::decodeInstruction(int opcode){
+
+	auto it = instructionTable.find(opcode);
+	if (it != instructionTable.end()) {
+		return it->second;
+	}
+	else
+	{
+		std::cout << "Invalid OP-Code" << std::endl;
+		//throw std::exception("Invalid OP-Code");
+		this->resetCPU();
+	}			
+
+	return nullptr;
+}
+
+void CPU::addInstruction(Instruction* instr){
+	// getPair() returns an OPCode + Instruction Object pair ready to be stored in the hashmap
+	instructionTable.insert((instr)->getPair());
+}
+
+
+byte CPU::fetchPCByte(){
+	return this->c64->readMemory(Registers.PC);
+}
+byte CPU::fetchByteAfterPC(){
+	return this->c64->readMemory(++(Registers.PC));
+}
+word CPU::fetchPCWord(){
+	return fetchPCByte() & fetchByteAfterPC();
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+// 6502 Addressing modes
+/////////////////////////////////////////////////////////////////////////////////////
+
+word CPU::Immediate()
+{
+	const word immAddress = fetchByteAfterPC();
+	return immAddress;
+}
+
+word CPU::Absolute()
+{
+	const word absoluteAddress = fetchPCWord();
+	return absoluteAddress;
+
+}
+
+word CPU::AbsoluteX()
+{
+	const word absoluteAddress = fetchPCWord() + Registers.X;
+	return absoluteAddress;
+}
+
+word CPU::AbsoluteY()
+{
+	const word absoluteAddress = fetchPCWord() + Registers.Y;
+	return absoluteAddress;
+}
+
+word CPU::ZeroPage()
+{
+	byte loAddress = fetchByteAfterPC();
+	const word zpAddress = Utils::makeWord(loAddress, 0x00);
+	return zpAddress;
+}
+
+word CPU::ZeroPageX()
+{
+	byte loAddress = fetchByteAfterPC() + Registers.X;
+	const word zpxAddress = Utils::makeWord(loAddress, 0x00);
+	return zpxAddress;
+}
+
+word CPU::ZeroPageY()
+{
+	byte loAddress = fetchByteAfterPC() + Registers.Y;
+	const word zpyAddress = Utils::makeWord(loAddress, 0x00);
+	return zpyAddress;
+}
+
+word CPU::IndirectX()
+{
+	byte data = fetchByteAfterPC() + Registers.X;
+	word zpAddress = Utils::makeWord(data, 0x00);
+	const word effAddress = Utils::makeWord(c64->readMemory(zpAddress), c64->readMemory(zpAddress + 1));	
+	return effAddress;
+}
+
+word CPU::IndirectY()
+{
+	byte data = fetchByteAfterPC();
+	word zpAddress = Utils::makeWord(data, 0x00);
+	word effAddress = Utils::makeWord(c64->readMemory(zpAddress), c64->readMemory(zpAddress + 1)); // TODO: little / big endian????
+	effAddress = effAddress + Registers.Y;
+	return effAddress;
+}
+
+void CPU::loadRegister(byte* reg, word addr){
+	*reg = c64->readMemory(addr);
+	Flags.Z = *reg == 0 ? true : false;
 }
 
 /*
- OPCODES
+ Initialize the instruction set hashmap
 */
-void CPU::NOP()
-{
+void CPU::loadInstructionSet(){
+	/*
+	Instruction constructor:
+		1. parameter: OP-Code (8bit hex)
+		2. parameter: Mnemonic code (3 characters max)
+		3. parameter: Number of cycles requires
+		4. parameter: Lambda-expression function which performs the actual command. A pointer to the CPU is provided
+	*/
 
-}
+	/*
+	   LDA GROUP
+	*/
 
+	// A9: LDA immediate
+	addInstruction(new Instruction(0xA9, "LDA_imm", 2, [this]() {
+		loadRegister(&Registers.A, Immediate());		
+	}));
+	// A5: LDA ZeroPage
+	addInstruction(new Instruction(0xA5, "LDA_zp", 3, [this]() {
+		loadRegister(&Registers.A, ZeroPage());
+	}));
+	// B5: LDA ZeroPageX
+	addInstruction(new Instruction(0xB5, "LDA_zpx", 4, [this]() {
+		loadRegister(&Registers.A, ZeroPageX());
+	}));
+	// AD: LDA Absolute
+	addInstruction(new Instruction(0xAD, "LDA_abs", 4, [this]() {
+		loadRegister(&Registers.A, Absolute());
+	}));
+	// BD: LDA AbsoluteX
+	addInstruction(new Instruction(0xBD, "LDA_absx", 4, [this]() {
+		loadRegister(&Registers.A, AbsoluteX());
+	}));
+	// B9: LDA AbsoluteY
+	addInstruction(new Instruction(0xB9, "LDA_absy", 4, [this]() {
+		loadRegister(&Registers.A, AbsoluteY());
+	}));
+	// A1: LDA IndirectX
+	addInstruction(new Instruction(0xA1, "LDA_ix", 6, [this]() {
+		loadRegister(&Registers.A, IndirectX());
+	}));
+	// B1: LDA IndirectY
+	addInstruction(new Instruction(0xB1, "LDA_iy", 5, [this]() {
+		loadRegister(&Registers.A, IndirectY());
+	}));
 
-void CPU::NI()
-{
-// Not implemented!!
-	std::cout << "Instruction not implemented!" << std::endl;
-}
+	/*
+	STA GROUP
+	*/
 
-void CPU::LDA_i()
-{
-	Registers.A = FetchImmediate();
-	if (Registers.A == 0)
-		Flags.Z = true;
-	else
-		Flags.Z = false;
-
-	cycleCounter += 2;
-}
-
-void CPU::LDA_zp(){
-	Registers.A = FetchZeroPage();
-	if (Registers.A == 0)
-		Flags.Z = true;
-	else
-		Flags.Z = false;
+	// 85: STA ZeroPage
+	addInstruction(new Instruction(0x85, "STA_zp", 3, [this]() {
+		c64->writeMemory(Utils::makeWord(fetchByteAfterPC(), 0x00), Registers.A);
+	}));
+	// 95: STA ZeroPageX
+	addInstruction(new Instruction(0x85, "STA_zpx", 3, [this]() {
+		c64->writeMemory(Utils::makeWord(fetchByteAfterPC(), 0x00), Registers.A);
+	}));
+	// 8D: STA Absolute
+	addInstruction(new Instruction(0x85, "STA_abs", 3, [this]() {
+		c64->writeMemory(Utils::makeWord(fetchByteAfterPC(), 0x00), Registers.A);
+	}));
 
 	
-	cycleCounter += 3;
+	/*
+	LSR GROUP
+	*/
+
+	///* LSR */
+	//  LSR_a(){
+	//	byte data = Registers.A;
+	//	Flags.C = (data & 0x01) != 0;
+	//	Registers.A = (data >> 1);
+	//	//return flags.nz;
+	//}
+	//
+	// LSR_zp();
+	// LSR_zpx();
+	// LSR_abs();
+	// LSR_absx();
+	//
+
+
 }
 
-void CPU::LDA_zpx(){
-	Registers.A = FetchZeroPageX();
-	if (Registers.A == 0)
-		Flags.Z = true;
-	else
-		Flags.Z = false;
-
-	cycleCounter += 4;
-}
-
-void CPU::LDA_abs(){
-	Registers.A = FetchAbsolute();
-	if (Registers.A == 0)
-		Flags.Z = true;
-	else
-		Flags.Z = false;
-
-	cycleCounter += 4;
-}
-
-void CPU::LDA_absx(){
-	Registers.A = FetchAbsoluteX();
-	if (Registers.A == 0)
-		Flags.Z = true;
-	else
-		Flags.Z = false;
-
-	cycleCounter += 4; //+1 if page boundary crossed
-}
-
-void CPU::LDA_absy(){
-	Registers.A = FetchAbsoluteY();
-	if (Registers.A == 0)
-		Flags.Z = true;
-	else
-		Flags.Z = false;
-
-	cycleCounter += 4; //+1 if page boundary crossed
-}
-
-void CPU::LDA_idx(){
-	Registers.A = FetchIndirectX();
-	if (Registers.A == 0)
-		Flags.Z = true;
-	else
-		Flags.Z = false;
-
-	cycleCounter += 6;
-}
-
-void CPU::LDA_idy(){
-	Registers.A = FetchIndirectY();
-	if (Registers.A == 0)
-		Flags.Z = true;
-	else
-		Flags.Z = false;
-
-	cycleCounter += 5; // + 1 if page boundary crossed
-}
-
-/* LDX */
-void CPU::LDX_i(){
-	Registers.X = FetchImmediate();
-	if (Registers.X == 0)
-		Flags.Z = true;
-	else
-		Flags.Z = false;
-	cycleCounter += 2;
-}
-
-void CPU::LDX_zp(){
-	Registers.X = FetchZeroPage();
-	if (Registers.X == 0)
-		Flags.Z = true;
-	else
-		Flags.Z = false;
-
-	cycleCounter += 3;
-}
-void CPU::LDX_zpy(){
-	Registers.X = FetchZeroPageY();
-	if (Registers.X == 0)
-		Flags.Z = true;
-	else
-		Flags.Z = false;
-
-	cycleCounter += 4;
-}
-void CPU::LDX_abs(){
-	Registers.X = FetchAbsolute();
-	if (Registers.X == 0)
-		Flags.Z = true;
-	else
-		Flags.Z = false;
-
-	cycleCounter += 4;
-}
-void CPU::LDX_absy(){
-	Registers.A = FetchAbsoluteY();
-	if (Registers.X == 0)
-		Flags.Z = true;
-	else
-		Flags.Z = false;
-
-	cycleCounter += 4; // +1 if page boundary crossed
-}
-
-/* LDY */
-void CPU::LDY_i(){
-	Registers.Y = FetchImmediate();
-	if (Registers.Y == 0)
-		Flags.Z = true;
-	else
-		Flags.Z = false;
-
-	cycleCounter += 2;
-}
-
-void CPU::LDY_zp(){
-	Registers.X = FetchZeroPage();
-	if (Registers.Y == 0)
-		Flags.Z = true;
-	else
-		Flags.Z = false;
-
-	cycleCounter += 3;
-}
-void CPU::LDY_zpx(){
-	Registers.Y = FetchZeroPageX();
-	if (Registers.Y == 0)
-		Flags.Z = true;
-	else
-		Flags.Z = false;
-
-	cycleCounter += 4;
-}
-void CPU::LDY_abs(){
-	Registers.Y = FetchAbsolute();
-	if (Registers.Y == 0)
-		Flags.Z = true;
-	else
-		Flags.Z = false;
-
-	cycleCounter += 4;
-}
-void CPU::LDY_absx(){
-	Registers.Y = FetchAbsoluteX();
-	if (Registers.Y == 0)
-		Flags.Z = true;
-	else
-		Flags.Z = false;
-
-	cycleCounter += 4; // +1 if page boundary crossed
-}
-
-/* LSR */
-void CPU::LSR_a(){
-	byte data = Registers.A;
-	Flags.C = (data & 0x01) != 0;
-	Registers.A = (data >> 1);
-	//return flags.nz;
-}
-
-void LSR_zp();
-void LSR_zpx();
-void LSR_abs();
-void LSR_absx();
-
-void CPU::STA_zp(){
-	byte loAddress = fetchByteAfterPC();
-	mem->write_byte(Utils::makeWord(loAddress, 0x00), Registers.A);	
-	cycleCounter += 3;
-}
-
-void (CPU::*const CPU::opcodeMap[0x100])() =
-{
-//    0        1         2         3         4          5        6         7         8         9         A         B         C         D         E         F
-	&NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      // 0x00 - 0x0F
-	&NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      // 0x10 - 0x1F
-	&NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      // 0x20 - 0x2F
-	&NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      // 0x30 - 0x3F
-	&NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      // 0x40 - 0x4F
-	&NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      // 0x50 - 0x5F
-	&NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      // 0x60 - 0x6F
-	&NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      // 0x70 - 0x7F
-	&NI,      &NI,      &NI,      &NI,      &NI,      &STA_zp,  &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      // 0x80 - 0x8F
-	&NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      // 0x90 - 0x9F
-	&LDY_i,   &LDA_idx, &LDX_i,   &NI,      &LDY_zp,  &LDA_zp,  &LDX_zp,  &NI,      &NI,      &LDA_i,   &NI,      &NI,      &LDY_abs, &LDA_abs, &LDX_abs, &NI,      // 0xA0 - 0xAF
-	&NI,      &LDA_idy, &NI,      &NI,      &LDY_zpx, &LDA_zpx, &LDX_zpy, &NI,      &NI,      &NI,      &NI,      &NI,      &LDY_absx,&LDA_absy,&LDX_absy,&NI,      // 0xB0 - 0xBF
-	&NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      // 0xC0 - 0xCF
-	&NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      // 0xD0 - 0xDF
-	&NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      // 0xE0 - 0xEF
-	&NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      &NI,      // 0xF0 - 0xFF
-
-};
