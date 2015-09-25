@@ -57,14 +57,20 @@
 		cpu->Registers.A = 7; //hack
 
 		// Load test program to memory
+        // LDA Test
 		this->writeMemory(0x1000, 0x85); // STA zp
 		this->writeMemory(0x1001, 0x50);
 		this->writeMemory(0x1002, 0xA5); // LDA zp
 		this->writeMemory(0x1003, 0x50);
+        // LDX Test
+        this->writeMemory(0x1004, 0xA1); // LDX zp
+        this->writeMemory(0x1005, 0x50);
 
+        
 		cpu->emulateCycles(0);
 		cpu->Registers.A = 0x00; // hack
 		cpu->emulateCycles(0);
+        cpu->emulateCycles(0);
 
 		cpu->Registers.dump();
 		cpu->Flags.dump();

@@ -243,45 +243,103 @@ void CPU::loadInstructionSet(){
 		4. parameter: Lambda-expression function which performs the actual command. A pointer to the CPU is provided
 	*/
 
+    
+    /*
+     LDY GROUP
+     Load Memory data to Register Y
+     */
+    
+    // A0: LDY immediate
+    addInstruction(new Instruction(0xA0, "LDY_imm", 2, [this]() {
+        loadRegister(&Registers.Y, Immediate());
+    }));
+    // A4: LDY ZeroPage
+    addInstruction(new Instruction(0xA4, "LDY_zp", 3, [this]() {
+        loadRegister(&Registers.Y, ZeroPage());
+    }));
+    // B4: LDY ZeroPageX
+    addInstruction(new Instruction(0xB4, "LDY_zpx", 4, [this]() {
+        loadRegister(&Registers.Y, ZeroPageX());
+    }));
+    // AC: LDY Absolute
+    addInstruction(new Instruction(0xAC, "LDY_abs", 4, [this]() {
+        loadRegister(&Registers.Y, Absolute());
+    }));
+    // BC: LDY AbsoluteX
+    addInstruction(new Instruction(0xBC, "LDY_absx", 4, [this]() {
+        loadRegister(&Registers.Y, AbsoluteX());
+    }));
+    
+    
+    /*
+     LDX GROUP
+     Load Memory data to Register X
+     */
+    
+    // A1: LDX immediate
+    addInstruction(new Instruction(0xA1, "LDX_imm", 2, [this]() {
+        loadRegister(&Registers.X, Immediate());
+    }));
+    // A6: LDX ZeroPage
+    addInstruction(new Instruction(0xA6, "LDX_zp", 3, [this]() {
+        loadRegister(&Registers.X, ZeroPage());
+    }));
+    // B6: LDX ZeroPageX
+    addInstruction(new Instruction(0xB6, "LDX_zpx", 4, [this]() {
+        loadRegister(&Registers.X, ZeroPageX());
+    }));
+    // AE: LDX Absolute
+    addInstruction(new Instruction(0xAE, "LDX_abs", 4, [this]() {
+        loadRegister(&Registers.X, Absolute());
+    }));
+    // BE: LDX AbsoluteX
+    addInstruction(new Instruction(0xBE, "LDX_absx", 4, [this]() {
+        loadRegister(&Registers.X, AbsoluteX());
+    }));
+    
+    
+    /*
+     LDA GROUP
+     Load Memory data to Register A
+     */
+    
+    // A9: LDA immediate
+    addInstruction(new Instruction(0xA9, "LDA_imm", 2, [this]() {
+        loadRegister(&Registers.A, Immediate());
+    }));
+    // A5: LDA ZeroPage
+    addInstruction(new Instruction(0xA5, "LDA_zp", 3, [this]() {
+        loadRegister(&Registers.A, ZeroPage());
+    }));
+    // B5: LDA ZeroPageX
+    addInstruction(new Instruction(0xB5, "LDA_zpx", 4, [this]() {
+        loadRegister(&Registers.A, ZeroPageX());
+    }));
+    // AD: LDA Absolute
+    addInstruction(new Instruction(0xAD, "LDA_abs", 4, [this]() {
+        loadRegister(&Registers.A, Absolute());
+    }));
+    // BD: LDA AbsoluteX
+    addInstruction(new Instruction(0xBD, "LDA_absx", 4, [this]() {
+        loadRegister(&Registers.A, AbsoluteX());
+    }));
+    // B9: LDA AbsoluteY
+    addInstruction(new Instruction(0xB9, "LDA_absy", 4, [this]() {
+        loadRegister(&Registers.A, AbsoluteY());
+    }));
+    // A1: LDA IndirectX
+    addInstruction(new Instruction(0xA1, "LDA_ix", 6, [this]() {
+        loadRegister(&Registers.A, IndirectX());
+    }));
+    // B1: LDA IndirectY
+    addInstruction(new Instruction(0xB1, "LDA_iy", 5, [this]() {
+        loadRegister(&Registers.A, IndirectY());
+    }));
+    
+    
 	/*
-	   LDA GROUP
-	*/
-
-	// A9: LDA immediate
-	addInstruction(new Instruction(0xA9, "LDA_imm", 2, [this]() {
-		loadRegister(&Registers.A, Immediate());		
-	}));
-	// A5: LDA ZeroPage
-	addInstruction(new Instruction(0xA5, "LDA_zp", 3, [this]() {
-		loadRegister(&Registers.A, ZeroPage());
-	}));
-	// B5: LDA ZeroPageX
-	addInstruction(new Instruction(0xB5, "LDA_zpx", 4, [this]() {
-		loadRegister(&Registers.A, ZeroPageX());
-	}));
-	// AD: LDA Absolute
-	addInstruction(new Instruction(0xAD, "LDA_abs", 4, [this]() {
-		loadRegister(&Registers.A, Absolute());
-	}));
-	// BD: LDA AbsoluteX
-	addInstruction(new Instruction(0xBD, "LDA_absx", 4, [this]() {
-		loadRegister(&Registers.A, AbsoluteX());
-	}));
-	// B9: LDA AbsoluteY
-	addInstruction(new Instruction(0xB9, "LDA_absy", 4, [this]() {
-		loadRegister(&Registers.A, AbsoluteY());
-	}));
-	// A1: LDA IndirectX
-	addInstruction(new Instruction(0xA1, "LDA_ix", 6, [this]() {
-		loadRegister(&Registers.A, IndirectX());
-	}));
-	// B1: LDA IndirectY
-	addInstruction(new Instruction(0xB1, "LDA_iy", 5, [this]() {
-		loadRegister(&Registers.A, IndirectY());
-	}));
-
-	/*
-	STA GROUP
+        STA GROUP
+        Store Register A value to Memory
 	*/
 
 	// 85: STA ZeroPage
