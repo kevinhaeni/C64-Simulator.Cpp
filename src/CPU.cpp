@@ -52,8 +52,23 @@ void CPU::Flags::checkC_LSB(byte value){
 }
 
 void CPU::Flags::checkC_MSB(byte value){
-    // Todo
+    C = (value & 0x7F) != 0;
 }
+
+/* ShiftLeft */
+void CPU::shiftLeft(byte value){
+    Flags.checkC_MSB(value);
+    Registers.A = (value << 1) ;
+    Flags.checkZ(Registers.A);
+    Flags.checkN(Registers.A);
+}
+
+void CPU::shiftLeft(word addr){
+    byte value = c64->readMemory(addr);
+    shiftLeft(value);
+}
+
+/* ShiftRight */
 
 void CPU::shiftRight(byte value){
     Flags.checkC_LSB(value);
@@ -63,8 +78,8 @@ void CPU::shiftRight(byte value){
 }
 
 void CPU::shiftRight(word addr){
-    byte data = c64->readMemory(addr);
-    shiftRight(data);
+    byte value = c64->readMemory(addr);
+    shiftRight(value);
 }
 
 /* AND */
@@ -453,6 +468,10 @@ void CPU::loadInstructionSet(){
         c64->writeMemory(Absolute(), Registers.X);
     }));
     
+    
+    /* TXX Group */
+    // Tested: OK
+    
     /*
      TAX
      */
@@ -499,10 +518,10 @@ void CPU::loadInstructionSet(){
     
     /**** AND ***/
     // Todo, variable cycles
+    // Tested: OK
     
     /*
      29: Immediate
-     Tested: OK
      */
     addInstruction(new Instruction(0x29, "And_imm", 2, [this]() {
         andRegA(Immediate());
@@ -559,6 +578,7 @@ void CPU::loadInstructionSet(){
     
     
     /*** ORA ***/
+    // Tested: OK
     
     /*
      09: Immediate
@@ -618,6 +638,7 @@ void CPU::loadInstructionSet(){
     
     
     /*** EOR ***/
+    // Tested: OK
     
     /*
      49: Immediate
@@ -677,40 +698,81 @@ void CPU::loadInstructionSet(){
 
     
 	/*** LSR GROUP ***/
-
+    // Tested: OK
+    
 	/* 
      4A: LSR Register A
     */
-    addInstruction(new Instruction(0x4A, "LSR_a", 1, [this]() {
+    addInstruction(new Instruction(0x4A, "LSR_a", 2, [this]() {
         shiftRight(Registers.A);
     }));
     
     /*
      46: LSR Zero Page
     */
-    addInstruction(new Instruction(0x46, "LSR_zp", 2, [this]() {
+    addInstruction(new Instruction(0x46, "LSR_zp", 5, [this]() {
         shiftRight(ZeroPage());
     }));
     
     /*
     56: LSR Zero Page X
      */
-    addInstruction(new Instruction(0x56, "LSR_zpx", 2, [this]() {
+    addInstruction(new Instruction(0x56, "LSR_zpx", 6, [this]() {
         shiftRight(ZeroPageX());
     }));
     
     /*
      4E: LSR Absolute
      */
-    addInstruction(new Instruction(0x4E, "LSR_abs", 3, [this]() {
+    addInstruction(new Instruction(0x4E, "LSR_abs", 6, [this]() {
         shiftRight(Absolute());
     }));
     
     /*
      5E: LSR Absolute X
      */
-    addInstruction(new Instruction(0x5E, "LSR_absx", 3, [this]() {
+    addInstruction(new Instruction(0x5E, "LSR_absx", 7, [this]() {
         shiftRight(AbsoluteX());
     }));
+    
+    
+    /*** ASL GROUP ***/
+    // Tested: OK
+    
+    /*
+     0A: ASL Register A
+     */
+    addInstruction(new Instruction(0x0A, "ASL_a", 2, [this]() {
+        shiftLeft(Registers.A);
+    }));
+    
+    /*
+     06: ASL Zero Page
+     */
+    addInstruction(new Instruction(0x06, "ASL_zp", 5, [this]() {
+        shiftLeft(ZeroPage());
+    }));
+    
+    /*
+     16: ASL Zero Page X
+     */
+    addInstruction(new Instruction(0x16, "ASL_zpx", 6, [this]() {
+        shiftLeft(ZeroPageX());
+    }));
+    
+    /*
+     0E: ASL Absolute
+     */
+    addInstruction(new Instruction(0x0E, "ASL_abs", 6, [this]() {
+        shiftLeft(Absolute());
+    }));
+    
+    /*
+     1E: ASL Absolute X
+     */
+    addInstruction(new Instruction(0x1E, "ASL_absx", 7, [this]() {
+        shiftLeft(AbsoluteX());
+    }));
+
 }
 

@@ -58,10 +58,10 @@
 
 		// Load test program to memory
      
-        this->writeMemory(0x1000, 0x4D);
+        this->writeMemory(0x1000, 0x4E);
         this->writeMemory(0x1001, 0x12);
         this->writeMemory(0x1002, 0x40);
-        this->writeMemory(0x4012, 0x19);
+        this->writeMemory(0x4012, 0x38);
         
 		cpu->Registers.dump();
 		cpu->Flags.dump();
