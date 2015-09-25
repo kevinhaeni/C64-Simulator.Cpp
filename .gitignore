@@ -1,0 +1,7 @@
+**/Debug/
+**.txt
+**.sdf
+**.suo
+**.obj
+**.opensdf
+C64/Debug/Utils.obj
