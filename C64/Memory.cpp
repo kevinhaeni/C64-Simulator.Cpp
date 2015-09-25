@@ -1,6 +1,5 @@
 #include "Memory.h"
 #include "Utils.h"
-#include <exception>
 #include <fstream>
 #include <vector>
 
