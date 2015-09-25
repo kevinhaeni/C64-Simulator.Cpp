@@ -67,6 +67,7 @@ void CPU::shiftRight(word addr){
     shiftRight(data);
 }
 
+/* AND */
 void CPU::andRegA(byte operand){
     operand &= Registers.A;
     Flags.checkN(operand);
@@ -78,6 +79,33 @@ void CPU::andRegA(word addr){
     byte operand = c64->readMemory(addr);
     andRegA(operand);
 }
+
+/* EOR */
+void CPU::eorRegA(word addr){
+    byte operand = c64->readMemory(addr);
+    eorRegA(operand);
+}
+
+void CPU::eorRegA(byte operand){
+    operand ^= Registers.A;
+    Flags.checkN(operand);
+    Flags.checkZ(operand);
+    Registers.A = operand;
+}
+
+/* ORA */
+void CPU::oraRegA(word addr){
+    byte operand = c64->readMemory(addr);
+    oraRegA(operand);
+}
+
+void CPU::oraRegA(byte operand){
+    operand |= Registers.A;
+    Flags.checkN(operand);
+    Flags.checkZ(operand);
+    Registers.A = operand;
+}
+
 
 /*
     Fetch PC
@@ -469,7 +497,7 @@ void CPU::loadInstructionSet(){
     
     /***** Bitwise *****/
     
-    /* And Group */
+    /**** AND ***/
     // Todo, variable cycles
     
     /*
@@ -502,14 +530,14 @@ void CPU::loadInstructionSet(){
     }));
     
     /*
-     3D: Absolute X
+     3D: Absolute X, Variable Cycles
      */
     addInstruction(new Instruction(0x3D, "And_absx", 4, [this]() {
         andRegA(AbsoluteX());
     }));
     
     /*
-     39: Absolute Y
+     39: Absolute Y, Variable Cycles
      */
     addInstruction(new Instruction(0x39, "And_absy", 4, [this]() {
         andRegA(AbsoluteY());
@@ -523,14 +551,132 @@ void CPU::loadInstructionSet(){
     }));
     
     /*
-     31: Indirect Y
+     31: Indirect Y, Variable Cycles
      */
-    addInstruction(new Instruction(0x31, "And_iny", 6, [this]() {
+    addInstruction(new Instruction(0x31, "And_iny", 5, [this]() {
         andRegA(IndirectY());
     }));
     
     
-	/* LSR GROUP */
+    /*** ORA ***/
+    
+    /*
+     09: Immediate
+     */
+    addInstruction(new Instruction(0x09, "ORA_imm", 2, [this]() {
+        oraRegA(Immediate());
+    }));
+    
+    /*
+     05: Zeropage
+     */
+    addInstruction(new Instruction(0x05, "ORA_zp", 3, [this]() {
+        oraRegA(ZeroPage());
+    }));
+    
+    /*
+     15: Zeropage X
+     */
+    addInstruction(new Instruction(0x15, "ORA_zpx", 4, [this]() {
+        oraRegA(ZeroPageX());
+    }));
+    
+    /*
+     0D: Absolute
+     */
+    addInstruction(new Instruction(0x0D, "ORA_abs", 4, [this]() {
+        oraRegA(Absolute());
+    }));
+    
+    /*
+     1D: Absolute X, Variable Cycles
+     */
+    addInstruction(new Instruction(0x1D, "ORA_absx", 4, [this]() {
+        oraRegA(AbsoluteX());
+    }));
+    
+    /*
+     19: Absolute Y, Variable Cycles
+     */
+    addInstruction(new Instruction(0x19, "ORA_absy", 4, [this]() {
+        oraRegA(AbsoluteY());
+    }));
+    
+    /*
+     01: Indirect X
+     */
+    addInstruction(new Instruction(0x01, "ORA_inx", 6, [this]() {
+        oraRegA(IndirectX());
+    }));
+    
+    /*
+     11: Indirect Y, Variable Cycles
+     */
+    addInstruction(new Instruction(0x11, "ORA_iny", 5, [this]() {
+        oraRegA(IndirectY());
+    }));
+    
+    
+    /*** EOR ***/
+    
+    /*
+     49: Immediate
+     */
+    addInstruction(new Instruction(0x49, "EOR_imm", 2, [this]() {
+        eorRegA(Immediate());
+    }));
+    
+    /*
+     45: Zeropage
+     */
+    addInstruction(new Instruction(0x45, "EOR_zp", 3, [this]() {
+        eorRegA(ZeroPage());
+    }));
+    
+    /*
+     55: Zeropage X
+     */
+    addInstruction(new Instruction(0x55, "EOR_zpx", 4, [this]() {
+        eorRegA(ZeroPageX());
+    }));
+    
+    /*
+     4D: Absolute
+     */
+    addInstruction(new Instruction(0x4D, "EOR_abs", 4, [this]() {
+        eorRegA(Absolute());
+    }));
+    
+    /*
+     5D: Absolute X, Variable Cycles
+     */
+    addInstruction(new Instruction(0x5D, "EOR_absx", 4, [this]() {
+        eorRegA(AbsoluteX());
+    }));
+    
+    /*
+     59: Absolute Y, Variable Cycles
+     */
+    addInstruction(new Instruction(0x59, "EOR_absy", 4, [this]() {
+        eorRegA(AbsoluteY());
+    }));
+    
+    /*
+     41: Indirect X
+     */
+    addInstruction(new Instruction(0x41, "EOR_inx", 6, [this]() {
+        eorRegA(IndirectX());
+    }));
+    
+    /*
+     51: Indirect Y, Variable Cycles
+     */
+    addInstruction(new Instruction(0x51, "EOR_iny", 5, [this]() {
+        eorRegA(IndirectY());
+    }));
+
+    
+	/*** LSR GROUP ***/
 
 	/* 
      4A: LSR Register A

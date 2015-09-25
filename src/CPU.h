@@ -55,6 +55,12 @@ private:
     void andRegA(word addr);
     void andRegA(byte value);
     
+    void eorRegA(word addr);
+    void eorRegA(byte value);
+    
+    void oraRegA(word addr);
+    void oraRegA(byte value);
+    
 
 public:
 	CPU(C64* c64, SID* sid);
