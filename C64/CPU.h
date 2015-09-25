@@ -6,7 +6,7 @@
 #include "Instruction.h"
 #include "Utils.h"
 #include "SID.h"
-#include "c64.h"
+#include "C64.h"
 
 // Type definitions, constants etc.
 typedef uint8_t byte;
