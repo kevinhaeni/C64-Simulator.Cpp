@@ -1,2 +1,2 @@
 all:
-	g++ -std=c++11 C64/C64Sim.cpp C64/Utils.cpp C64/C64.cpp C64/CPU.cpp C64/Flag.cpp C64/Memory.cpp C64/SID.cpp C64/Instruction.cpp -o C64Sim
+	g++ -std=c++11 src/C64Sim.cpp src/Utils.cpp src/C64.cpp src/CPU.cpp src/Flag.cpp src/Memory.cpp src/SID.cpp src/Instruction.cpp -o C64Sim
