@@ -2,7 +2,7 @@
 #define C64_H
 #include <cstdint>
 #include "Memory.h"
-#include "../SID/SID.h"
+#include "SID.h"
 
 // Type definitions, constants etc.
 

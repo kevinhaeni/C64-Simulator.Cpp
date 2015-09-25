@@ -4,9 +4,9 @@
 #include <unordered_map>
 #include "Flag.h"
 #include "Instruction.h"
-#include "../util/Utils.h"
-#include "../SID/SID.h"
-#include "../C64/c64.h"
+#include "Utils.h"
+#include "SID.h"
+#include "c64.h"
 
 // Type definitions, constants etc.
 typedef uint8_t byte;

@@ -1,5 +1,5 @@
 #include "C64.h"
-#include "../CPU/CPU.h"
+#include "CPU.h"
 
 	C64::C64(){
 

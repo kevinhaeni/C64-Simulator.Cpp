@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -19,13 +19,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -76,23 +76,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="c64/C64.h" />
-    <ClInclude Include="c64\Memory.h" />
-    <ClInclude Include="CPU/CPU.h" />
-    <ClInclude Include="CPU\Flag.h" />
-    <ClInclude Include="cpu\Instruction.h" />
-    <ClInclude Include="SID\SID.h" />
-    <ClInclude Include="util/Utils.h" />
+    <ClCompile Include="C64.cpp" />
+    <ClCompile Include="C64Sim.cpp" />
+    <ClCompile Include="CPU.cpp" />
+    <ClCompile Include="Flag.cpp" />
+    <ClCompile Include="Instruction.cpp" />
+    <ClCompile Include="Memory.cpp" />
+    <ClCompile Include="SID.cpp" />
+    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="c64/C64.cpp" />
-    <ClCompile Include="C64Sim.cpp" />
-    <ClCompile Include="c64\Memory.cpp" />
-    <ClCompile Include="CPU/CPU.cpp" />
-    <ClCompile Include="CPU\Flag.cpp" />
-    <ClCompile Include="cpu\Instruction.cpp" />
-    <ClCompile Include="SID\SID.cpp" />
-    <ClCompile Include="util\Utils.cpp" />
+    <ClInclude Include="C64.h" />
+    <ClInclude Include="CPU.h" />
+    <ClInclude Include="Flag.h" />
+    <ClInclude Include="Instruction.h" />
+    <ClInclude Include="Memory.h" />
+    <ClInclude Include="SID.h" />
+    <ClInclude Include="Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

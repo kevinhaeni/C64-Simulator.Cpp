@@ -13,12 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Source Files\util">
-      <UniqueIdentifier>{5df2483a-0a41-461d-a86c-ba67a05d48e6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\util">
-      <UniqueIdentifier>{364983f1-b198-457b-b741-3eef6dbb7852}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\SID">
       <UniqueIdentifier>{bf1c7738-a3ca-47ec-a959-b15d57ecd1b1}</UniqueIdentifier>
     </Filter>
@@ -37,54 +31,60 @@
     <Filter Include="Source Files\C64">
       <UniqueIdentifier>{6494d9d0-5482-402f-b413-23abac9c4a4d}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="CPU/CPU.h">
-      <Filter>Header Files\CPU</Filter>
-    </ClInclude>
-    <ClInclude Include="c64/C64.h">
-      <Filter>Header Files\C64</Filter>
-    </ClInclude>
-    <ClInclude Include="util/Utils.h">
-      <Filter>Header Files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="SID\SID.h">
-      <Filter>Header Files\SID</Filter>
-    </ClInclude>
-    <ClInclude Include="CPU\Flag.h">
-      <Filter>Header Files\CPU</Filter>
-    </ClInclude>
-    <ClInclude Include="cpu\Instruction.h">
-      <Filter>Header Files\CPU</Filter>
-    </ClInclude>
-    <ClInclude Include="c64\Memory.h">
-      <Filter>Header Files\C64</Filter>
-    </ClInclude>
+    <Filter Include="Header Files\UTIL">
+      <UniqueIdentifier>{364983f1-b198-457b-b741-3eef6dbb7852}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\UTIL">
+      <UniqueIdentifier>{5df2483a-0a41-461d-a86c-ba67a05d48e6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="C64Sim.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CPU/CPU.cpp">
-      <Filter>Source Files\CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="c64/C64.cpp">
+    <ClCompile Include="C64.cpp">
       <Filter>Source Files\C64</Filter>
     </ClCompile>
-    <ClCompile Include="SID\SID.cpp">
+    <ClCompile Include="Memory.cpp">
+      <Filter>Source Files\C64</Filter>
+    </ClCompile>
+    <ClCompile Include="CPU.cpp">
+      <Filter>Source Files\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Flag.cpp">
+      <Filter>Source Files\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Instruction.cpp">
+      <Filter>Source Files\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="SID.cpp">
       <Filter>Source Files\SID</Filter>
     </ClCompile>
-    <ClCompile Include="util\Utils.cpp">
-      <Filter>Source Files\util</Filter>
+    <ClCompile Include="Utils.cpp">
+      <Filter>Source Files\UTIL</Filter>
     </ClCompile>
-    <ClCompile Include="CPU\Flag.cpp">
-      <Filter>Source Files\CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="cpu\Instruction.cpp">
-      <Filter>Source Files\CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="c64\Memory.cpp">
-      <Filter>Source Files\C64</Filter>
-    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C64.h">
+      <Filter>Header Files\C64</Filter>
+    </ClInclude>
+    <ClInclude Include="Memory.h">
+      <Filter>Header Files\C64</Filter>
+    </ClInclude>
+    <ClInclude Include="CPU.h">
+      <Filter>Header Files\CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Flag.h">
+      <Filter>Header Files\CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Instruction.h">
+      <Filter>Header Files\CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SID.h">
+      <Filter>Header Files\SID</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils.h">
+      <Filter>Header Files\UTIL</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -2,11 +2,10 @@
 //
 #pragma once
 #include <stdio.h>
-#include <tchar.h>
 #include <iostream>
-#include "c64/C64.h"
+#include "C64.h"
 
-int _tmain(int argc, _TCHAR* argv[])
+int main(int argc, char* argv[])
 {
 
 	C64 theC64;

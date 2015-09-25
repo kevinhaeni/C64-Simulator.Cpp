@@ -2,7 +2,7 @@
 #define MEMORY_H
 #include <cstdint>
 #include <string>
-#include "../CPU/Flag.h"
+#include "Flag.h"
 
 class Memory
 {

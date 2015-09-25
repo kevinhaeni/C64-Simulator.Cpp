@@ -2,7 +2,7 @@
 #include <string>
 #include <iostream>
 #include <algorithm>    // std::find_if
-#include "../C64/c64.h"
+#include "c64.h"
 
 CPU::CPU(C64* c64, SID* sid)
 	: c64(c64), sid(sid)
