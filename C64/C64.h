@@ -24,8 +24,8 @@ class C64
 		C64();
 
 		// Memory mapping (IMPORTANT: only use these functions for memory access!!)
-		void C64::writeMemory(uint16_t address, uint8_t data);
-		uint8_t C64::readMemory(uint16_t address);
+		void writeMemory(uint16_t address, uint8_t data);
+		uint8_t readMemory(uint16_t address);
 
 		void run();
 		void reset();
