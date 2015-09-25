@@ -54,38 +54,48 @@
 		
 		cpu->Registers.PC = 0x1000;
 
-		cpu->Registers.A = 7; //hack
+		cpu->Registers.A = 0x3F; //hack
 
 		// Load test program to memory
-        // LDA Test
-		this->writeMemory(0x1000, 0xA9);
-        this->writeMemory(0x1001, 0x00);
-        // STA zp
-		/*this->writeMemory(0x1001, 0x80);
-		this->writeMemory(0x1002, 0xA5); // LDA zp
-		this->writeMemory(0x1003, 0x50);
-        // LDX Test
-        this->writeMemory(0x1004, 0xA1); // LDX zp
-        this->writeMemory(0x1005, 0x50);*/
-
+        this->writeMemory(0x1000, 0x4E);
+        this->writeMemory(0x1001, 0x12);
+        this->writeMemory(0x1002, 0x40);
+        this->writeMemory(0x4012, 0x19);
         
-		
-		//cpu->Registers.A = 0x00; // hack
-		//cpu->emulateCycles(0);
-        //cpu->emulateCycles(0);
-
 		cpu->Registers.dump();
 		cpu->Flags.dump();
 
         cpu->emulateCycles(0);
-        
-		//cpu->LSR_a();
 
 		cpu->Registers.dump();
 		cpu->Flags.dump();
-		mem->save("c:\\test\\mem->dump");
+		//mem->save("c:\\test\\mem->dump");
 
 		this->readMemory(0x0080);
 		this->readMemory(0x0050);
+        
+        // Tests
+        
+        /*
+         LSR Absolute
+         this->writeMemory(0x1000, 0x4E);
+         this->writeMemory(0x1001, 0x12);
+         this->writeMemory(0x1002, 0x40);
+         this->writeMemory(0x4012, 0x19);
+        */
+        
+        /*
+         LSR Immediate
+         this->writeMemory(0x1000, 0x4A);
+         this->writeMemory(0x1001, 0x12);
+         */
+        
+        /*
+         AND
+         this->writeMemory(0x1000, 0x2D);
+         this->writeMemory(0x1001, 0x12);
+         this->writeMemory(0x1002, 0x40);
+         this->writeMemory(0x4012, 0x19);
+         */
 	}
 

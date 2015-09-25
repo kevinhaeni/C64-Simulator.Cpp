@@ -47,7 +47,14 @@ private:
 	void loadRegister(byte* reg, byte value);
 	void loadRegister(byte* reg, word addr);					// Load register with memory data
     
-    bool checkIfNegative(byte reg);
+    void shiftLeft(word reg);
+    void shiftLeft(byte addr);
+    void shiftRight(word reg);
+    void shiftRight(byte addr);
+  
+    void andRegA(word addr);
+    void andRegA(byte value);
+    
 
 public:
 	CPU(C64* c64, SID* sid);
@@ -56,7 +63,16 @@ public:
 	struct Flags
 	{
 	public:
-		bool C;		// Carry
+        void checkC_LSB(byte value);
+        void checkC_MSB(byte value);
+    
+        void checkB(byte value);
+        void checkD(byte value);
+        void checkV(byte value);
+        void checkZ(byte value);
+        void checkN(byte value);
+        
+        bool C;		// Carry
 		bool I;		// Interrupt
 		bool B;		// Break
 		bool D;		// Decimal

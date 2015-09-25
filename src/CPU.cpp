@@ -39,6 +39,61 @@ void CPU::Flags::dump(){
 }
 
 
+void CPU::Flags::checkN(byte value){
+    N =  value >> 7;
+}
+
+void CPU::Flags::checkZ(byte value){
+    Z = value == 0 ? true : false;
+}
+
+void CPU::Flags::checkC_LSB(byte value){
+    C = (value & 0x01) != 0;
+}
+
+void CPU::Flags::checkC_MSB(byte value){
+    // Todo
+}
+
+void CPU::shiftRight(byte value){
+    Flags.checkC_LSB(value);
+    Registers.A = (value >> 1) ;
+    Flags.checkZ(Registers.A);
+    Flags.checkN(Registers.A);
+}
+
+void CPU::shiftRight(word addr){
+    byte data = c64->readMemory(addr);
+    shiftRight(data);
+}
+
+void CPU::andRegA(byte operand){
+    operand &= Registers.A;
+    Flags.checkN(operand);
+    Flags.checkZ(operand);
+    Registers.A = operand;
+}
+
+void CPU::andRegA(word addr){
+    byte operand = c64->readMemory(addr);
+    andRegA(operand);
+}
+
+/*
+    Fetch PC
+*/
+byte CPU::fetchPCByte(){
+    return this->c64->readMemory(Registers.PC);
+}
+byte CPU::fetchByteAfterPC(){
+    return this->c64->readMemory(++(Registers.PC));
+}
+word CPU::fetchPCWord(){
+    byte lowByte = fetchByteAfterPC();
+    byte highByte = fetchByteAfterPC();
+    return ((highByte << 8)| lowByte);
+}
+
 /*
     Registers
 */
@@ -145,15 +200,10 @@ void CPU::addInstruction(Instruction* instr){
 }
 
 
-byte CPU::fetchPCByte(){
-	return this->c64->readMemory(Registers.PC);
-}
-byte CPU::fetchByteAfterPC(){
-	return this->c64->readMemory(++(Registers.PC));
-}
-word CPU::fetchPCWord(){
-	return fetchPCByte() & fetchByteAfterPC();
-}
+
+
+
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 // 6502 Addressing modes
@@ -161,8 +211,8 @@ word CPU::fetchPCWord(){
 
 byte CPU::Immediate()
 {
-	const byte immAddress = fetchByteAfterPC();
-	return immAddress;
+	const byte immValue = fetchByteAfterPC();
+	return immValue;
 }
 
 word CPU::Absolute()
@@ -222,14 +272,11 @@ word CPU::IndirectY()
 	return effAddress;
 }
 
-bool CPU::checkIfNegative(byte number){
-    return (number >> 7);
-}
 
 void CPU::loadRegister(byte* reg, byte value) {
 	*reg = value;
-	Flags.Z = value == 0 ? true : false;
-	Flags.N = checkIfNegative(value);
+    Flags.checkN(value);
+    Flags.checkZ(value);
 }
 
 void CPU::loadRegister(byte* reg, word addr){
@@ -420,27 +467,104 @@ void CPU::loadInstructionSet(){
         loadRegister(&Registers.Y, Registers.A);
     }));
     
+    /***** Bitwise *****/
+    
+    /* And Group */
+    // Todo, variable cycles
+    
+    /*
+     29: Immediate
+     Tested: OK
+     */
+    addInstruction(new Instruction(0x29, "And_imm", 2, [this]() {
+        andRegA(Immediate());
+    }));
+    
+    /*
+     25: Zeropage
+     */
+    addInstruction(new Instruction(0x25, "And_zp", 3, [this]() {
+        andRegA(ZeroPage());
+    }));
+    
+    /*
+     35: Zeropage X
+     */
+    addInstruction(new Instruction(0x35, "And_zpx", 4, [this]() {
+        andRegA(ZeroPageX());
+    }));
+    
+    /*
+     2D: Absolute
+     */
+    addInstruction(new Instruction(0x2D, "And_abs", 4, [this]() {
+        andRegA(Absolute());
+    }));
+    
+    /*
+     3D: Absolute X
+     */
+    addInstruction(new Instruction(0x3D, "And_absx", 4, [this]() {
+        andRegA(AbsoluteX());
+    }));
+    
+    /*
+     39: Absolute Y
+     */
+    addInstruction(new Instruction(0x39, "And_absy", 4, [this]() {
+        andRegA(AbsoluteY());
+    }));
+    
+    /*
+     21: Indirect X
+     */
+    addInstruction(new Instruction(0x21, "And_inx", 6, [this]() {
+        andRegA(IndirectX());
+    }));
+    
+    /*
+     31: Indirect Y
+     */
+    addInstruction(new Instruction(0x31, "And_iny", 6, [this]() {
+        andRegA(IndirectY());
+    }));
     
     
+	/* LSR GROUP */
+
+	/* 
+     4A: LSR Register A
+    */
+    addInstruction(new Instruction(0x4A, "LSR_a", 1, [this]() {
+        shiftRight(Registers.A);
+    }));
     
-	/*
-	LSR GROUP
-	*/
-
-	///* LSR */
-	//  LSR_a(){
-	//	byte data = Registers.A;
-	//	Flags.C = (data & 0x01) != 0;
-	//	Registers.A = (data >> 1);
-	//	//return flags.nz;
-	//}
-	//
-	// LSR_zp();
-	// LSR_zpx();
-	// LSR_abs();
-	// LSR_absx();
-	//
-
-
+    /*
+     46: LSR Zero Page
+    */
+    addInstruction(new Instruction(0x46, "LSR_zp", 2, [this]() {
+        shiftRight(ZeroPage());
+    }));
+    
+    /*
+    56: LSR Zero Page X
+     */
+    addInstruction(new Instruction(0x56, "LSR_zpx", 2, [this]() {
+        shiftRight(ZeroPageX());
+    }));
+    
+    /*
+     4E: LSR Absolute
+     */
+    addInstruction(new Instruction(0x4E, "LSR_abs", 3, [this]() {
+        shiftRight(Absolute());
+    }));
+    
+    /*
+     5E: LSR Absolute X
+     */
+    addInstruction(new Instruction(0x5E, "LSR_absx", 3, [this]() {
+        shiftRight(AbsoluteX());
+    }));
 }
 
