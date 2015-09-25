@@ -76,23 +76,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="C64.cpp" />
-    <ClCompile Include="C64Sim.cpp" />
-    <ClCompile Include="CPU.cpp" />
-    <ClCompile Include="Flag.cpp" />
-    <ClCompile Include="Instruction.cpp" />
-    <ClCompile Include="Memory.cpp" />
-    <ClCompile Include="SID.cpp" />
-    <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="src/C64.cpp" />
+    <ClCompile Include="src/C64Sim.cpp" />
+    <ClCompile Include="src/CPU.cpp" />
+    <ClCompile Include="src/Flag.cpp" />
+    <ClCompile Include="src/Instruction.cpp" />
+    <ClCompile Include="src/Memory.cpp" />
+    <ClCompile Include="src/SID.cpp" />
+    <ClCompile Include="src/Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="C64.h" />
-    <ClInclude Include="CPU.h" />
-    <ClInclude Include="Flag.h" />
-    <ClInclude Include="Instruction.h" />
-    <ClInclude Include="Memory.h" />
-    <ClInclude Include="SID.h" />
-    <ClInclude Include="Utils.h" />
+    <ClInclude Include="src/C64.h" />
+    <ClInclude Include="src/CPU.h" />
+    <ClInclude Include="src/Flag.h" />
+    <ClInclude Include="src/Instruction.h" />
+    <ClInclude Include="src/Memory.h" />
+    <ClInclude Include="src/SID.h" />
+    <ClInclude Include="src/Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

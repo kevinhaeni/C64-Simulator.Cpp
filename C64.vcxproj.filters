@@ -39,51 +39,51 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="C64Sim.cpp">
+    <ClCompile Include="src/C64Sim.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C64.cpp">
+    <ClCompile Include="src/C64.cpp">
       <Filter>Source Files\C64</Filter>
     </ClCompile>
-    <ClCompile Include="Memory.cpp">
+    <ClCompile Include="src/CPU.cpp">
+      <Filter>Source Files\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="src/Flag.cpp">
+      <Filter>Source Files\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="src/Instruction.cpp">
+      <Filter>Source Files\CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="src/Memory.cpp">
       <Filter>Source Files\C64</Filter>
     </ClCompile>
-    <ClCompile Include="CPU.cpp">
-      <Filter>Source Files\CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="Flag.cpp">
-      <Filter>Source Files\CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="Instruction.cpp">
-      <Filter>Source Files\CPU</Filter>
-    </ClCompile>
-    <ClCompile Include="SID.cpp">
+    <ClCompile Include="src/SID.cpp">
       <Filter>Source Files\SID</Filter>
     </ClCompile>
-    <ClCompile Include="Utils.cpp">
+    <ClCompile Include="src/Utils.cpp">
       <Filter>Source Files\UTIL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="C64.h">
+    <ClInclude Include="src/C64.h">
       <Filter>Header Files\C64</Filter>
     </ClInclude>
-    <ClInclude Include="Memory.h">
+    <ClInclude Include="src/Memory.h">
       <Filter>Header Files\C64</Filter>
     </ClInclude>
-    <ClInclude Include="CPU.h">
+    <ClInclude Include="src/CPU.h">
       <Filter>Header Files\CPU</Filter>
     </ClInclude>
-    <ClInclude Include="Flag.h">
+    <ClInclude Include="src/Flag.h">
       <Filter>Header Files\CPU</Filter>
     </ClInclude>
-    <ClInclude Include="Instruction.h">
+    <ClInclude Include="src/Instruction.h">
       <Filter>Header Files\CPU</Filter>
     </ClInclude>
-    <ClInclude Include="SID.h">
+    <ClInclude Include="src/SID.h">
       <Filter>Header Files\SID</Filter>
     </ClInclude>
-    <ClInclude Include="Utils.h">
+    <ClInclude Include="src/Utils.h">
       <Filter>Header Files\UTIL</Filter>
     </ClInclude>
   </ItemGroup>
