@@ -31,15 +31,18 @@ void Memory::memoryAccess(){
 	if (rw.get()){
 		if (addressBus <= this->memsize && addressBus >= 0)
 			_mem[addressBus] = dataBus;
-		else
-			throw std::exception("Invalid memory address");
+		else {
+			//throw std::exception("Invalid memory address");
+		}			
 	}
 	else{
 		// read access
 		if (addressBus <= this->memsize && addressBus >= 0)
 			dataBus = _mem[addressBus];
-		else
-			throw std::exception("Invalid memory address");
+		else {
+			//throw std::exception("Invalid memory address");
+		}
+			
 	}
 }
 
