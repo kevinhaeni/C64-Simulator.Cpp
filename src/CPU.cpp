@@ -286,15 +286,15 @@ void CPU::loadInstructionSet(){
 
 	// 85: STA ZeroPage
 	addInstruction(new Instruction(0x85, "STA_zp", 3, [this]() {
-		c64->writeMemory(Utils::makeWord(fetchByteAfterPC(), 0x00), Registers.A);
+		c64->writeMemory(ZeroPage(), Registers.A);
 	}));
 	// 95: STA ZeroPageX
 	addInstruction(new Instruction(0x85, "STA_zpx", 3, [this]() {
-		c64->writeMemory(Utils::makeWord(fetchByteAfterPC(), 0x00), Registers.A);
+		c64->writeMemory(ZeroPageX(), Registers.A);
 	}));
 	// 8D: STA Absolute
 	addInstruction(new Instruction(0x85, "STA_abs", 3, [this]() {
-		c64->writeMemory(Utils::makeWord(fetchByteAfterPC(), 0x00), Registers.A);
+		c64->writeMemory(Absolute(), Registers.A);
 	}));
 
 	
