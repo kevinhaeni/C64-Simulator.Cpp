@@ -159,9 +159,9 @@ word CPU::fetchPCWord(){
 // 6502 Addressing modes
 /////////////////////////////////////////////////////////////////////////////////////
 
-word CPU::Immediate()
+byte CPU::Immediate()
 {
-	const word immAddress = fetchByteAfterPC();
+	const byte immAddress = fetchByteAfterPC();
 	return immAddress;
 }
 
@@ -226,16 +226,14 @@ bool CPU::checkIfNegative(byte number){
     return (number >> 7);
 }
 
-void CPU::loadRegister(byte* reg, word addr){
-	*reg = c64->readMemory(addr);
-	Flags.Z = *reg == 0 ? true : false;
-    Flags.N = checkIfNegative(*reg);
+void CPU::loadRegister(byte* reg, byte value) {
+	*reg = value;
+	Flags.Z = value == 0 ? true : false;
+	Flags.N = checkIfNegative(value);
 }
 
-void CPU::loadRegister(byte* regFrom, byte* regTo){
-    *regTo = *regFrom;
-    Flags.Z = *regFrom == 0 ? true : false;
-    Flags.N = checkIfNegative(*regFrom);
+void CPU::loadRegister(byte* reg, word addr){
+	loadRegister(reg, c64->readMemory(addr));
 }
 
 /*
@@ -384,42 +382,42 @@ void CPU::loadInstructionSet(){
      TAX
      */
     addInstruction(new Instruction(0xAA, "TAX_XXX", 2, [this]() {
-        loadRegister(&Registers.A, &Registers.Y);
+        loadRegister(&Registers.A, Registers.Y);
     }));
 	
     /*
      TAY
      */
     addInstruction(new Instruction(0xA8, "TAY_XXX", 2, [this]() {
-        loadRegister(&Registers.A, &Registers.Y);
+        loadRegister(&Registers.A, Registers.Y);
     }));
     
     /*
      TSX
      */
     addInstruction(new Instruction(0xBA, "TSX_XXX", 2, [this]() {
-        loadRegister(&Registers.SP, &Registers.X);
+        loadRegister(&Registers.SP, Registers.X);
     }));
     
     /*
      TXA
      */
     addInstruction(new Instruction(0x8A, "TXA_XXX", 2, [this]() {
-        loadRegister(&Registers.X, &Registers.A);
+        loadRegister(&Registers.X, Registers.A);
     }));
 
     /*
      TXS
      */
     addInstruction(new Instruction(0x9A, "TXS_XXX", 2, [this]() {
-        loadRegister(&Registers.X, &Registers.SP);
+        loadRegister(&Registers.X, Registers.SP);
     }));
     
     /*
      TYA
      */
     addInstruction(new Instruction(0x98, "TYA_XXX", 2, [this]() {
-        loadRegister(&Registers.Y, &Registers.A);
+        loadRegister(&Registers.Y, Registers.A);
     }));
     
     

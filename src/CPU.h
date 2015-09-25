@@ -34,7 +34,7 @@ private:
 	word fetchPCWord();
 
 	/* Return the target address of the particular address mode */
-	word Immediate();
+	byte Immediate();
 	word Absolute();	
 	word AbsoluteX();
 	word AbsoluteY();
@@ -44,8 +44,8 @@ private:
 	word IndirectX();	
 	word IndirectY();
 
+	void loadRegister(byte* reg, byte value);
 	void loadRegister(byte* reg, word addr);					// Load register with memory data
-    void loadRegister(byte* regFrom, byte* regTo);
     
     bool checkIfNegative(byte reg);
 

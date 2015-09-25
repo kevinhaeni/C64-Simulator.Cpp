@@ -59,7 +59,7 @@
 		// Load test program to memory
         // LDA Test
 		this->writeMemory(0x1000, 0xA9);
-        this->writeMemory(0x1001, 0x80);
+        this->writeMemory(0x1001, 0x00);
         // STA zp
 		/*this->writeMemory(0x1001, 0x80);
 		this->writeMemory(0x1002, 0xA5); // LDA zp
@@ -83,7 +83,7 @@
 
 		cpu->Registers.dump();
 		cpu->Flags.dump();
-//		cpu->mem->save("c:\\test\\mem->dump");
+		mem->save("c:\\test\\mem->dump");
 
 		this->readMemory(0x0080);
 		this->readMemory(0x0050);
