@@ -14,8 +14,6 @@ CPU::CPU(C64* c64, SID* sid)
 void CPU::resetCPU(){
 	this->Flags.reset();
 	this->Registers.reset();
-	
-	this->Registers.SP = 0x00FF;
 
 	this->cycleCounter = 0;
 }
@@ -24,9 +22,7 @@ void CPU::resetCPU(){
 	Flags
 */
 void CPU::Flags::reset(){
-	C = I = D = B = V = false;
-	Z = 0x00;
-	N = 0x00;
+	N = Z = C = I = D = B = V = false;
 }
 
 //	Print all flags
@@ -50,7 +46,7 @@ void CPU::Registers::reset(){
 	this->A = 0x00;
 	this->X = 0x00;
 	this->Y = 0x00;
-	this->SP = 0x00;
+	this->SP = 0xFF; // 0x01FF till 0x0100
 	this->PC = 0x0000;
 }
 
@@ -226,9 +222,20 @@ word CPU::IndirectY()
 	return effAddress;
 }
 
+bool CPU::checkIfNegative(byte number){
+    return (number >> 7);
+}
+
 void CPU::loadRegister(byte* reg, word addr){
 	*reg = c64->readMemory(addr);
 	Flags.Z = *reg == 0 ? true : false;
+    Flags.N = checkIfNegative(*reg);
+}
+
+void CPU::loadRegister(byte* regFrom, byte* regTo){
+    *regTo = *regFrom;
+    Flags.Z = *regFrom == 0 ? true : false;
+    Flags.N = checkIfNegative(*regFrom);
 }
 
 /*
@@ -354,8 +361,70 @@ void CPU::loadInstructionSet(){
 	addInstruction(new Instruction(0x85, "STA_abs", 3, [this]() {
 		c64->writeMemory(Absolute(), Registers.A);
 	}));
-
+    
+    /*
+     STX GROUP
+     Store Register X value to Memory
+     */
+    
+    // 86: STX ZeroPage
+    addInstruction(new Instruction(0x86, "STX_zp", 2, [this]() {
+        c64->writeMemory(ZeroPage(), Registers.X);
+    }));
+    // 96: STX ZeroPageY
+    addInstruction(new Instruction(0x96, "STX_zpx", 2, [this]() {
+        c64->writeMemory(ZeroPageY(), Registers.X);
+    }));
+    // 8E: STX Absolute
+    addInstruction(new Instruction(0x8E, "STX_abs", 3, [this]() {
+        c64->writeMemory(Absolute(), Registers.X);
+    }));
+    
+    /*
+     TAX
+     */
+    addInstruction(new Instruction(0xAA, "TAX_XXX", 2, [this]() {
+        loadRegister(&Registers.A, &Registers.Y);
+    }));
 	
+    /*
+     TAY
+     */
+    addInstruction(new Instruction(0xA8, "TAY_XXX", 2, [this]() {
+        loadRegister(&Registers.A, &Registers.Y);
+    }));
+    
+    /*
+     TSX
+     */
+    addInstruction(new Instruction(0xBA, "TSX_XXX", 2, [this]() {
+        loadRegister(&Registers.SP, &Registers.X);
+    }));
+    
+    /*
+     TXA
+     */
+    addInstruction(new Instruction(0x8A, "TXA_XXX", 2, [this]() {
+        loadRegister(&Registers.X, &Registers.A);
+    }));
+
+    /*
+     TXS
+     */
+    addInstruction(new Instruction(0x9A, "TXS_XXX", 2, [this]() {
+        loadRegister(&Registers.X, &Registers.SP);
+    }));
+    
+    /*
+     TYA
+     */
+    addInstruction(new Instruction(0x98, "TYA_XXX", 2, [this]() {
+        loadRegister(&Registers.Y, &Registers.A);
+    }));
+    
+    
+    
+    
 	/*
 	LSR GROUP
 	*/

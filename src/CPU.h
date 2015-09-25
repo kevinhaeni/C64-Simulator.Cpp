@@ -45,6 +45,9 @@ private:
 	word IndirectY();
 
 	void loadRegister(byte* reg, word addr);					// Load register with memory data
+    void loadRegister(byte* regFrom, byte* regTo);
+    
+    bool checkIfNegative(byte reg);
 
 public:
 	CPU(C64* c64, SID* sid);
@@ -58,8 +61,8 @@ public:
 		bool B;		// Break
 		bool D;		// Decimal
 		bool V;		// Overflow
-		byte Z;		// Zero
-		byte N;		// Null
+		bool Z;		// Zero
+		bool N;		// Null
 
 		void reset();
 		void dump();
