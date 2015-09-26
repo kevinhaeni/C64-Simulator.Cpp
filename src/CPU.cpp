@@ -825,42 +825,66 @@ void CPU::loadInstructionSet(){
 
 	// 10: BPL (Branch on Plus)
 	addInstruction(new Instruction(0x10, "BPL", 2, [this]() {
-		// Not implemented
+		if (!Flags.N)
+			Registers.PC = Absolute();		
+		else
+			Registers.PC++;
 	}));
 
 	// 30: BMI (Branch on Minus)
 	addInstruction(new Instruction(0x30, "BMI", 2, [this]() {
-		// Not implemented
+		if (Flags.N) 
+			Registers.PC = Absolute();
+		else
+			Registers.PC++;	
 	}));
 
 	// 50: BVC
 	addInstruction(new Instruction(0x50, "BVC", 2, [this]() {
-		// Not implemented
+		if (!Flags.V)
+			Registers.PC = Absolute();
+		else
+			Registers.PC++;
 	}));
 
 	// 70: BVS
 	addInstruction(new Instruction(0x70, "BVS", 2, [this]() {
-		// Not implemented
+		if (Flags.V)
+			Registers.PC = Absolute();
+		else
+			Registers.PC++;
 	}));
 
 	// 90: BCC
 	addInstruction(new Instruction(0x90, "BCC", 2, [this]() {
-		// Not implemented
+		if (!Flags.C)
+			Registers.PC = Absolute();
+		else
+			Registers.PC++;
 	}));
 
 	// B0: BCS
 	addInstruction(new Instruction(0xB0, "BCS", 2, [this]() {
-		// Not implemented
+		if (Flags.C)
+			Registers.PC = Absolute();
+		else
+			Registers.PC++;
 	}));
 
 	// D0: BNE
 	addInstruction(new Instruction(0xD0, "BNE", 2, [this]() {
-		// Not implemented
+		if (!Flags.Z)
+			Registers.PC = Absolute();
+		else
+			Registers.PC++;
 	}));
 
 	// F0: BEQ
 	addInstruction(new Instruction(0xF0, "BEQ", 2, [this]() {
-		// Not implemented
+		if (Flags.C)
+			Registers.PC = Absolute();
+		else
+			Registers.PC++;
 	}));
 
 	/* BRK (Break) */
