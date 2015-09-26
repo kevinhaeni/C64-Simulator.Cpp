@@ -243,11 +243,6 @@ void CPU::addInstruction(Instruction* instr){
 }
 
 
-
-
-
-
-
 /////////////////////////////////////////////////////////////////////////////////////
 // 6502 Addressing modes
 /////////////////////////////////////////////////////////////////////////////////////
@@ -334,6 +329,22 @@ void CPU::push(byte value) {
 byte CPU::pop(){
 	const word address = Utils::makeWord(++(Registers.SP), 0x01);
 	return c64->readMemory(address);
+}
+
+void CPU::inc(word adr) {
+	byte value = c64->readMemory(adr);
+	value = value++;
+	Flags.checkN(value);
+	Flags.checkZ(value);
+	c64->writeMemory(adr, value);
+}
+
+void CPU::dec(word adr) {
+	byte value = c64->readMemory(adr);
+	value = value--;
+	Flags.checkN(value);
+	Flags.checkZ(value);
+	c64->writeMemory(adr, value);
 }
 
 /*
@@ -970,44 +981,44 @@ void CPU::loadInstructionSet(){
 
 	// E6: INC
 	addInstruction(new Instruction(0xE6, "INC_zp", 5, [this]() {
-		// Not implemented
+		inc(ZeroPage());
 	}));
 
 	// F6: INC
 	addInstruction(new Instruction(0xF6, "INC_zpx", 6, [this]() {
-		// Not implemented
+		inc(ZeroPageX());
 	}));
 
 	// EE: INC
 	addInstruction(new Instruction(0xEE, "INC_abs", 6, [this]() {
-		// Not implemented
+		inc(Absolute());
 	}));
 
 	// FE: INC
 	addInstruction(new Instruction(0xFE, "INC_absx", 7, [this]() {
-		// Not implemented
+		inc(AbsoluteX());
 	}));
 
 	/* DEC */
 
 	// C6: DEC
 	addInstruction(new Instruction(0xC6, "DEC_zp", 5, [this]() {
-		// Not implemented
+		dec(ZeroPage());
 	}));
 
 	// D6: DEC
 	addInstruction(new Instruction(0xD6, "DEC_zpx", 6, [this]() {
-		// Not implemented
+		dec(ZeroPageX());
 	}));
 
 	// CE: DEC
 	addInstruction(new Instruction(0xCE, "DEC_abs", 6, [this]() {
-		// Not implemented
+		dec(Absolute());
 	}));
 
 	// DE: DEC
 	addInstruction(new Instruction(0xDE, "DEC_absx", 7, [this]() {
-		// Not implemented
+		dec(AbsoluteX());
 	}));
 
 	/* Flag Instructions */

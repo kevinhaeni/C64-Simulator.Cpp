@@ -48,6 +48,8 @@ private:
 	void loadRegister(byte* reg, word addr);					// Load register with memory data
 	void push(byte value);
 	byte pop();
+	void inc(word adr);
+	void dec(word adr);
 
     void shiftLeft(word reg);
     void shiftLeft(byte addr);
