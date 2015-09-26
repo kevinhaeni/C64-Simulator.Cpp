@@ -1070,9 +1070,12 @@ void CPU::loadInstructionSet(){
 		// Not implemented
 	}));
 
-	// 20: JSR
+	// 20: JSR (Jump Subroutine)
 	addInstruction(new Instruction(0x20, "JSR_abs", 2, [this]() {
-		// Not implemented
+		word currentPC = Registers.PC;
+		push((uint8_t)(currentPC >> 8));
+		push((uint8_t)currentPC);
+		Registers.PC = fetchPCWord();
 	}));
 
 	/* Rotate Instructions */
@@ -1142,7 +1145,11 @@ void CPU::loadInstructionSet(){
 
 	// 60: RTI (Return from Subroutine)
 	addInstruction(new Instruction(0x60, "RTS", 6, [this]() {
-		// Not implemented
+		word newPC;
+		newPC = pop();
+		newPC |= (word)pop() << 8;
+		newPC++;
+		Registers.PC = newPC;
 	}));
 
 }
