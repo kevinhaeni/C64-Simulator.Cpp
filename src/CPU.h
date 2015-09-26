@@ -51,6 +51,7 @@ private:
 	void inc(word adr);
 	void dec(word adr);
 	void AddWithCarry(const byte value);
+	void SubtractWithCarry(const byte value);
 
     void shiftLeft(word reg);
     void shiftLeft(byte addr);

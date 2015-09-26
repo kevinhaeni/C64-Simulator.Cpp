@@ -54,25 +54,24 @@
 		
 		cpu->Registers.PC = 0x1000;
 
-		cpu->Registers.A = 0x3F; //hack
+		cpu->Registers.A = 0x01; //hack
 
 		// Load test program to memory
      
-        this->writeMemory(0x1000, 0x85);
-        this->writeMemory(0x1001, 0x50);
-        this->writeMemory(0x1002, 0xE6);
-        this->writeMemory(0x1003, 0x50);
+		this->writeMemory(0x0050, 0x02);
+		this->writeMemory(0x1000, 0x69);
+        this->writeMemory(0x1001, 0x02);
+        this->writeMemory(0x1002, 0xE9);
+        this->writeMemory(0x1003, 0x02);
         
-		// Stack intsruction tests
-		cpu->Registers.A = 9;
-        cpu->emulateCycles(0);
-		
+		// Stack intsruction tests	
+        cpu->emulateCycles(0);	
+		cpu->Registers.dump();
 		cpu->emulateCycles(0);
 		
 		cpu->Registers.dump();
 		cpu->Flags.dump();
-
-		byte val = this->readMemory(0x0050);
+	
 	
 
         // Tests

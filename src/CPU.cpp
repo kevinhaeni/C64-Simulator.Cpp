@@ -349,6 +349,11 @@ void CPU::AddWithCarry(const byte value) {
 	
 }
 
+void CPU::SubtractWithCarry(const byte value) {
+	Flags.C = !Flags.C;					// switch carry flag first
+	AddWithCarry(value ^ 0xff);			// Subtraction is the addition of the complement
+}
+
 /*
  Initialize the instruction set hashmap
 */
@@ -745,7 +750,7 @@ void CPU::loadInstructionSet(){
 
 	// 69: ADC
 	addInstruction(new Instruction(0x69, "ADC_imm", 2, [this]() {
-		AddWithCarry(c64->readMemory(Immediate()));
+		AddWithCarry(Immediate());
 	}));
 
 	// 65: ADC
@@ -786,42 +791,42 @@ void CPU::loadInstructionSet(){
 
 	// E9: SBC
 	addInstruction(new Instruction(0xE9, "SBC_imm", 2, [this]() {
-		AddWithCarry(c64->readMemory(Immediate()) ^ 0xFF);
+		SubtractWithCarry(Immediate());
 	}));
 
 	// E5: SBC
 	addInstruction(new Instruction(0xE5, "SBC_zp", 3, [this]() {
-		AddWithCarry(c64->readMemory(ZeroPage()) ^ 0xFF);
+		SubtractWithCarry(c64->readMemory(ZeroPage()));
 	}));
 
 	// F5: SBC
 	addInstruction(new Instruction(0xF5, "SBC_zpx", 4, [this]() {
-		AddWithCarry(c64->readMemory(ZeroPageX()) ^ 0xFF);
+		SubtractWithCarry(c64->readMemory(ZeroPageX()));
 	}));
 
 	// ED: SBC
 	addInstruction(new Instruction(0xED, "SBC_abs", 4, [this]() {
-		AddWithCarry(c64->readMemory(Absolute()) ^ 0xFF);
+		SubtractWithCarry(c64->readMemory(Absolute()));
 	}));
 
 	// FD: SBC
 	addInstruction(new Instruction(0xFD, "SBC_absx", 4, [this]() {
-		AddWithCarry(c64->readMemory(AbsoluteX()) ^ 0xFF);
+		SubtractWithCarry(c64->readMemory(AbsoluteX()));
 	}));
 
 	// F9: SBC
 	addInstruction(new Instruction(0xF9, "SBC_absy", 4, [this]() {
-		AddWithCarry(c64->readMemory(AbsoluteY()) ^ 0xFF);
+		SubtractWithCarry(c64->readMemory(AbsoluteY()));
 	}));
 
 	// E1: SBC
 	addInstruction(new Instruction(0xE1, "SBC_idx", 6, [this]() {
-		AddWithCarry(c64->readMemory(IndirectX()) ^ 0xFF);
+		SubtractWithCarry(c64->readMemory(IndirectX()));
 	}));
 
 	// F1: SBC
 	addInstruction(new Instruction(0xF1, "SBC_idy", 5, [this]() {
-		AddWithCarry(c64->readMemory(IndirectY()) ^ 0xFF);
+		SubtractWithCarry(c64->readMemory(IndirectY()));
 	}));
 
 	/* BIT */
