@@ -326,6 +326,16 @@ void CPU::loadRegister(byte* reg, word addr){
 	loadRegister(reg, c64->readMemory(addr));
 }
 
+void CPU::push(byte value) {
+	const word address = Utils::makeWord(Registers.SP--, 0x01);
+	c64->writeMemory(address, value);	
+}
+
+byte CPU::pop(){
+	const word address = Utils::makeWord(++(Registers.SP), 0x01);
+	return c64->readMemory(address);
+}
+
 /*
  Initialize the instruction set hashmap
 */
@@ -472,106 +482,76 @@ void CPU::loadInstructionSet(){
     /* TXX Group */
     // Tested: OK
     
-    /*
-     TAX
-     */
-    addInstruction(new Instruction(0xAA, "TAX_XXX", 2, [this]() {
+    // AA: TAX
+    addInstruction(new Instruction(0xAA, "TAX", 2, [this]() {
         loadRegister(&Registers.A, Registers.Y);
     }));
 	
-    /*
-     TAY
-     */
-    addInstruction(new Instruction(0xA8, "TAY_XXX", 2, [this]() {
+    // A8: TAY
+    addInstruction(new Instruction(0xA8, "TAY", 2, [this]() {
         loadRegister(&Registers.A, Registers.Y);
     }));
     
-    /*
-     TSX
-     */
-    addInstruction(new Instruction(0xBA, "TSX_XXX", 2, [this]() {
+    // BA: TSX
+    addInstruction(new Instruction(0xBA, "TSX", 2, [this]() {
         loadRegister(&Registers.SP, Registers.X);
     }));
     
-    /*
-     TXA
-     */
-    addInstruction(new Instruction(0x8A, "TXA_XXX", 2, [this]() {
+    // 8A: TXA
+    addInstruction(new Instruction(0x8A, "TXA", 2, [this]() {
         loadRegister(&Registers.X, Registers.A);
     }));
 
-    /*
-     TXS
-     */
-    addInstruction(new Instruction(0x9A, "TXS_XXX", 2, [this]() {
+    // 9A: TXS
+    addInstruction(new Instruction(0x9A, "TXS", 2, [this]() {
         loadRegister(&Registers.X, Registers.SP);
     }));
     
-    /*
-     TYA
-     */
-    addInstruction(new Instruction(0x98, "TYA_XXX", 2, [this]() {
+    // 98: TYA
+    addInstruction(new Instruction(0x98, "TYA", 2, [this]() {
         loadRegister(&Registers.Y, Registers.A);
-    }));
-    
-    /***** Bitwise *****/
+    }));  
     
     /**** AND ***/
     // Todo, variable cycles
     // Tested: OK
     
-    /*
-     29: Immediate
-     */
-    addInstruction(new Instruction(0x29, "And_imm", 2, [this]() {
+    // 29: AND
+    addInstruction(new Instruction(0x29, "AND_i", 2, [this]() {
         andRegA(Immediate());
     }));
     
-    /*
-     25: Zeropage
-     */
+    // 25: AND
     addInstruction(new Instruction(0x25, "And_zp", 3, [this]() {
         andRegA(ZeroPage());
     }));
     
-    /*
-     35: Zeropage X
-     */
+    // 35: AND
     addInstruction(new Instruction(0x35, "And_zpx", 4, [this]() {
         andRegA(ZeroPageX());
     }));
     
-    /*
-     2D: Absolute
-     */
+    // 2D: AND
     addInstruction(new Instruction(0x2D, "And_abs", 4, [this]() {
         andRegA(Absolute());
     }));
     
-    /*
-     3D: Absolute X, Variable Cycles
-     */
+    // 3D: AND
     addInstruction(new Instruction(0x3D, "And_absx", 4, [this]() {
         andRegA(AbsoluteX());
     }));
     
-    /*
-     39: Absolute Y, Variable Cycles
-     */
+    // 39: AND
     addInstruction(new Instruction(0x39, "And_absy", 4, [this]() {
         andRegA(AbsoluteY());
     }));
     
-    /*
-     21: Indirect X
-     */
+    // 21: AND
     addInstruction(new Instruction(0x21, "And_inx", 6, [this]() {
         andRegA(IndirectX());
     }));
     
-    /*
-     31: Indirect Y, Variable Cycles
-     */
+    // 31: AND
     addInstruction(new Instruction(0x31, "And_iny", 5, [this]() {
         andRegA(IndirectY());
     }));
@@ -580,58 +560,42 @@ void CPU::loadInstructionSet(){
     /*** ORA ***/
     // Tested: OK
     
-    /*
-     09: Immediate
-     */
+    // 09: ORA
     addInstruction(new Instruction(0x09, "ORA_imm", 2, [this]() {
         oraRegA(Immediate());
     }));
     
-    /*
-     05: Zeropage
-     */
+    // 05: ORA
     addInstruction(new Instruction(0x05, "ORA_zp", 3, [this]() {
         oraRegA(ZeroPage());
     }));
     
-    /*
-     15: Zeropage X
-     */
+    // 15: ORA
     addInstruction(new Instruction(0x15, "ORA_zpx", 4, [this]() {
         oraRegA(ZeroPageX());
     }));
     
-    /*
-     0D: Absolute
-     */
+    // 0D: ORA
     addInstruction(new Instruction(0x0D, "ORA_abs", 4, [this]() {
         oraRegA(Absolute());
     }));
     
-    /*
-     1D: Absolute X, Variable Cycles
-     */
+    // 1D: ORA
     addInstruction(new Instruction(0x1D, "ORA_absx", 4, [this]() {
         oraRegA(AbsoluteX());
     }));
     
-    /*
-     19: Absolute Y, Variable Cycles
-     */
+    // 19: ORA
     addInstruction(new Instruction(0x19, "ORA_absy", 4, [this]() {
         oraRegA(AbsoluteY());
     }));
     
-    /*
-     01: Indirect X
-     */
+    // 01: ORA
     addInstruction(new Instruction(0x01, "ORA_inx", 6, [this]() {
         oraRegA(IndirectX());
     }));
     
-    /*
-     11: Indirect Y, Variable Cycles
-     */
+    // 11: ORA
     addInstruction(new Instruction(0x11, "ORA_iny", 5, [this]() {
         oraRegA(IndirectY());
     }));
@@ -640,23 +604,17 @@ void CPU::loadInstructionSet(){
     /*** EOR ***/
     // Tested: OK
     
-    /*
-     49: Immediate
-     */
+    // 49: EOR
     addInstruction(new Instruction(0x49, "EOR_imm", 2, [this]() {
         eorRegA(Immediate());
     }));
     
-    /*
-     45: Zeropage
-     */
+    // 45: EOR
     addInstruction(new Instruction(0x45, "EOR_zp", 3, [this]() {
         eorRegA(ZeroPage());
     }));
     
-    /*
-     55: Zeropage X
-     */
+	// 55: EOR
     addInstruction(new Instruction(0x55, "EOR_zpx", 4, [this]() {
         eorRegA(ZeroPageX());
     }));
@@ -668,30 +626,22 @@ void CPU::loadInstructionSet(){
         eorRegA(Absolute());
     }));
     
-    /*
-     5D: Absolute X, Variable Cycles
-     */
+	// 5D: EOR
     addInstruction(new Instruction(0x5D, "EOR_absx", 4, [this]() {
         eorRegA(AbsoluteX());
     }));
     
-    /*
-     59: Absolute Y, Variable Cycles
-     */
+	// 59: EOR
     addInstruction(new Instruction(0x59, "EOR_absy", 4, [this]() {
         eorRegA(AbsoluteY());
     }));
     
-    /*
-     41: Indirect X
-     */
+	// 41: EOR
     addInstruction(new Instruction(0x41, "EOR_inx", 6, [this]() {
         eorRegA(IndirectX());
     }));
     
-    /*
-     51: Indirect Y, Variable Cycles
-     */
+	// 51: EOR
     addInstruction(new Instruction(0x51, "EOR_iny", 5, [this]() {
         eorRegA(IndirectY());
     }));
@@ -700,37 +650,27 @@ void CPU::loadInstructionSet(){
 	/*** LSR GROUP ***/
     // Tested: OK
     
-	/* 
-     4A: LSR Register A
-    */
+	// 5A: LSR
     addInstruction(new Instruction(0x4A, "LSR_a", 2, [this]() {
         shiftRight(Registers.A);
     }));
     
-    /*
-     46: LSR Zero Page
-    */
+	// 46: LSR
     addInstruction(new Instruction(0x46, "LSR_zp", 5, [this]() {
         shiftRight(ZeroPage());
     }));
     
-    /*
-    56: LSR Zero Page X
-     */
+	// 56: LSR
     addInstruction(new Instruction(0x56, "LSR_zpx", 6, [this]() {
         shiftRight(ZeroPageX());
     }));
     
-    /*
-     4E: LSR Absolute
-     */
+	// 4E: LSR
     addInstruction(new Instruction(0x4E, "LSR_abs", 6, [this]() {
         shiftRight(Absolute());
     }));
     
-    /*
-     5E: LSR Absolute X
-     */
+	// 5E: LSR
     addInstruction(new Instruction(0x5E, "LSR_absx", 7, [this]() {
         shiftRight(AbsoluteX());
     }));
@@ -739,40 +679,436 @@ void CPU::loadInstructionSet(){
     /*** ASL GROUP ***/
     // Tested: OK
     
-    /*
-     0A: ASL Register A
-     */
+	// 4A: ASL
     addInstruction(new Instruction(0x0A, "ASL_a", 2, [this]() {
         shiftLeft(Registers.A);
     }));
     
-    /*
-     06: ASL Zero Page
-     */
+	// 06: ASL
     addInstruction(new Instruction(0x06, "ASL_zp", 5, [this]() {
         shiftLeft(ZeroPage());
     }));
     
-    /*
-     16: ASL Zero Page X
-     */
+	// 16: ASL
     addInstruction(new Instruction(0x16, "ASL_zpx", 6, [this]() {
         shiftLeft(ZeroPageX());
     }));
     
-    /*
-     0E: ASL Absolute
-     */
+	// 0E: ASL
     addInstruction(new Instruction(0x0E, "ASL_abs", 6, [this]() {
         shiftLeft(Absolute());
     }));
     
-    /*
-     1E: ASL Absolute X
-     */
+	// 1E: ASL
     addInstruction(new Instruction(0x1E, "ASL_absx", 7, [this]() {
         shiftLeft(AbsoluteX());
     }));
+
+	/* STACK INSTRUCTIONS */
+
+	// 48: PHA
+	addInstruction(new Instruction(0x48, "PHA", 3, [this]() {
+		push(Registers.A);
+	}));
+
+	// 68: PLA
+	addInstruction(new Instruction(0x68, "PLA", 4, [this]() {
+		loadRegister(&Registers.A, pop());
+	}));
+
+	// 08: PHP
+	addInstruction(new Instruction(0x08, "PHP", 3, [this]() {
+		// Not implemented
+	}));
+
+	// 28: PLP
+	addInstruction(new Instruction(0x28, "PLP", 4, [this]() {
+		// Not implemented
+	}));
+
+	/* ALU Instructions */
+
+	// 69: ADC
+	addInstruction(new Instruction(0x69, "ADC_imm", 2, [this]() {
+		// Not implemented
+	}));
+
+	// 65: ADC
+	addInstruction(new Instruction(0x65, "ADC_zp", 3, [this]() {
+		// Not implemented
+	}));
+
+	// 75: ADC
+	addInstruction(new Instruction(0x75, "ADC_zpx", 4, [this]() {
+		// Not implemented
+	}));
+
+	// 6D: ADC
+	addInstruction(new Instruction(0x6D, "ADC_abs", 4, [this]() {
+		// Not implemented
+	}));
+
+	// 7D: ADC
+	addInstruction(new Instruction(0x7D, "ADC_absx", 4, [this]() {
+		// Not implemented
+	}));
+
+	// 79: ADC
+	addInstruction(new Instruction(0x79, "ADC_absy", 4, [this]() {
+		// Not implemented
+	}));
+
+	// 61: ADC
+	addInstruction(new Instruction(0x61, "ADC_idx", 6, [this]() {
+		// Not implemented
+	}));
+
+	// 71: ADC
+	addInstruction(new Instruction(0x71, "ADC_idy", 5, [this]() {
+		// Not implemented
+	}));
+
+
+	// E9: SBC
+	addInstruction(new Instruction(0xE9, "SBC_imm", 2, [this]() {
+		// Not implemented
+	}));
+
+	// E5: SBC
+	addInstruction(new Instruction(0xE5, "SBC_zp", 3, [this]() {
+		// Not implemented
+	}));
+
+	// F5: SBC
+	addInstruction(new Instruction(0xF5, "SBC_zpx", 4, [this]() {
+		// Not implemented
+	}));
+
+	// ED: SBC
+	addInstruction(new Instruction(0xED, "SBC_abs", 4, [this]() {
+		// Not implemented
+	}));
+
+	// FD: SBC
+	addInstruction(new Instruction(0xFD, "SBC_absx", 4, [this]() {
+		// Not implemented
+	}));
+
+	// F9: SBC
+	addInstruction(new Instruction(0xF9, "SBC_absy", 4, [this]() {
+		// Not implemented
+	}));
+
+	// E1: SBC
+	addInstruction(new Instruction(0xE1, "SBC_idx", 6, [this]() {
+		// Not implemented
+	}));
+
+	// F1: SBC
+	addInstruction(new Instruction(0xF1, "SBC_idy", 5, [this]() {
+		// Not implemented
+	}));
+
+	/* BIT */
+
+	// 24: BIT
+	addInstruction(new Instruction(0x24, "BIT_zp", 3, [this]() {
+		// Not implemented
+	}));
+
+	// 2C: BIT
+	addInstruction(new Instruction(0x2C, "BIT_abs", 4, [this]() {
+		// Not implemented
+	}));
+
+	/* Branch Instructions */
+
+	// 10: BPL (Branch on Plus)
+	addInstruction(new Instruction(0x10, "BPL", 2, [this]() {
+		// Not implemented
+	}));
+
+	// 30: BMI (Branch on Minus)
+	addInstruction(new Instruction(0x30, "BMI", 2, [this]() {
+		// Not implemented
+	}));
+
+	// 50: BVC
+	addInstruction(new Instruction(0x50, "BVC", 2, [this]() {
+		// Not implemented
+	}));
+
+	// 70: BVS
+	addInstruction(new Instruction(0x70, "BVS", 2, [this]() {
+		// Not implemented
+	}));
+
+	// 90: BCC
+	addInstruction(new Instruction(0x90, "BCC", 2, [this]() {
+		// Not implemented
+	}));
+
+	// B0: BCS
+	addInstruction(new Instruction(0xB0, "BCS", 2, [this]() {
+		// Not implemented
+	}));
+
+	// D0: BNE
+	addInstruction(new Instruction(0xD0, "BNE", 2, [this]() {
+		// Not implemented
+	}));
+
+	// F0: BEQ
+	addInstruction(new Instruction(0xF0, "BEQ", 2, [this]() {
+		// Not implemented
+	}));
+
+	/* BRK (Break) */
+
+	// 00: BRK (Break)
+	addInstruction(new Instruction(0x00, "BRK", 7, [this]() {
+		// Not implemented
+	}));
+
+	/* Compare Instructions */
+
+	// C9: CMP
+	addInstruction(new Instruction(0xC9, "CMP_imm", 2, [this]() {
+		// Not implemented
+	}));
+
+	// C5: CMP
+	addInstruction(new Instruction(0xC5, "CMP_zp", 3, [this]() {
+		// Not implemented
+	}));
+
+	// D5: CMP
+	addInstruction(new Instruction(0xD5, "CMP_zpx", 4, [this]() {
+		// Not implemented
+	}));
+
+	// CD: CMP
+	addInstruction(new Instruction(0xCD, "CMP_abs", 4, [this]() {
+		// Not implemented
+	}));
+
+	// DD: CMP
+	addInstruction(new Instruction(0xDD, "CMP_absx", 4, [this]() {
+		// Not implemented
+	}));
+
+	// D9: CMP
+	addInstruction(new Instruction(0xD9, "CMP_absy", 4, [this]() {
+		// Not implemented
+	}));
+
+	// C1: CMP
+	addInstruction(new Instruction(0xC1, "CMP_idx", 6, [this]() {
+		// Not implemented
+	}));
+
+	// D1: CMP
+	addInstruction(new Instruction(0xD1, "CMP_idy", 5, [this]() {
+		// Not implemented
+	}));
+
+	// E0: CPX
+	addInstruction(new Instruction(0xE0, "CPX_imm", 2, [this]() {
+		// Not implemented
+	}));
+
+	// E4: CPX
+	addInstruction(new Instruction(0xE4, "CPX_zp", 3, [this]() {
+		// Not implemented
+	}));
+
+	// EC: CPX
+	addInstruction(new Instruction(0xEC, "CPX_abs", 4, [this]() {
+		// Not implemented
+	}));
+
+	// C0: CPY
+	addInstruction(new Instruction(0xC0, "CPY_imm", 2, [this]() {
+		// Not implemented
+	}));
+
+	// C4: CPY
+	addInstruction(new Instruction(0xC4, "CPY_zp", 3, [this]() {
+		// Not implemented
+	}));
+
+	// CC: CPY
+	addInstruction(new Instruction(0xCC, "CPY_abs", 4, [this]() {
+		// Not implemented
+	}));
+
+	/* INC */
+
+	// E6: INC
+	addInstruction(new Instruction(0xE6, "INC_zp", 5, [this]() {
+		// Not implemented
+	}));
+
+	// F6: INC
+	addInstruction(new Instruction(0xF6, "INC_zpx", 6, [this]() {
+		// Not implemented
+	}));
+
+	// EE: INC
+	addInstruction(new Instruction(0xEE, "INC_abs", 6, [this]() {
+		// Not implemented
+	}));
+
+	// FE: INC
+	addInstruction(new Instruction(0xFE, "INC_absx", 7, [this]() {
+		// Not implemented
+	}));
+
+	/* DEC */
+
+	// C6: DEC
+	addInstruction(new Instruction(0xC6, "DEC_zp", 5, [this]() {
+		// Not implemented
+	}));
+
+	// D6: DEC
+	addInstruction(new Instruction(0xD6, "DEC_zpx", 6, [this]() {
+		// Not implemented
+	}));
+
+	// CE: DEC
+	addInstruction(new Instruction(0xCE, "DEC_abs", 6, [this]() {
+		// Not implemented
+	}));
+
+	// DE: DEC
+	addInstruction(new Instruction(0xDE, "DEC_absx", 7, [this]() {
+		// Not implemented
+	}));
+
+	/* Flag Instructions */
+
+	// 18: CLC
+	addInstruction(new Instruction(0x18, "CLC", 2, [this]() {
+		// Not implemented
+	}));
+
+	// 38: SEC
+	addInstruction(new Instruction(0x38, "SEC", 2, [this]() {
+		// Not implemented
+	}));
+
+	// 58: CLI
+	addInstruction(new Instruction(0x58, "CLI", 2, [this]() {
+		// Not implemented
+	}));
+
+	// 78: SEI
+	addInstruction(new Instruction(0x78, "SEI", 2, [this]() {
+		// Not implemented
+	}));
+
+	// B8: CLV
+	addInstruction(new Instruction(0xB8, "CLV", 2, [this]() {
+		// Not implemented
+	}));
+
+	// D8: CLD
+	addInstruction(new Instruction(0xD8, "CLD", 2, [this]() {
+		// Not implemented
+	}));
+
+	// F8: SED
+	addInstruction(new Instruction(0xF8, "SED", 2, [this]() {
+		// Not implemented
+	}));
+
+	/* JMP (Jump) Instructions */
+
+	// 4C: JMP
+	addInstruction(new Instruction(0x4C, "JMP_abs", 2, [this]() {
+		// Not implemented
+	}));
+
+	// 6C: JMP
+	addInstruction(new Instruction(0x6C, "JMP_id", 2, [this]() {
+		// Not implemented
+	}));
+
+	// 20: JSR
+	addInstruction(new Instruction(0x20, "JSR_abs", 2, [this]() {
+		// Not implemented
+	}));
+
+	/* Rotate Instructions */
+
+	// 2A: ROL
+	addInstruction(new Instruction(0x2A, "ROL_acc", 2, [this]() {
+		// Not implemented
+	}));
+
+	// 26: ROL
+	addInstruction(new Instruction(0x26, "ROL_zp", 5, [this]() {
+		// Not implemented
+	}));
+
+	// 36: ROL
+	addInstruction(new Instruction(0x36, "ROL_zpx", 6, [this]() {
+		// Not implemented
+	}));
+
+	// 2E: ROL
+	addInstruction(new Instruction(0x2E, "ROL_abs", 6, [this]() {
+		// Not implemented
+	}));
+
+	// 3E: ROL
+	addInstruction(new Instruction(0x3E, "ROL_absx", 7, [this]() {
+		// Not implemented
+	}));
+
+
+	// 6A: ROR
+	addInstruction(new Instruction(0x6A, "ROR_acc", 2, [this]() {
+		// Not implemented
+	}));
+
+	// 66: ROR
+	addInstruction(new Instruction(0x66, "ROR_zp", 5, [this]() {
+		// Not implemented
+	}));
+
+	// 76: ROR
+	addInstruction(new Instruction(0x76, "ROR_zpx", 6, [this]() {
+		// Not implemented
+	}));
+
+	// 6E: ROR
+	addInstruction(new Instruction(0x6E, "ROR_abs", 6, [this]() {
+		// Not implemented
+	}));
+
+	// 7E: ROR
+	addInstruction(new Instruction(0x7E, "ROR_absx", 7, [this]() {
+		// Not implemented
+	}));
+
+	/* Other Instructions */
+
+	// EA: NOP
+	addInstruction(new Instruction(0xEA, "NOP", 2, [this]() {
+		// Not implemented
+	}));
+
+	// 40: RTI (Return from Interrupt)
+	addInstruction(new Instruction(0x40, "RTI", 6, [this]() {
+		// Not implemented
+	}));
+
+	// 60: RTI (Return from Subroutine)
+	addInstruction(new Instruction(0x60, "RTS", 6, [this]() {
+		// Not implemented
+	}));
 
 }
 

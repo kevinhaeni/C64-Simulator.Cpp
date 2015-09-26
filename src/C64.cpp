@@ -58,23 +58,36 @@
 
 		// Load test program to memory
      
-        this->writeMemory(0x1000, 0x4E);
-        this->writeMemory(0x1001, 0x12);
-        this->writeMemory(0x1002, 0x40);
-        this->writeMemory(0x4012, 0x38);
+        this->writeMemory(0x1000, 0x48);
+        this->writeMemory(0x1001, 0x48);
+        this->writeMemory(0x1002, 0x68);
+        this->writeMemory(0x1003, 0x68);
         
-		cpu->Registers.dump();
-		cpu->Flags.dump();
-
+		// Stack intsruction tests
+		cpu->Registers.A = 5;
         cpu->emulateCycles(0);
-
+		std::cout << "Push 1:" << std::endl;
 		cpu->Registers.dump();
 		cpu->Flags.dump();
-		//mem->save("c:\\test\\mem->dump");
 
-		this->readMemory(0x0080);
-		this->readMemory(0x0050);
+		cpu->Registers.A = 6;
+		cpu->emulateCycles(0);
+		std::cout << "Push 2:" << std::endl;
+		cpu->Registers.dump();
+		cpu->Flags.dump();
+
+		cpu->Registers.A = 0;
+
+		cpu->emulateCycles(0);
+		std::cout << "Pull 1:" << std::endl;
+		cpu->Registers.dump();
+		cpu->Flags.dump();
         
+		cpu->emulateCycles(0);
+		std::cout << "Pull 2:" << std::endl;
+		cpu->Registers.dump();
+		cpu->Flags.dump();
+
         // Tests
         
         /*
