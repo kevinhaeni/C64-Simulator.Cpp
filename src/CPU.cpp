@@ -340,6 +340,15 @@ void CPU::dec(word adr) {
 	c64->writeMemory(adr, value);
 }
 
+void CPU::AddWithCarry(const byte value) {
+	byte tmp = Registers.A + value + (Flags.C ? 1 : 0);
+	Flags.C = tmp > 0xFF;
+	// The overflow flag is set when the sign of the addends is the same and differs from the sign of the sum
+	Flags.V = ~(Registers.A ^ value) & (Registers.A ^ tmp) & 0x80;
+	loadRegister(&(Registers.A), tmp);
+	
+}
+
 /*
  Initialize the instruction set hashmap
 */
@@ -709,6 +718,7 @@ void CPU::loadInstructionSet(){
     }));
 
 	/* STACK INSTRUCTIONS */
+	// Test: OK
 
 	// 48: PHA
 	addInstruction(new Instruction(0x48, "PHA", 3, [this]() {
@@ -731,86 +741,87 @@ void CPU::loadInstructionSet(){
 	}));
 
 	/* ALU Instructions */
+	// UNTESTED!!
 
 	// 69: ADC
 	addInstruction(new Instruction(0x69, "ADC_imm", 2, [this]() {
-		// Not implemented
+		AddWithCarry(c64->readMemory(Immediate()));
 	}));
 
 	// 65: ADC
 	addInstruction(new Instruction(0x65, "ADC_zp", 3, [this]() {
-		// Not implemented
+		AddWithCarry(c64->readMemory(ZeroPage()));
 	}));
 
 	// 75: ADC
 	addInstruction(new Instruction(0x75, "ADC_zpx", 4, [this]() {
-		// Not implemented
+		AddWithCarry(c64->readMemory(ZeroPageX()));
 	}));
 
 	// 6D: ADC
 	addInstruction(new Instruction(0x6D, "ADC_abs", 4, [this]() {
-		// Not implemented
+		AddWithCarry(c64->readMemory(Absolute()));
 	}));
 
 	// 7D: ADC
 	addInstruction(new Instruction(0x7D, "ADC_absx", 4, [this]() {
-		// Not implemented
+		AddWithCarry(c64->readMemory(AbsoluteX()));
 	}));
 
 	// 79: ADC
 	addInstruction(new Instruction(0x79, "ADC_absy", 4, [this]() {
-		// Not implemented
+		AddWithCarry(c64->readMemory(AbsoluteY()));
 	}));
 
 	// 61: ADC
 	addInstruction(new Instruction(0x61, "ADC_idx", 6, [this]() {
-		// Not implemented
+		AddWithCarry(c64->readMemory(IndirectX()));
 	}));
 
 	// 71: ADC
 	addInstruction(new Instruction(0x71, "ADC_idy", 5, [this]() {
-		// Not implemented
+		AddWithCarry(c64->readMemory(IndirectY()));
 	}));
 
 
 	// E9: SBC
 	addInstruction(new Instruction(0xE9, "SBC_imm", 2, [this]() {
-		// Not implemented
+		AddWithCarry(c64->readMemory(Immediate()) ^ 0xFF);
 	}));
 
 	// E5: SBC
 	addInstruction(new Instruction(0xE5, "SBC_zp", 3, [this]() {
-		// Not implemented
+		AddWithCarry(c64->readMemory(ZeroPage()) ^ 0xFF);
 	}));
 
 	// F5: SBC
 	addInstruction(new Instruction(0xF5, "SBC_zpx", 4, [this]() {
-		// Not implemented
+		AddWithCarry(c64->readMemory(ZeroPageX()) ^ 0xFF);
 	}));
 
 	// ED: SBC
 	addInstruction(new Instruction(0xED, "SBC_abs", 4, [this]() {
-		// Not implemented
+		AddWithCarry(c64->readMemory(Absolute()) ^ 0xFF);
 	}));
 
 	// FD: SBC
 	addInstruction(new Instruction(0xFD, "SBC_absx", 4, [this]() {
-		// Not implemented
+		AddWithCarry(c64->readMemory(AbsoluteX()) ^ 0xFF);
 	}));
 
 	// F9: SBC
 	addInstruction(new Instruction(0xF9, "SBC_absy", 4, [this]() {
-		// Not implemented
+		AddWithCarry(c64->readMemory(AbsoluteY()) ^ 0xFF);
 	}));
 
 	// E1: SBC
 	addInstruction(new Instruction(0xE1, "SBC_idx", 6, [this]() {
-		// Not implemented
+		AddWithCarry(c64->readMemory(IndirectX()) ^ 0xFF);
 	}));
 
 	// F1: SBC
 	addInstruction(new Instruction(0xF1, "SBC_idy", 5, [this]() {
-		// Not implemented
+		AddWithCarry(c64->readMemory(IndirectY()) ^ 0xFF);
 	}));
 
 	/* BIT */
@@ -826,6 +837,7 @@ void CPU::loadInstructionSet(){
 	}));
 
 	/* Branch Instructions */
+	// UNTESTED
 
 	// 10: BPL (Branch on Plus)
 	addInstruction(new Instruction(0x10, "BPL", 2, [this]() {
@@ -971,6 +983,7 @@ void CPU::loadInstructionSet(){
 	}));
 
 	/* INC */
+	// Test: OK
 
 	// E6: INC
 	addInstruction(new Instruction(0xE6, "INC_zp", 5, [this]() {
@@ -1063,7 +1076,7 @@ void CPU::loadInstructionSet(){
 		// Not implemented
 	}));
 
-	// 20: JSR (Jump Subroutine)
+	// 20: JSR (Jump Subroutine) // UNTESTED
 	addInstruction(new Instruction(0x20, "JSR_abs", 2, [this]() {
 		word currentPC = Registers.PC;
 		push((uint8_t)(currentPC >> 8));
@@ -1136,7 +1149,7 @@ void CPU::loadInstructionSet(){
 		// Not implemented
 	}));
 
-	// 60: RTI (Return from Subroutine)
+	// 60: RTI (Return from Subroutine) // UNTESTED
 	addInstruction(new Instruction(0x60, "RTS", 6, [this]() {
 		word newPC;
 		newPC = pop();
