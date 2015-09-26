@@ -27,15 +27,8 @@ void CPU::Flags::reset(){
 
 //	Print all flags
 void CPU::Flags::dump(){
-	std::cout << "Flag-Dump:" << std::endl;
-	std::cout << "C = " << (int)C << std::endl;
-	std::cout << "Z = " << (int)Z << std::endl;
-	std::cout << "I = " << (int)I << std::endl;
-	std::cout << "D = " << (int)D << std::endl;
-	std::cout << "B = " << (int)B << std::endl;
-	std::cout << "V = " << (int)V << std::endl;
-	std::cout << "N = " << (int)N << std::endl;
-	std::cout << std::endl;
+	std::cout << "Flag-Dump [";
+	std::cout << "C=" << (int)C << ", Z=" << (int)Z << ", I=" << (int)I << ", D=" << (int)D << ", B=" << (int)B << ", V=" << (int)V << ", N=" << (int)N << "]" << std::endl;
 }
 
 
