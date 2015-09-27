@@ -67,6 +67,11 @@ private:
     void oraRegA(word addr);
     void oraRegA(byte value);
     
+    void rotateBitLeft(word addr);
+    void rotateBitLeft(byte value);
+    
+    void rotateBitRight(word addr);
+    void rotateBitRight(byte value);
 
 public:
 	CPU(C64* c64, SID* sid);

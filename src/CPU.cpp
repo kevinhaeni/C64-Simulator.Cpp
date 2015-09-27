@@ -45,76 +45,8 @@ void CPU::Flags::checkC_LSB(byte value){
 }
 
 void CPU::Flags::checkC_MSB(byte value){
-    C = (value & 0x7F) != 0;
+    C = (value & 0x80) != 0;
 }
-
-/* ShiftLeft */
-void CPU::shiftLeft(byte value){
-    Flags.checkC_MSB(value);
-    Registers.A = (value << 1) ;
-    Flags.checkZ(Registers.A);
-    Flags.checkN(Registers.A);
-}
-
-void CPU::shiftLeft(word addr){
-    byte value = c64->readMemory(addr);
-    shiftLeft(value);
-}
-
-/* ShiftRight */
-
-void CPU::shiftRight(byte value){
-    Flags.checkC_LSB(value);
-    Registers.A = (value >> 1) ;
-    Flags.checkZ(Registers.A);
-    Flags.checkN(Registers.A);
-}
-
-void CPU::shiftRight(word addr){
-    byte value = c64->readMemory(addr);
-    shiftRight(value);
-}
-
-/* AND */
-void CPU::andRegA(byte operand){
-    operand &= Registers.A;
-    Flags.checkN(operand);
-    Flags.checkZ(operand);
-    Registers.A = operand;
-}
-
-void CPU::andRegA(word addr){
-    byte operand = c64->readMemory(addr);
-    andRegA(operand);
-}
-
-/* EOR */
-void CPU::eorRegA(word addr){
-    byte operand = c64->readMemory(addr);
-    eorRegA(operand);
-}
-
-void CPU::eorRegA(byte operand){
-    operand ^= Registers.A;
-    Flags.checkN(operand);
-    Flags.checkZ(operand);
-    Registers.A = operand;
-}
-
-/* ORA */
-void CPU::oraRegA(word addr){
-    byte operand = c64->readMemory(addr);
-    oraRegA(operand);
-}
-
-void CPU::oraRegA(byte operand){
-    operand |= Registers.A;
-    Flags.checkN(operand);
-    Flags.checkZ(operand);
-    Registers.A = operand;
-}
-
-
 /*
     Fetch PC
 */
@@ -352,6 +284,129 @@ void CPU::AddWithCarry(const byte value) {
 void CPU::SubtractWithCarry(const byte value) {
 	Flags.C = !Flags.C;					// switch carry flag first
 	AddWithCarry(value ^ 0xff);			// Subtraction is the addition of the complement
+}
+
+
+/* ShiftLeft */
+void CPU::shiftLeft(byte value){
+    Flags.checkC_MSB(value);
+    Registers.A = (value << 1) ;
+    Flags.checkZ(Registers.A);
+    Flags.checkN(Registers.A);
+}
+
+void CPU::shiftLeft(word addr){
+    byte value = c64->readMemory(addr);
+    Flags.checkC_MSB(value);
+    value <<= 1;
+    Flags.checkZ(value);
+    Flags.checkN(value);
+    c64->writeMemory(addr,value);
+}
+
+/* ShiftRight */
+void CPU::shiftRight(byte value){
+    Flags.checkC_LSB(value);
+    Registers.A = (value >> 1) ;
+    Flags.checkZ(Registers.A);
+    Flags.N = 0;
+}
+
+void CPU::shiftRight(word addr){
+    byte value = c64->readMemory(addr);
+    Flags.checkC_LSB(value);
+    value >>= 1;
+    Flags.checkZ(value);
+    Flags.N = 0;
+    c64->writeMemory(addr,value);
+}
+
+/* AND */
+void CPU::andRegA(byte operand){
+    operand &= Registers.A;
+    Flags.checkN(operand);
+    Flags.checkZ(operand);
+    Registers.A = operand;
+}
+
+void CPU::andRegA(word addr){
+    byte operand = c64->readMemory(addr);
+    andRegA(operand);
+}
+
+/* EOR */
+void CPU::eorRegA(word addr){
+    byte operand = c64->readMemory(addr);
+    eorRegA(operand);
+}
+
+void CPU::eorRegA(byte operand){
+    operand ^= Registers.A;
+    Flags.checkN(operand);
+    Flags.checkZ(operand);
+    Registers.A = operand;
+}
+
+/* ORA */
+void CPU::oraRegA(word addr){
+    byte operand = c64->readMemory(addr);
+    oraRegA(operand);
+}
+
+void CPU::oraRegA(byte operand){
+    operand |= Registers.A;
+    Flags.checkN(operand);
+    Flags.checkZ(operand);
+    Registers.A = operand;
+}
+
+/* Rotate Bit Left */
+void CPU::rotateBitLeft(byte value){
+    // svae Flag C State
+    bool  flagCTemp = Flags.C;
+    Flags.checkC_MSB(value);
+    value = value << 1;
+    if(flagCTemp == true) value |= 0x01;
+    Flags.checkN(value);
+    Flags.checkZ(value);
+    Registers.A = value;
+}
+
+void CPU::rotateBitLeft(word addr){
+    // svae Flag C State
+    bool  flagCTemp = Flags.C;
+    byte value = c64->readMemory(addr);
+    Flags.checkC_MSB(value);
+    value = value << 1;
+    if(flagCTemp == true) value |= 0x01;
+    Flags.checkN(value);
+    Flags.checkZ(value);
+    c64->writeMemory(addr, value);
+}
+
+
+/* Rotate Bit Right */
+void CPU::rotateBitRight(byte value){
+    // svae Flag C State
+    bool  flagCTemp = Flags.C;
+    Flags.checkC_LSB(value);
+    value = value >> 1;
+    if(flagCTemp == true) value |= 0x80;
+    Flags.checkN(value);
+    Flags.checkZ(value);
+    Registers.A = value;
+}
+
+void CPU::rotateBitRight(word addr){
+    // svae Flag C State
+    bool  flagCTemp = Flags.C;
+    byte value = c64->readMemory(addr);
+    Flags.checkC_LSB(value);
+    value = value >> 1;
+    if(flagCTemp == true) value |= 0x80;
+    Flags.checkN(value);
+    Flags.checkZ(value);
+    c64->writeMemory(addr, value);
 }
 
 /*
@@ -668,7 +723,7 @@ void CPU::loadInstructionSet(){
 	/*** LSR GROUP ***/
     // Tested: OK
     
-	// 5A: LSR
+	// 4A: LSR
     addInstruction(new Instruction(0x4A, "LSR_a", 2, [this]() {
         shiftRight(Registers.A);
     }));
@@ -697,7 +752,7 @@ void CPU::loadInstructionSet(){
     /*** ASL GROUP ***/
     // Tested: OK
     
-	// 4A: ASL
+	// 0A: ASL
     addInstruction(new Instruction(0x0A, "ASL_a", 2, [this]() {
         shiftLeft(Registers.A);
     }));
@@ -1090,56 +1145,56 @@ void CPU::loadInstructionSet(){
 	}));
 
 	/* Rotate Instructions */
-
+    // Tested OK
 	// 2A: ROL
 	addInstruction(new Instruction(0x2A, "ROL_acc", 2, [this]() {
-		// Not implemented
+        rotateBitLeft(Registers.A);
 	}));
 
 	// 26: ROL
 	addInstruction(new Instruction(0x26, "ROL_zp", 5, [this]() {
-		// Not implemented
+		rotateBitLeft(ZeroPage());
 	}));
 
 	// 36: ROL
 	addInstruction(new Instruction(0x36, "ROL_zpx", 6, [this]() {
-		// Not implemented
+		rotateBitLeft(ZeroPageX());
 	}));
 
 	// 2E: ROL
 	addInstruction(new Instruction(0x2E, "ROL_abs", 6, [this]() {
-		// Not implemented
+		rotateBitLeft(Absolute());
 	}));
 
 	// 3E: ROL
 	addInstruction(new Instruction(0x3E, "ROL_absx", 7, [this]() {
-		// Not implemented
+		rotateBitLeft(AbsoluteX());
 	}));
 
 
 	// 6A: ROR
 	addInstruction(new Instruction(0x6A, "ROR_acc", 2, [this]() {
-		// Not implemented
+		rotateBitRight(Registers.A);
 	}));
 
 	// 66: ROR
 	addInstruction(new Instruction(0x66, "ROR_zp", 5, [this]() {
-		// Not implemented
+		rotateBitRight(ZeroPage());
 	}));
 
 	// 76: ROR
 	addInstruction(new Instruction(0x76, "ROR_zpx", 6, [this]() {
-		// Not implemented
+		rotateBitRight(ZeroPageX());
 	}));
 
 	// 6E: ROR
 	addInstruction(new Instruction(0x6E, "ROR_abs", 6, [this]() {
-		// Not implemented
+		rotateBitRight(Absolute());
 	}));
 
 	// 7E: ROR
 	addInstruction(new Instruction(0x7E, "ROR_absx", 7, [this]() {
-		// Not implemented
+        rotateBitRight(AbsoluteX());
 	}));
 
 	/* Other Instructions */

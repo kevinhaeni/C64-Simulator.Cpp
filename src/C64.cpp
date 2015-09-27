@@ -54,26 +54,55 @@
 		
 		cpu->Registers.PC = 0x1000;
 
-		cpu->Registers.A = 0x01; //hack
+		cpu->Registers.A = 0xF1; //hack
 
 		// Load test program to memory
-     
-		this->writeMemory(0x0050, 0x02);
-		this->writeMemory(0x1000, 0x69);
-        this->writeMemory(0x1001, 0x02);
-        this->writeMemory(0x1002, 0xE9);
-        this->writeMemory(0x1003, 0x02);
         
-		// Stack intsruction tests	
-        cpu->emulateCycles(0);	
-		cpu->Registers.dump();
-		cpu->emulateCycles(0);
+        this->writeMemory(0x1000, 0x6A);
+        this->writeMemory(0x1001, 0x6A);
+        this->writeMemory(0x1002, 0x6A);
+        this->writeMemory(0x1003, 0x6A);
+        this->writeMemory(0x1004, 0x6A);
+        this->writeMemory(0x1005, 0x6A);
+        this->writeMemory(0x1006, 0x6A);
+        this->writeMemory(0x1007, 0x6A);
+        this->writeMemory(0x1008, 0x6A);
+        this->writeMemory(0x1009, 0x6A);
+        
+        
+        // Stack intsruction tests
+        cpu->Registers.dump();
+        cpu->Flags.dump();
+        
+        
+        cpu->emulateCycles(0);
+        cpu->Registers.dump();
+         cpu->Flags.dump();
+        cpu->emulateCycles(0);
+        cpu->Registers.dump();
+         cpu->Flags.dump();
+        cpu->emulateCycles(0);
+        cpu->Registers.dump();
+         cpu->Flags.dump();
+        cpu->emulateCycles(0);
+        cpu->Registers.dump();
+         cpu->Flags.dump();
+        cpu->emulateCycles(0);
+        cpu->Registers.dump();
+        cpu->Flags.dump();
+        cpu->emulateCycles(0);
+        cpu->Registers.dump();
+        cpu->Flags.dump();
+        cpu->emulateCycles(0);
+        cpu->Registers.dump();
+        cpu->Flags.dump();
+        cpu->emulateCycles(0);
+        cpu->Registers.dump();
+        cpu->Flags.dump();
+        cpu->emulateCycles(0);
+        cpu->Registers.dump();
+        cpu->Flags.dump();
 		
-		cpu->Registers.dump();
-		cpu->Flags.dump();
-	
-	
-
         // Tests
         
         /*
