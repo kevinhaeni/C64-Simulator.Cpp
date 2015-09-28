@@ -32,14 +32,17 @@
 		// CLOCK_PAL  =  985248 Hz
 		// Considering an average of approx. 3 cycles per instruction, we need 1/3 * 985248 = 328416 iterations per second
 		// in order to reach the PAL clock frequency.
-		
+		mem->load("C:\\Users\\khaeni\\Documents\\visual studio 2013\\Projects\\C64Sim\\C64Sim\\Kernal.rom", 0xE000, 8192);
+		mem->dump("c:\\temp\\memdump2809.txt", true);
+		cpu->Registers.PC = 0xFCE2;
+
 		int previousCycles = 0;
 		do{
 			// Check for interrupts...
 			// VIC.emulateCycles();
 			sid->emulateCycles();			
 			previousCycles = cpu->emulateCycles(10 + previousCycles);
-
+			
 		} while (true);
 
 	}

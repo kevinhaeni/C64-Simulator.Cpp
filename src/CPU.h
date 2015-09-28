@@ -26,11 +26,10 @@ private:
 
 
 	void loadInstructionSet();									// Insert all instructions into the hashmap
-	Instruction* decodeInstruction(int opcode);					// Lookup the instruction in the hashmap
+	Instruction* decodeInstruction(uint8_t opcode);					// Lookup the instruction in the hashmap
 
 	// PC helpers
 	byte fetchPCByte();
-	byte fetchByteAfterPC();
 	word fetchPCWord();
 
 	/* Return the target address of the particular address mode */

@@ -30,6 +30,7 @@ public:
 	void dump(std::string filePath, bool showAdr);
 	void save(std::string filePath);
 	void load(std::string filePath);
+	void load(std::string filePath, uint16_t from, uint16_t size);
 
 };
 

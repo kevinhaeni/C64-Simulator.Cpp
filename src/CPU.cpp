@@ -55,14 +55,11 @@ void CPU::Flags::checkC_MSB(byte value){
     Fetch PC
 */
 byte CPU::fetchPCByte(){
-    return this->c64->readMemory(Registers.PC);
-}
-byte CPU::fetchByteAfterPC(){
-    return this->c64->readMemory(++(Registers.PC));
+    return this->c64->readMemory(Registers.PC++);
 }
 word CPU::fetchPCWord(){
-    byte lowByte = fetchByteAfterPC();
-    byte highByte = fetchByteAfterPC();
+	byte lowByte = fetchPCByte();
+	byte highByte = fetchPCByte();
     return ((highByte << 8)| lowByte);
 }
 
@@ -73,7 +70,7 @@ void CPU::Registers::reset(){
 	this->A = 0x00;
 	this->X = 0x00;
 	this->Y = 0x00;
-	this->SP = 0xFF; // 0x01FF till 0x0100
+	this->SP = 0xFF; // 0x01FF --> 0x0100
 	this->PC = 0x0000;
 }
 
@@ -106,11 +103,20 @@ int CPU::emulateCycles(int cyclesToExecute){
 		// remember how many cycles the next instruction will require
 		cycleCounter -= inst->getNumberOfCycles();
 
+#ifdef _DEBUG
+		std::cout << "[" << Utils::hexify(Registers.PC) << "] Executing " << inst->getMnemonicCode() << "(" << Utils::hexify(inst->getOpcode()) << ")" << std::endl;
+#endif
+
 		// execute instruction
 		inst->execute();
 
 		// increase PC
-		this->Registers.PC++;
+		//this->Registers.PC++;
+	}
+	else{
+#ifdef _DEBUG
+		std::cout << "OP-Code " << opcode << " is unknown." << std::endl;
+#endif
 	}
 	
 	return (cyclesToExecute - cycleCounter);
@@ -150,7 +156,7 @@ void CPU::Interrupts::reset(){
 Lookup of opcode within the instruction table
 returns nullptr if the OP-Code does not exist
 */
-Instruction* CPU::decodeInstruction(int opcode){
+Instruction* CPU::decodeInstruction(uint8_t opcode){
 
 	auto it = instructionTable.find(opcode);
 	if (it != instructionTable.end()) {
@@ -158,9 +164,9 @@ Instruction* CPU::decodeInstruction(int opcode){
 	}
 	else
 	{
-		std::cout << "Invalid OP-Code" << std::endl;
+		std::cout << "Invalid OP-Code: " << Utils::hexify(opcode) << std::endl;
 		//throw std::exception("Invalid OP-Code");
-		this->resetCPU();
+		//this->resetCPU();
 	}			
 
 	return nullptr;
@@ -178,7 +184,7 @@ void CPU::addInstruction(Instruction* instr){
 
 word CPU::Immediate()
 {
-	const word immediateAddress = ++(Registers.PC);
+	const word immediateAddress = Registers.PC++;
 	return immediateAddress;
 }
 
@@ -203,28 +209,28 @@ word CPU::AbsoluteY()
 
 word CPU::ZeroPage()
 {
-	byte loAddress = fetchByteAfterPC();
+	byte loAddress = fetchPCByte();
 	const word zpAddress = Utils::makeWord(loAddress, 0x00);
 	return zpAddress;
 }
 
 word CPU::ZeroPageX()
 {
-	byte loAddress = fetchByteAfterPC() + Registers.X;
+	byte loAddress = fetchPCByte() + Registers.X;
 	const word zpxAddress = Utils::makeWord(loAddress, 0x00);
 	return zpxAddress;
 }
 
 word CPU::ZeroPageY()
 {
-	byte loAddress = fetchByteAfterPC() + Registers.Y;
+	byte loAddress = fetchPCByte() + Registers.Y;
 	const word zpyAddress = Utils::makeWord(loAddress, 0x00);
 	return zpyAddress;
 }
 
 word CPU::Indirect()
 {
-	byte data = fetchByteAfterPC();
+	byte data = fetchPCByte();
 	word zpAddress = Utils::makeWord(data, 0x00);
 	const word effAddress = Utils::makeWord(c64->readMemory(zpAddress), c64->readMemory(zpAddress + 1));
 	return effAddress;
@@ -233,7 +239,7 @@ word CPU::Indirect()
 
 word CPU::IndirectX()
 {
-	byte data = fetchByteAfterPC() + Registers.X;
+	byte data = fetchPCByte() + Registers.X;
 	word zpAddress = Utils::makeWord(data, 0x00);
 	const word effAddress = Utils::makeWord(c64->readMemory(zpAddress), c64->readMemory(zpAddress + 1));	
 	return effAddress;
@@ -241,7 +247,7 @@ word CPU::IndirectX()
 
 word CPU::IndirectY()
 {
-	byte data = fetchByteAfterPC();
+	byte data = fetchPCByte();
 	word zpAddress = Utils::makeWord(data, 0x00);
 	word effAddress = Utils::makeWord(c64->readMemory(zpAddress), c64->readMemory(zpAddress + 1)); // TODO: little / big endian????
 	effAddress = effAddress + Registers.Y;
@@ -425,7 +431,7 @@ void CPU::rotateBitRight(word addr){
 void CPU::compare(byte *reg, word address){
 	byte val1 = *reg;
 	byte val2 = c64->readMemory(address);
-	byte result = val2 - val1;
+	byte result = val1 - val2;
 	Flags.C = (val1 >= val2);
 	Flags.checkNZ(result);
 }
@@ -486,8 +492,8 @@ void CPU::loadInstructionSet(){
      Load Memory data to Register X
      */
     
-    // A1: LDX immediate
-    addInstruction(new Instruction(0xA1, "LDX_imm", 2, [this]() {
+    // A2: LDX immediate
+    addInstruction(new Instruction(0xA2, "LDX_imm", 2, [this]() {
         loadRegister(&Registers.X, Immediate());
     }));
     // A6: LDX ZeroPage
@@ -512,11 +518,12 @@ void CPU::loadInstructionSet(){
      LDA GROUP
      Load Memory data to Register A
      */
-    
-    // A9: LDA immediate
-    addInstruction(new Instruction(0xA9, "LDA_imm", 2, [this]() {
-        loadRegister(&Registers.A, Immediate());
-    }));
+
+	// A9: LDA ZeroPage
+	addInstruction(new Instruction(0xA9, "LDA_imm", 2, [this]() {
+		loadRegister(&Registers.A, Immediate());
+	}));
+
     // A5: LDA ZeroPage
     addInstruction(new Instruction(0xA5, "LDA_zp", 3, [this]() {
         loadRegister(&Registers.A, ZeroPage());
