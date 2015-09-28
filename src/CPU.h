@@ -34,14 +34,15 @@ private:
 	word fetchPCWord();
 
 	/* Return the target address of the particular address mode */
-	byte Immediate();
-	word Absolute();	
+	word Immediate();
+	word Absolute();
 	word AbsoluteX();
 	word AbsoluteY();
 	word ZeroPage();
 	word ZeroPageX();
 	word ZeroPageY();
-	word IndirectX();	
+	word Indirect();
+	word IndirectX();
 	word IndirectY();
 
 	void loadRegister(byte* reg, byte value);
@@ -73,6 +74,9 @@ private:
     void rotateBitRight(word addr);
     void rotateBitRight(byte value);
 
+	void compare(byte *reg, word address);
+	void bit(word address);
+
 public:
 	CPU(C64* c64, SID* sid);
 
@@ -88,6 +92,7 @@ public:
         void checkV(byte value);
         void checkZ(byte value);
         void checkN(byte value);
+		void checkNZ(byte value);
         
         bool C;		// Carry
 		bool I;		// Interrupt

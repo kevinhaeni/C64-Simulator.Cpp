@@ -31,6 +31,10 @@ void CPU::Flags::dump(){
 	std::cout << "C=" << (int)C << ", Z=" << (int)Z << ", I=" << (int)I << ", D=" << (int)D << ", B=" << (int)B << ", V=" << (int)V << ", N=" << (int)N << "]" << std::endl;
 }
 
+void CPU::Flags::checkNZ(byte value){
+	checkN(value);
+	checkZ(value);
+}
 
 void CPU::Flags::checkN(byte value){
     N =  value >> 7;
@@ -172,10 +176,10 @@ void CPU::addInstruction(Instruction* instr){
 // 6502 Addressing modes
 /////////////////////////////////////////////////////////////////////////////////////
 
-byte CPU::Immediate()
+word CPU::Immediate()
 {
-	const byte immValue = fetchByteAfterPC();
-	return immValue;
+	const word immediateAddress = ++(Registers.PC);
+	return immediateAddress;
 }
 
 word CPU::Absolute()
@@ -217,6 +221,15 @@ word CPU::ZeroPageY()
 	const word zpyAddress = Utils::makeWord(loAddress, 0x00);
 	return zpyAddress;
 }
+
+word CPU::Indirect()
+{
+	byte data = fetchByteAfterPC();
+	word zpAddress = Utils::makeWord(data, 0x00);
+	const word effAddress = Utils::makeWord(c64->readMemory(zpAddress), c64->readMemory(zpAddress + 1));
+	return effAddress;
+}
+
 
 word CPU::IndirectX()
 {
@@ -407,6 +420,25 @@ void CPU::rotateBitRight(word addr){
     Flags.checkN(value);
     Flags.checkZ(value);
     c64->writeMemory(addr, value);
+}
+
+void CPU::compare(byte *reg, word address){
+	byte val1 = *reg;
+	byte val2 = c64->readMemory(address);
+	byte result = val2 - val1;
+	Flags.C = (val1 >= val2);
+	Flags.checkNZ(result);
+}
+
+void CPU::bit(word address){
+	byte value = c64->readMemory(address);
+	if (value & (1 << 6)) {
+		Flags.V = true;
+	}
+	else {
+		Flags.V = false;
+	}
+	Flags.checkNZ(value);
 }
 
 /*
@@ -805,7 +837,7 @@ void CPU::loadInstructionSet(){
 
 	// 69: ADC
 	addInstruction(new Instruction(0x69, "ADC_imm", 2, [this]() {
-		AddWithCarry(Immediate());
+		AddWithCarry(c64->readMemory(Immediate()));
 	}));
 
 	// 65: ADC
@@ -846,7 +878,7 @@ void CPU::loadInstructionSet(){
 
 	// E9: SBC
 	addInstruction(new Instruction(0xE9, "SBC_imm", 2, [this]() {
-		SubtractWithCarry(Immediate());
+		SubtractWithCarry(c64->readMemory(Immediate()));
 	}));
 
 	// E5: SBC
@@ -888,12 +920,12 @@ void CPU::loadInstructionSet(){
 
 	// 24: BIT
 	addInstruction(new Instruction(0x24, "BIT_zp", 3, [this]() {
-		// Not implemented
+		bit(ZeroPage());
 	}));
 
 	// 2C: BIT
 	addInstruction(new Instruction(0x2C, "BIT_abs", 4, [this]() {
-		// Not implemented
+		bit(Absolute());
 	}));
 
 	/* Branch Instructions */
@@ -974,72 +1006,72 @@ void CPU::loadInstructionSet(){
 
 	// C9: CMP
 	addInstruction(new Instruction(0xC9, "CMP_imm", 2, [this]() {
-		// Not implemented
+		compare(&Registers.A, Immediate());
 	}));
 
 	// C5: CMP
 	addInstruction(new Instruction(0xC5, "CMP_zp", 3, [this]() {
-		// Not implemented
+		compare(&Registers.A, ZeroPage());
 	}));
 
 	// D5: CMP
 	addInstruction(new Instruction(0xD5, "CMP_zpx", 4, [this]() {
-		// Not implemented
+		compare(&Registers.A, ZeroPageX());
 	}));
 
 	// CD: CMP
 	addInstruction(new Instruction(0xCD, "CMP_abs", 4, [this]() {
-		// Not implemented
+		compare(&Registers.A, Absolute());
 	}));
 
 	// DD: CMP
 	addInstruction(new Instruction(0xDD, "CMP_absx", 4, [this]() {
-		// Not implemented
+		compare(&Registers.A, AbsoluteX());
 	}));
 
 	// D9: CMP
 	addInstruction(new Instruction(0xD9, "CMP_absy", 4, [this]() {
-		// Not implemented
+		compare(&Registers.A, AbsoluteY());
 	}));
 
 	// C1: CMP
 	addInstruction(new Instruction(0xC1, "CMP_idx", 6, [this]() {
-		// Not implemented
+		compare(&Registers.A, IndirectX());
 	}));
 
 	// D1: CMP
 	addInstruction(new Instruction(0xD1, "CMP_idy", 5, [this]() {
-		// Not implemented
+		compare(&Registers.A, IndirectY());
 	}));
 
 	// E0: CPX
 	addInstruction(new Instruction(0xE0, "CPX_imm", 2, [this]() {
-		// Not implemented
+		compare(&Registers.X, Immediate());
 	}));
 
 	// E4: CPX
 	addInstruction(new Instruction(0xE4, "CPX_zp", 3, [this]() {
-		// Not implemented
+		compare(&Registers.X, ZeroPage());
 	}));
 
 	// EC: CPX
 	addInstruction(new Instruction(0xEC, "CPX_abs", 4, [this]() {
-		// Not implemented
+		compare(&Registers.X, Absolute());
 	}));
 
 	// C0: CPY
 	addInstruction(new Instruction(0xC0, "CPY_imm", 2, [this]() {
-		// Not implemented
+		compare(&Registers.Y, Immediate());
 	}));
 
 	// C4: CPY
 	addInstruction(new Instruction(0xC4, "CPY_zp", 3, [this]() {
-		// Not implemented
+		compare(&Registers.Y, ZeroPage());
 	}));
 
 	// CC: CPY
 	addInstruction(new Instruction(0xCC, "CPY_abs", 4, [this]() {
-		// Not implemented
+		compare(&Registers.Y, Absolute());
 	}));
 
 	/* INC */
@@ -1091,49 +1123,49 @@ void CPU::loadInstructionSet(){
 
 	// 18: CLC
 	addInstruction(new Instruction(0x18, "CLC", 2, [this]() {
-		// Not implemented
+		Flags.C = false;
 	}));
 
 	// 38: SEC
 	addInstruction(new Instruction(0x38, "SEC", 2, [this]() {
-		// Not implemented
+		Flags.C = true;
 	}));
 
 	// 58: CLI
 	addInstruction(new Instruction(0x58, "CLI", 2, [this]() {
-		// Not implemented
+		Flags.I = false;
 	}));
 
 	// 78: SEI
 	addInstruction(new Instruction(0x78, "SEI", 2, [this]() {
-		// Not implemented
+		Flags.I = true;
 	}));
 
 	// B8: CLV
 	addInstruction(new Instruction(0xB8, "CLV", 2, [this]() {
-		// Not implemented
+		Flags.V = false;
 	}));
 
 	// D8: CLD
 	addInstruction(new Instruction(0xD8, "CLD", 2, [this]() {
-		// Not implemented
+		Flags.D = false;
 	}));
 
 	// F8: SED
 	addInstruction(new Instruction(0xF8, "SED", 2, [this]() {
-		// Not implemented
+		Flags.D = true;
 	}));
 
 	/* JMP (Jump) Instructions */
 
 	// 4C: JMP
 	addInstruction(new Instruction(0x4C, "JMP_abs", 2, [this]() {
-		// Not implemented
+		Registers.PC = Absolute();
 	}));
 
 	// 6C: JMP
 	addInstruction(new Instruction(0x6C, "JMP_id", 2, [this]() {
-		// Not implemented
+		Registers.PC = Indirect();
 	}));
 
 	// 20: JSR (Jump Subroutine) // UNTESTED
