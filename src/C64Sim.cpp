@@ -10,8 +10,9 @@ int main(int argc, char* argv[])
 {
 
 	C64 theC64;
-	theC64.run();
-
+	//theC64.run();
+    theC64.test();
+    
 	int a;
 	std::cin >> a;
 	return 0;

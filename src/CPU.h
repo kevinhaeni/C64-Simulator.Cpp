@@ -32,6 +32,8 @@ private:
 	byte fetchPCByte();
 	word fetchPCWord();
 
+    
+    
 	/* Return the target address of the particular address mode */
 	word Immediate();
 	word Absolute();
@@ -75,6 +77,8 @@ private:
 
 	void compare(byte *reg, word address);
 	void bit(word address);
+    
+   
 
 public:
 	CPU(C64* c64, SID* sid);
@@ -94,15 +98,19 @@ public:
 		void checkNZ(byte value);
         
         bool C;		// Carry
+        bool Z;		// Zero
 		bool I;		// Interrupt
-		bool B;		// Break
 		bool D;		// Decimal
+        bool B;		// Break
 		bool V;		// Overflow
-		bool Z;		// Zero
 		bool N;		// Null
 
 		void reset();
 		void dump();
+        
+        byte getFlagsAsByte();
+        void setFlagsFromByte(byte);
+        
 	} Flags;
 
 	// Registers
@@ -115,8 +123,9 @@ public:
 		uint16_t PC;	// program counter
 
 		void reset();
-		void dump();	
-
+		void dump();
+        
+       
 	} Registers;
 
 
@@ -132,8 +141,8 @@ public:
 		void reset();
 	} Interrupts;
 	
-
-	void resetCPU();	
+    
+	void resetCPU();
 	
 	int emulateCycles(int cyclesToExecute);
 

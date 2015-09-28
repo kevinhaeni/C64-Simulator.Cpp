@@ -61,16 +61,11 @@
 
 		// Load test program to memory
         
-        this->writeMemory(0x1000, 0x6A);
-        this->writeMemory(0x1001, 0x6A);
-        this->writeMemory(0x1002, 0x6A);
-        this->writeMemory(0x1003, 0x6A);
-        this->writeMemory(0x1004, 0x6A);
-        this->writeMemory(0x1005, 0x6A);
-        this->writeMemory(0x1006, 0x6A);
-        this->writeMemory(0x1007, 0x6A);
-        this->writeMemory(0x1008, 0x6A);
-        this->writeMemory(0x1009, 0x6A);
+        cpu->Flags.N = 1;
+        cpu->Flags.D = 1;
+        
+        this->writeMemory(0x1000, 0x08);
+        this->writeMemory(0x1001, 0x28);
         
         
         // Stack intsruction tests
@@ -79,32 +74,14 @@
         
         
         cpu->emulateCycles(0);
+        cpu->Flags.D = 0;
         cpu->Registers.dump();
-         cpu->Flags.dump();
-        cpu->emulateCycles(0);
-        cpu->Registers.dump();
-         cpu->Flags.dump();
-        cpu->emulateCycles(0);
-        cpu->Registers.dump();
-         cpu->Flags.dump();
-        cpu->emulateCycles(0);
-        cpu->Registers.dump();
-         cpu->Flags.dump();
+        cpu->Flags.dump();
+
         cpu->emulateCycles(0);
         cpu->Registers.dump();
         cpu->Flags.dump();
-        cpu->emulateCycles(0);
-        cpu->Registers.dump();
-        cpu->Flags.dump();
-        cpu->emulateCycles(0);
-        cpu->Registers.dump();
-        cpu->Flags.dump();
-        cpu->emulateCycles(0);
-        cpu->Registers.dump();
-        cpu->Flags.dump();
-        cpu->emulateCycles(0);
-        cpu->Registers.dump();
-        cpu->Flags.dump();
+
 		
         // Tests
         

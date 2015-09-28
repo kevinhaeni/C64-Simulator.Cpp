@@ -51,13 +51,36 @@ void CPU::Flags::checkC_LSB(byte value){
 void CPU::Flags::checkC_MSB(byte value){
     C = (value & 0x80) != 0;
 }
+
+
+byte CPU::Flags::getFlagsAsByte(){
+    byte flagsAsByte = 0;
+    bool flags[8] = {C,Z,I,D,B,V,false,N};
+    
+    for (int i=0; i < 8; ++i){
+        if(flags[i]){
+             flagsAsByte |= 1 << i;
+        }
+    }
+    return flagsAsByte;
+}
+
+void CPU::Flags::setFlagsFromByte(byte flags){
+    this->N = flags & 0x80;
+    this->V = flags & 0x40;
+    this->B = flags & 0x10;
+    this->D = flags & 0x08;
+    this->I = flags & 0x04;
+    this->Z = flags & 0x02;
+    this->C = flags & 0x01;
+}
+
 /*
     Fetch PC
 */
 byte CPU::fetchPCByte(){
     return this->c64->readMemory(Registers.PC++);
-}
-word CPU::fetchPCWord(){
+}word CPU::fetchPCWord(){
 	byte lowByte = fetchPCByte();
 	byte highByte = fetchPCByte();
     return ((highByte << 8)| lowByte);
@@ -73,7 +96,6 @@ void CPU::Registers::reset(){
 	this->SP = 0xFF; // 0x01FF --> 0x0100
 	this->PC = 0x0000;
 }
-
 
 /*
 	Print all Registers
@@ -830,13 +852,15 @@ void CPU::loadInstructionSet(){
 	}));
 
 	// 08: PHP
+    // Tested
 	addInstruction(new Instruction(0x08, "PHP", 3, [this]() {
-		// Not implemented
+        push(Flags.getFlagsAsByte());
 	}));
 
 	// 28: PLP
+    // Tested
 	addInstruction(new Instruction(0x28, "PLP", 4, [this]() {
-		// Not implemented
+        Flags.setFlagsFromByte(pop());
 	}));
 
 	/* ALU Instructions */
