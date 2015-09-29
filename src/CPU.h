@@ -45,6 +45,7 @@ private:
 	word Indirect();
 	word IndirectX();
 	word IndirectY();
+	word Branch();
 
 	void loadRegister(byte* reg, byte value);
 	void loadRegister(byte* reg, word addr);					// Load register with memory data

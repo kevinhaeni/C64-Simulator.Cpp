@@ -118,7 +118,7 @@ int CPU::emulateCycles(int cyclesToExecute){
 
 	// get OP-Code from program counter
 	byte opcode = fetchPCByte();
-
+	
 	// decode instruction
 	Instruction* inst = this->decodeInstruction(opcode);
 	if (inst != nullptr){
@@ -212,20 +212,22 @@ word CPU::Immediate()
 
 word CPU::Absolute()
 {
-	const word absoluteAddress = fetchPCWord();
+	byte lo = fetchPCByte();
+	byte hi = fetchPCByte();
+	word absoluteAddress = Utils::makeWord(lo, hi);
 	return absoluteAddress;
 
 }
 
 word CPU::AbsoluteX()
 {
-	const word absoluteAddress = fetchPCWord() + Registers.X;
+	const word absoluteAddress = Absolute() + Registers.X;
 	return absoluteAddress;
 }
 
 word CPU::AbsoluteY()
 {
-	const word absoluteAddress = fetchPCWord() + Registers.Y;
+	const word absoluteAddress = Absolute() + Registers.Y;
 	return absoluteAddress;
 }
 
@@ -274,6 +276,13 @@ word CPU::IndirectY()
 	word effAddress = Utils::makeWord(c64->readMemory(zpAddress), c64->readMemory(zpAddress + 1)); // TODO: little / big endian????
 	effAddress = effAddress + Registers.Y;
 	return effAddress;
+}
+
+word CPU::Branch()
+{	
+	int offset = c64->readMemory(Immediate());
+	word branchTarget = Registers.PC + offset;
+	return branchTarget;
 }
 
 
@@ -586,12 +595,28 @@ void CPU::loadInstructionSet(){
 		c64->writeMemory(ZeroPage(), Registers.A);
 	}));
 	// 95: STA ZeroPageX
-	addInstruction(new Instruction(0x85, "STA_zpx", 3, [this]() {
+	addInstruction(new Instruction(0x95, "STA_zpx", 4, [this]() {
 		c64->writeMemory(ZeroPageX(), Registers.A);
 	}));
 	// 8D: STA Absolute
-	addInstruction(new Instruction(0x85, "STA_abs", 3, [this]() {
+	addInstruction(new Instruction(0x8D, "STA_abs", 4, [this]() {
 		c64->writeMemory(Absolute(), Registers.A);
+	}));
+	// 9D: STA AbsoluteX
+	addInstruction(new Instruction(0x9D, "STA_absx", 5, [this]() {
+		c64->writeMemory(AbsoluteX(), Registers.A);
+	}));
+	// 99: STA AbsoluteY
+	addInstruction(new Instruction(0x99, "STA_absy", 5, [this]() {
+		c64->writeMemory(AbsoluteY(), Registers.A);
+	}));
+	// 81: STA IndirectX
+	addInstruction(new Instruction(0x81, "STA_idx", 6, [this]() {
+		c64->writeMemory(IndirectX(), Registers.A);
+	}));
+	// 91: STA IndirectY
+	addInstruction(new Instruction(0x91, "STA_idy", 6, [this]() {
+		c64->writeMemory(IndirectY(), Registers.A);
 	}));
     
     /*
@@ -600,52 +625,86 @@ void CPU::loadInstructionSet(){
      */
     
     // 86: STX ZeroPage
-    addInstruction(new Instruction(0x86, "STX_zp", 2, [this]() {
+    addInstruction(new Instruction(0x86, "STX_zp", 3, [this]() {
         c64->writeMemory(ZeroPage(), Registers.X);
     }));
     // 96: STX ZeroPageY
-    addInstruction(new Instruction(0x96, "STX_zpx", 2, [this]() {
+    addInstruction(new Instruction(0x96, "STX_zpx", 4, [this]() {
         c64->writeMemory(ZeroPageY(), Registers.X);
     }));
     // 8E: STX Absolute
-    addInstruction(new Instruction(0x8E, "STX_abs", 3, [this]() {
+    addInstruction(new Instruction(0x8E, "STX_abs", 4, [this]() {
         c64->writeMemory(Absolute(), Registers.X);
     }));
     
+	/*
+	STY GROUP
+	Store Register Y value to Memory
+	*/
+
+	// 84: STY ZeroPage
+	addInstruction(new Instruction(0x84, "STY_zp", 3, [this]() {
+		c64->writeMemory(ZeroPage(), Registers.Y);
+	}));
+	// 94: STY ZeroPageY
+	addInstruction(new Instruction(0x94, "STY_zpx", 4, [this]() {
+		c64->writeMemory(ZeroPageY(), Registers.Y);
+	}));
+	// 8C: STY Absolute
+	addInstruction(new Instruction(0x8C, "STY_abs", 4, [this]() {
+		c64->writeMemory(Absolute(), Registers.Y);
+	}));
     
     /* TXX Group */
     // Tested: OK
     
     // AA: TAX
     addInstruction(new Instruction(0xAA, "TAX", 2, [this]() {
-        loadRegister(&Registers.A, Registers.Y);
+        loadRegister(&Registers.X, Registers.A);
     }));
 	
     // A8: TAY
     addInstruction(new Instruction(0xA8, "TAY", 2, [this]() {
-        loadRegister(&Registers.A, Registers.Y);
+        loadRegister(&Registers.Y, Registers.A);
     }));
     
     // BA: TSX
     addInstruction(new Instruction(0xBA, "TSX", 2, [this]() {
-        loadRegister(&Registers.SP, Registers.X);
+		loadRegister(&Registers.X, Registers.SP);
     }));
     
     // 8A: TXA
     addInstruction(new Instruction(0x8A, "TXA", 2, [this]() {
-        loadRegister(&Registers.X, Registers.A);
+        loadRegister(&Registers.A, Registers.X);
     }));
 
     // 9A: TXS
     addInstruction(new Instruction(0x9A, "TXS", 2, [this]() {
-        loadRegister(&Registers.X, Registers.SP);
+		loadRegister(&Registers.SP, Registers.X);		
     }));
     
     // 98: TYA
     addInstruction(new Instruction(0x98, "TYA", 2, [this]() {
-        loadRegister(&Registers.Y, Registers.A);
+        loadRegister(&Registers.A, Registers.Y);
     }));  
     
+	// E8: INX
+	addInstruction(new Instruction(0xE8, "INX", 2, [this]() {
+		loadRegister(&Registers.X, ++Registers.X);
+	}));
+	// C8: INY
+	addInstruction(new Instruction(0xC8, "INY", 2, [this]() {
+		loadRegister(&Registers.Y, ++Registers.Y);
+	}));
+	// CA: DEX
+	addInstruction(new Instruction(0xCA, "DEX", 2, [this]() {
+		loadRegister(&Registers.X, --Registers.X);
+	}));
+	// 88: DEY
+	addInstruction(new Instruction(0x88, "DEY", 2, [this]() {
+		loadRegister(&Registers.Y, --Registers.Y);
+	}));
+
     /**** AND ***/
     // Todo, variable cycles
     // Tested: OK
@@ -681,12 +740,12 @@ void CPU::loadInstructionSet(){
     }));
     
     // 21: AND
-    addInstruction(new Instruction(0x21, "And_inx", 6, [this]() {
+    addInstruction(new Instruction(0x21, "And_idx", 6, [this]() {
         andRegA(IndirectX());
     }));
     
     // 31: AND
-    addInstruction(new Instruction(0x31, "And_iny", 5, [this]() {
+    addInstruction(new Instruction(0x31, "And_idy", 5, [this]() {
         andRegA(IndirectY());
     }));
     
@@ -725,12 +784,12 @@ void CPU::loadInstructionSet(){
     }));
     
     // 01: ORA
-    addInstruction(new Instruction(0x01, "ORA_inx", 6, [this]() {
+    addInstruction(new Instruction(0x01, "ORA_idx", 6, [this]() {
         oraRegA(IndirectX());
     }));
     
     // 11: ORA
-    addInstruction(new Instruction(0x11, "ORA_iny", 5, [this]() {
+    addInstruction(new Instruction(0x11, "ORA_idy", 5, [this]() {
         oraRegA(IndirectY());
     }));
     
@@ -753,9 +812,7 @@ void CPU::loadInstructionSet(){
         eorRegA(ZeroPageX());
     }));
     
-    /*
-     4D: Absolute
-     */
+	// 4D: EOR
     addInstruction(new Instruction(0x4D, "EOR_abs", 4, [this]() {
         eorRegA(Absolute());
     }));
@@ -771,12 +828,12 @@ void CPU::loadInstructionSet(){
     }));
     
 	// 41: EOR
-    addInstruction(new Instruction(0x41, "EOR_inx", 6, [this]() {
+    addInstruction(new Instruction(0x41, "EOR_idx", 6, [this]() {
         eorRegA(IndirectX());
     }));
     
 	// 51: EOR
-    addInstruction(new Instruction(0x51, "EOR_iny", 5, [this]() {
+    addInstruction(new Instruction(0x51, "EOR_idy", 5, [this]() {
         eorRegA(IndirectY());
     }));
 
@@ -965,7 +1022,7 @@ void CPU::loadInstructionSet(){
 	// 10: BPL (Branch on Plus)
 	addInstruction(new Instruction(0x10, "BPL", 2, [this]() {
 		if (!Flags.N)
-			Registers.PC = Absolute();		
+			Registers.PC = Branch();
 		else
 			Registers.PC++;
 	}));
@@ -973,7 +1030,7 @@ void CPU::loadInstructionSet(){
 	// 30: BMI (Branch on Minus)
 	addInstruction(new Instruction(0x30, "BMI", 2, [this]() {
 		if (Flags.N) 
-			Registers.PC = Absolute();
+			Registers.PC = Branch();
 		else
 			Registers.PC++;	
 	}));
@@ -981,7 +1038,7 @@ void CPU::loadInstructionSet(){
 	// 50: BVC
 	addInstruction(new Instruction(0x50, "BVC", 2, [this]() {
 		if (!Flags.V)
-			Registers.PC = Absolute();
+			Registers.PC = Branch();
 		else
 			Registers.PC++;
 	}));
@@ -989,7 +1046,7 @@ void CPU::loadInstructionSet(){
 	// 70: BVS
 	addInstruction(new Instruction(0x70, "BVS", 2, [this]() {
 		if (Flags.V)
-			Registers.PC = Absolute();
+			Registers.PC = Branch();
 		else
 			Registers.PC++;
 	}));
@@ -997,7 +1054,7 @@ void CPU::loadInstructionSet(){
 	// 90: BCC
 	addInstruction(new Instruction(0x90, "BCC", 2, [this]() {
 		if (!Flags.C)
-			Registers.PC = Absolute();
+			Registers.PC = Branch();
 		else
 			Registers.PC++;
 	}));
@@ -1005,15 +1062,17 @@ void CPU::loadInstructionSet(){
 	// B0: BCS
 	addInstruction(new Instruction(0xB0, "BCS", 2, [this]() {
 		if (Flags.C)
-			Registers.PC = Absolute();
+			Registers.PC = Branch();
 		else
 			Registers.PC++;
 	}));
 
 	// D0: BNE
-	addInstruction(new Instruction(0xD0, "BNE", 2, [this]() {
-		if (!Flags.Z)
-			Registers.PC = Absolute();
+	addInstruction(new Instruction(0xD0, "BNE", 2, [this]() {		
+		if (!Flags.Z){
+			Registers.PC = Branch();
+		}
+			
 		else
 			Registers.PC++;
 	}));
@@ -1021,7 +1080,7 @@ void CPU::loadInstructionSet(){
 	// F0: BEQ
 	addInstruction(new Instruction(0xF0, "BEQ", 2, [this]() {
 		if (Flags.C)
-			Registers.PC = Absolute();
+			Registers.PC = Branch();
 		else
 			Registers.PC++;
 	}));
@@ -1201,10 +1260,11 @@ void CPU::loadInstructionSet(){
 
 	// 20: JSR (Jump Subroutine) // UNTESTED
 	addInstruction(new Instruction(0x20, "JSR_abs", 2, [this]() {
-		word currentPC = Registers.PC;
+		word jumpAddress = Absolute();
+		word currentPC = Registers.PC-1;
 		push((uint8_t)(currentPC >> 8));
 		push((uint8_t)currentPC);
-		Registers.PC = fetchPCWord();
+		Registers.PC = jumpAddress;
 	}));
 
 	/* Rotate Instructions */
@@ -1267,17 +1327,17 @@ void CPU::loadInstructionSet(){
 		// Not implemented
 	}));
 
-	// 40: RTI (Return from Interrupt)
+	// 40: RTI
 	addInstruction(new Instruction(0x40, "RTI", 6, [this]() {
 		// Not implemented
 	}));
 
-	// 60: RTI (Return from Subroutine) // UNTESTED
+	// 60: RTS (Return from Subroutine) // UNTESTED
 	addInstruction(new Instruction(0x60, "RTS", 6, [this]() {
 		word newPC;
 		newPC = pop();
 		newPC |= (word)pop() << 8;
-		newPC++;
+		newPC = newPC++;
 		Registers.PC = newPC;
 	}));
 
