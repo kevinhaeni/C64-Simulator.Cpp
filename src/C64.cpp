@@ -65,6 +65,7 @@
         this->writeMemory(0xFFFF, 0x10);
         this->writeMemory(0x1000, 0x2A);
         this->writeMemory(0x1001, 0x00);
+        this->writeMemory(0x1022, 0x40);
         
         
         // Stack intsruction tests
@@ -79,7 +80,12 @@
         cpu->emulateCycles(0);
         cpu->Registers.dump();
         cpu->Flags.dump();
-		
+
+        cpu->emulateCycles(0);
+        cpu->Registers.dump();
+        cpu->Flags.dump();
+
+        
         // Tests
         
         /*

@@ -1343,12 +1343,16 @@ void CPU::loadInstructionSet(){
 
 	// EA: NOP
 	addInstruction(new Instruction(0xEA, "NOP", 2, [this]() {
-		// Not implemented
+		// No OPeration
+        // do nothing for 2 cycles
 	}));
 
 	// 40: RTI
 	addInstruction(new Instruction(0x40, "RTI", 6, [this]() {
-		// Not implemented
+        Flags.setFlagsFromByte(pop());
+        byte PCL = pop();
+        byte PCH = pop();
+        Registers.PC = PCH << 8 | PCL;
 	}));
 
 	// 60: RTS (Return from Subroutine) // UNTESTED
