@@ -80,10 +80,14 @@ void CPU::Flags::setFlagsFromByte(byte flags){
 */
 byte CPU::fetchPCByte(){
     return this->c64->readMemory(Registers.PC++);
-}word CPU::fetchPCWord(){
-	byte lowByte = fetchPCByte();
-	byte highByte = fetchPCByte();
-    return ((highByte << 8)| lowByte);
+}
+
+byte CPU::Registers::fetchPCL(){
+    return this->PC;
+}
+
+byte CPU::Registers::fetchPCH(){
+    return this->PC >> 8;
 }
 
 /*
@@ -476,6 +480,20 @@ void CPU::bit(word address){
 		Flags.V = false;
 	}
 	Flags.checkNZ(value);
+}
+
+void CPU::cpuBreak(){
+    // padding byte is ignored
+    Registers.PC++;
+    // push PC
+    push(Registers.fetchPCH());
+    push(Registers.fetchPCL());
+    //  set Break Flag to true, push Status Flags
+    push(Flags.getFlagsAsByte()|0x10);
+    // set new PC
+    byte PCL = c64->readMemory(0xFFFE);
+    byte PCH = c64->readMemory(0xFFFF);
+    Registers.PC = (PCH << 8) | PCL;
 }
 
 /*
@@ -911,7 +929,8 @@ void CPU::loadInstructionSet(){
 	// 08: PHP
     // Tested
 	addInstruction(new Instruction(0x08, "PHP", 3, [this]() {
-        push(Flags.getFlagsAsByte());
+        // set B flag as true
+        push(Flags.getFlagsAsByte()| 0x10);
 	}));
 
 	// 28: PLP
@@ -1089,7 +1108,7 @@ void CPU::loadInstructionSet(){
 
 	// 00: BRK (Break)
 	addInstruction(new Instruction(0x00, "BRK", 7, [this]() {
-		// Not implemented
+        cpuBreak();
 	}));
 
 	/* Compare Instructions */

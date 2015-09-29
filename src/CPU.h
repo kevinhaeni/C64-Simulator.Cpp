@@ -29,9 +29,7 @@ private:
 	Instruction* decodeInstruction(uint8_t opcode);					// Lookup the instruction in the hashmap
 
 	// PC helpers
-	byte fetchPCByte();
-	word fetchPCWord();
-
+    byte fetchPCByte();
     
     
 	/* Return the target address of the particular address mode */
@@ -79,6 +77,7 @@ private:
 	void compare(byte *reg, word address);
 	void bit(word address);
     
+    void cpuBreak();
    
 
 public:
@@ -126,6 +125,8 @@ public:
 		void reset();
 		void dump();
         
+        byte fetchPCL();
+        byte fetchPCH();
        
 	} Registers;
 
