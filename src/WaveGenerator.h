@@ -1,10 +1,11 @@
-#include "SDL/SDL.h"
-#include "SDL/SDL_audio.h"
+#include "SDL.h"
+#include "SDL_audio.h"
 #include <stdio.h>
 #include <math.h>
+#include <queue>
 
-#define AMPLITUDE 28000			// the frequency we want
-#define FREQUENCY 44100			// the frequency we want
+#define AMPLITUDE 1000
+#define FREQUENCY 44100
 
 struct SoundObject
 {
@@ -28,7 +29,6 @@ private:
 public:
 	WaveGenerator();
 	~WaveGenerator();
-	void init();
 	void playSound(double freq, int duration);
 	void generateSamples(Sint16 *stream, int length);
 	void wait();
