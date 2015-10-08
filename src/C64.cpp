@@ -116,3 +116,11 @@
          */
 	}
 
+
+	CPU* C64::getCPU(){
+		return this->cpu;
+	}
+	
+	Memory* C64::getMemory(){
+		return this->mem;
+	}

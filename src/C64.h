@@ -16,13 +16,15 @@ class CPU;				// forward declaration
 class C64
 {
 	private:
-
+		Memory *mem;
 		CPU *cpu;
 		SID *sid;
 
-	public:
-		Memory *mem;
+	public:		
 		C64();
+		CPU* getCPU();
+		Memory* getMemory();
+
 
 		// Memory mapping (IMPORTANT: only use these functions for memory access!!)
 		void writeMemory(uint16_t address, uint8_t data);

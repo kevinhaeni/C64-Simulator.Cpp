@@ -2,6 +2,7 @@
 #include <thread>
 #include <iostream>
 #include "Utils.h"
+#include "CPU.h"
 
 int thread_exit = 0;
 
@@ -13,16 +14,10 @@ int threadFunc(void *pointer){
 }
 
 MemoryGrid::MemoryGrid(C64* c64)
-	: theC64(c64), zoom(1)
+	: theC64(c64), cellsPerLine(256)
 {
-	numOfElements = MEMSIZE;					// get the number of memory cells
-	lineSize = std::sqrt(numOfElements);		// squareroot to get the number of rows and columns
-
-	int data = 10;
 	SDL_Thread *refresh_thread = SDL_CreateThread(threadFunc, NULL, this);
 }
-
-
 
 
 MemoryGrid::~MemoryGrid(){
@@ -37,21 +32,15 @@ void MemoryGrid::init()
 {
 	SDL_Init(SDL_INIT_VIDEO);              // Initialize SDL2
 	TTF_Init();
-	font = TTF_OpenFont("OpenSans.ttf", 48); //this opens a font style and sets a size
-
-	int window_width, window_height = 0;
-
-	window_width = (lineSize * (RECT_WIDTH + RECT_SPACING)) + 2 * BORDER_WIDTH;
-	window_height = (lineSize * (RECT_WIDTH + RECT_SPACING)) + 2 * BORDER_WIDTH;
-
+	font = TTF_OpenFont("OpenSans.ttf", 22); //this opens a font style and sets a size
 
 	// Create an application window with the following settings:
 	window = SDL_CreateWindow(
-		"An SDL2 window",                  // window title
+		"C64 Memory Window",               // window title
 		SDL_WINDOWPOS_UNDEFINED,           // initial x position
 		SDL_WINDOWPOS_UNDEFINED,           // initial y position
-		window_width,                      // width, in pixels
-		window_height,                     // height, in pixels
+		WINDOW_WIDTH,                      // width, in pixels
+		WINDOW_HEIGHT,                     // height, in pixels
 		SDL_WINDOW_OPENGL                  // flags - see below
 		);
 
@@ -67,28 +56,23 @@ void MemoryGrid::init()
 }
 
 void MemoryGrid::handleZoom(int x, int y, int change){
-	if (zoom == 1 && change <= -1){
+	if (cellsPerLine == 256 && change >= 1){
 		// cannot zoom further out
 	}
 	else if(change == 0){
 		// nothing to do
 	}
+	else if (change == 4 && change <= -1 ){
+		// nothing to do
+	}
 	else{
 		zoomPivot.x = x;
 		zoomPivot.y = y;
-		zoom += change;
+		if (change >= 1)
+			cellsPerLine *= 2;
+		else
+			cellsPerLine /= 2;
 	}
-}
-
-SDL_Texture* MemoryGrid::createText(std::string text, SDL_Renderer* renderer){
-	TTF_Font* Sans = TTF_OpenFont("Sans.ttf", 24); //this opens a font style and sets a size
-
-	SDL_Color White = { 255, 255, 255 };  // this is the color in rgb format, maxing out all would give you the color white, and it will be your text's color
-	SDL_Surface* surfaceMessage = TTF_RenderText_Solid(Sans, "put your text here", White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
-
-	SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage); //now you can convert it into a texture
-	
-	return Message;
 }
 
 void MemoryGrid::drawGrid()
@@ -110,13 +94,13 @@ void MemoryGrid::drawGrid()
 					// left click (zoom in)
 					int xcoord = event.button.x;
 					int ycoord = event.button.y;
-					handleZoom(xcoord, ycoord, +10);
+					handleZoom(xcoord, ycoord, -1);
 				}
 				else if (event.button.button == 3){
 					// right click (zoom out)
 					int xcoord = event.button.x;
 					int ycoord = event.button.y;
-					handleZoom(xcoord, ycoord, -10);
+					handleZoom(xcoord, ycoord, +1);
 				}
 				else{
 					// unhandled button
@@ -149,64 +133,44 @@ void MemoryGrid::drawGrid()
 		// Clear winow
 		SDL_RenderClear(renderer);
 
-		int xpos = BORDER_WIDTH + RECT_SPACING;						// set the margin/spacing between each square
+		int xpos = 0;
 
-		for (uint16_t i = 0; i < (uint16_t)MEMSIZE; i++){
-			// Creat a rect for each memory cell			
-			SDL_Rect r;
+		for (int i = 0; i <cellsPerLine; i++){
 
-			if (zoom == 1){
-				// No zoom, we show all cells
+			for (int j = 0; j < cellsPerLine; j++){
+				// Create a rect for each memory cell			
+				SDL_Rect r;
+				r.w = WINDOW_WIDTH / cellsPerLine;
+				r.h = WINDOW_HEIGHT / cellsPerLine;
+				r.y = i * r.h + 1*i;
+				r.x = j * r.w + 1 * j;
 
-				//r.x = 5 + (RECT_WIDTH*i) + i*5;
-				if (i % lineSize == 0){
-					xpos = BORDER_WIDTH + RECT_SPACING;
+				uint16_t cellAddress = (i << 8) | j;
+
+				// Set render color to white ( rect will be rendered in this color )			
+				if (cellAddress == theC64->getCPU()->Registers.PC){
+					SDL_SetRenderDrawColor(renderer, 255, 155, 155, 255);
+				}
+				else if (theC64->readMemory(cellAddress) != 0){
+
+					SDL_SetRenderDrawColor(renderer, 155, 155, 255, 255);
 				}
 				else{
-					xpos += RECT_WIDTH + RECT_SPACING;
+					SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 				}
-				r.x = xpos;
-				r.y = BORDER_WIDTH + RECT_SPACING + (i / lineSize)*RECT_WIDTH + (i / lineSize) * RECT_SPACING;
-				r.w = RECT_WIDTH;
-				r.h = RECT_WIDTH;
-			}
-			else{
-				// With zoom
-				//r.x = 5 + (RECT_WIDTH*i) + i*5;
-				if (i % lineSize == 0){
-					xpos = BORDER_WIDTH + RECT_SPACING;
+				SDL_RenderFillRect(renderer, &r);
+
+				// Render rect			
+				if (cellsPerLine <= 64){
+
+					SDL_Color White = { 255, 255, 255 };  // this is the color in rgb format, maxing out all would give you the color white, and it will be your text's color
+					SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::hexify(cellAddress).c_str(), White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+
+					SDL_Texture* text = SDL_CreateTextureFromSurface(renderer, surfaceMessage); //now you can convert it into a texture
+
+					SDL_RenderCopy(renderer, text, NULL, &r);
 				}
-				else{
-					xpos += RECT_WIDTH*zoom + RECT_SPACING;
-				}
-				r.x = xpos;
-				r.y = BORDER_WIDTH + RECT_SPACING + (i / lineSize)*RECT_WIDTH*zoom + (i / lineSize) * RECT_SPACING;
-				r.w = RECT_WIDTH*zoom;
-				r.h = RECT_WIDTH*zoom;
-			}			
-
-			
-			// Set render color to white ( rect will be rendered in this color )			
-			if (theC64->readMemory(i) != 0){
-
-				SDL_SetRenderDrawColor(renderer, 155, 155, 255, 255);
-			}
-			else{
-				SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-			}
-			SDL_RenderFillRect(renderer, &r);
-
-			// Render rect			
-			if (zoom >= 10 && i <= 1000){				
-
-				SDL_Color White = { 255, 255, 255 };  // this is the color in rgb format, maxing out all would give you the color white, and it will be your text's color
-				SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::hexify(i).c_str(), White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
-
-				SDL_Texture* text = SDL_CreateTextureFromSurface(renderer, surfaceMessage); //now you can convert it into a texture
-
-				SDL_RenderCopy(renderer, text, NULL, &r);
-			}
-			
+			}				
 		
 		}
 
