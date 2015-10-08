@@ -11,6 +11,8 @@
 
 	uint8_t C64::readMemory(uint16_t address) {
 		// if address shows to SID's address space --> redirect the read/write to the SID chip
+		return mem->read_byte(address);
+		
 		if (address >= SID_ADDRESS_SPACE && address < SID_ADDRESS_SPACE + SID_ADDRESS_SPACE_SIZE)
 			return sid->read_byte(address);
 		else
@@ -20,6 +22,9 @@
 
 	void C64::writeMemory(uint16_t address, uint8_t data){
 		// if address shows to SID's address space --> redirect the read/write to the SID chip
+		mem->write_byte(address, data);
+		return;
+
 		if (address >= SID_ADDRESS_SPACE && address < SID_ADDRESS_SPACE + SID_ADDRESS_SPACE_SIZE)
 			sid->write_byte(address, data);
 		else

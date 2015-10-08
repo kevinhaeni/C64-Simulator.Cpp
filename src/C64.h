@@ -5,7 +5,7 @@
 #include "SID.h"
 
 // Type definitions, constants etc.
-
+const int MEMSIZE = 65535;
 
 //  Define the SIDs address space for memory redirect
 #define SID_ADDRESS_SPACE 0x0DFF
@@ -16,11 +16,12 @@ class CPU;				// forward declaration
 class C64
 {
 	private:
-		Memory *mem;
+
 		CPU *cpu;
 		SID *sid;
 
 	public:
+		Memory *mem;
 		C64();
 
 		// Memory mapping (IMPORTANT: only use these functions for memory access!!)

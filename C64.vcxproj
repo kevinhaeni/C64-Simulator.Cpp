@@ -49,7 +49,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\SDL2-2.0.3\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -73,6 +73,7 @@
     <ClInclude Include="src\Flag.h" />
     <ClInclude Include="src\Instruction.h" />
     <ClInclude Include="src\Memory.h" />
+    <ClInclude Include="src\MemoryGrid.h" />
     <ClInclude Include="src\SID.h" />
     <ClInclude Include="src\Utils.h" />
     <ClInclude Include="src\WaveGenerator.h" />
@@ -84,6 +85,7 @@
     <ClCompile Include="src\Flag.cpp" />
     <ClCompile Include="src\Instruction.cpp" />
     <ClCompile Include="src\Memory.cpp" />
+    <ClCompile Include="src\MemoryGrid.cpp" />
     <ClCompile Include="src\SID.cpp" />
     <ClCompile Include="src\Utils.cpp" />
     <ClCompile Include="src\WaveGenerator.cpp" />
