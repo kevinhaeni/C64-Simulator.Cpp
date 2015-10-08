@@ -57,21 +57,22 @@ void MemoryGrid::init()
 
 void MemoryGrid::handleZoom(int x, int y, int change){
 	if (cellsPerLine == 256 && change >= 1){
-		// cannot zoom further out
+		// max zoom reached
 	}
 	else if(change == 0){
 		// nothing to do
 	}
-	else if (change == 4 && change <= -1 ){
-		// nothing to do
+	else if (cellsPerLine == 1 && change <= -1){
+		// max zoom reached
 	}
 	else{
-		zoomPivot.x = x;
-		zoomPivot.y = y;
+		zoomOffset.x = x / rectWidth;		// previous rectWidth
+		zoomOffset.y = y / rectHeight;		// previous rectHeight
+
 		if (change >= 1)
-			cellsPerLine *= 2;
+			cellsPerLine *= 4;
 		else
-			cellsPerLine /= 2;
+			cellsPerLine /= 4;
 	}
 }
 
@@ -115,7 +116,7 @@ void MemoryGrid::drawGrid()
 				return;
 				break;
 			}
-			default: /* unbeachteter Event */
+			default: /* unhandled event */
 				break;
 			}
 		}
@@ -133,19 +134,17 @@ void MemoryGrid::drawGrid()
 		// Clear winow
 		SDL_RenderClear(renderer);
 
-		int xpos = 0;
+		for (int y = 0; y <cellsPerLine; y++){
 
-		for (int i = 0; i <cellsPerLine; i++){
-
-			for (int j = 0; j < cellsPerLine; j++){
+			for (int x = 0; x < cellsPerLine; x++){
 				// Create a rect for each memory cell			
 				SDL_Rect r;
-				r.w = WINDOW_WIDTH / cellsPerLine;
-				r.h = WINDOW_HEIGHT / cellsPerLine;
-				r.y = i * r.h + 1*i;
-				r.x = j * r.w + 1 * j;
+				rectWidth = r.w = (WINDOW_WIDTH / cellsPerLine);
+				rectHeight = r.h = (WINDOW_HEIGHT / cellsPerLine);
+				r.y = y * (r.h + 1);
+				r.x = x * (r.w + 1);
 
-				uint16_t cellAddress = (i << 8) | j;
+				uint16_t cellAddress = ((y + this->zoomOffset.y) << 8) | (x + this->zoomOffset.x);
 
 				// Set render color to white ( rect will be rendered in this color )			
 				if (cellAddress == theC64->getCPU()->Registers.PC){

@@ -21,12 +21,13 @@ private:
 
 	int cellsPerLine;
 	
-	int rectWidth = 2;
+	int rectWidth = 0;
+	int rectHeight = 0;
 
-	struct ZoomPivot{
+	struct ZoomOffset{
 		int x;
 		int y;
-	} zoomPivot;
+	} zoomOffset;
 
 
 public:
