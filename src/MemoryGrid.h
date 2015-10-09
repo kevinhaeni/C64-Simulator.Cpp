@@ -9,9 +9,9 @@
 #include <stack>
 
 
-const int REFRESH_INTERVAL = 600;				// mseconds
+const int REFRESH_INTERVAL = 200;				// mseconds
 const int WINDOW_WIDTH = 1000;
-const int WINDOW_HEIGHT = 600;
+const int WINDOW_HEIGHT = 700;
 
 class MemoryGrid
 {
@@ -22,8 +22,8 @@ private:
 
 	int cellsPerLine;
 	
-	int rectWidth = 0;
-	int rectHeight = 0;
+	int rectWidth = 1;
+	int rectHeight = 1;
 
 	int quadrant = 0;
 
@@ -34,14 +34,17 @@ private:
 	} zoomOffset;
 
 	std::stack<ZoomOffset> offsetStack;
+	
 
 
 public:
 	MemoryGrid(C64* theC64);
 	~MemoryGrid();
 	void init();
+	void mainLoop();
 	void drawGrid();
 	void handleZoom(int x, int y, int change);
+	uint16_t getCellAtCoordinates(int x, int y);
 };
 
 

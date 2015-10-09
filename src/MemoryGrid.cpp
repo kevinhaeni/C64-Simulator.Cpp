@@ -30,7 +30,7 @@ void MemoryGrid::init()
 	// Init SDL & SDL_ttf
 	SDL_Init(SDL_INIT_VIDEO);
 	TTF_Init();
-	font = TTF_OpenFont("OpenSans.ttf", 22);	//this opens a font style and sets a size
+	font = TTF_OpenFont("OpenSans.ttf", 72);	//this opens a font style and sets a size
 
 	// Create an application window with the following settings:
 	window = SDL_CreateWindow(
@@ -49,7 +49,7 @@ void MemoryGrid::init()
 		return;
 	}
 	//SDL_CreateRenderer(window, 0, SDL_RENDERER_ACCELERATED);
-	drawGrid();
+	mainLoop();
 	return;
 }
 
@@ -126,16 +126,22 @@ void MemoryGrid::handleZoom(int x, int y, int change){
 	}
 }
 
-void MemoryGrid::drawGrid()
+void MemoryGrid::mainLoop()
 {
 	while (thread_exit == 0){
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
 			switch (event.type)
-			{ 
+			{
 			case SDL_KEYDOWN:
 			{
 				int y = 0;
+				break;
+			}
+			case SDL_MOUSEMOTION:
+			{
+				SDL_SetWindowTitle(window, Utils::hexify(getCellAtCoordinates(event.motion.x, event.motion.y)).c_str());
+				//SDL_UpdateTexture()
 				break;
 			}
 			case SDL_MOUSEBUTTONDOWN:
@@ -173,70 +179,86 @@ void MemoryGrid::drawGrid()
 			}
 		}
 
-		// handle your event here
-		// Setup renderer
-		SDL_Renderer *renderer = SDL_GetRenderer(window);
-		if (renderer == nullptr)
-			renderer = SDL_CreateRenderer(window, 0, SDL_RENDERER_ACCELERATED);
-
-		// Set background color
-		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-
-		// Clear winow
-		SDL_RenderClear(renderer);
-
-		// spanning up grid
-		for (int y = 0; y < cellsPerLine; y++){
-
-			for (int x = 0; x < cellsPerLine; x++){
-				// Create a rect for each memory cell			
-				SDL_Rect r;
-				rectWidth	= r.w	= (WINDOW_WIDTH / cellsPerLine);
-				rectHeight	= r.h	= (WINDOW_HEIGHT / cellsPerLine);
-				r.y			= y * (r.h + 1);		// width + 1 pixel spacing
-				r.x			= x * (r.w + 1);		// height + 1 pixel spacing
-
-				// calculate memory address of the cell
-				uint16_t cellAddress = ((y + this->zoomOffset.y) << 8) | (x + this->zoomOffset.x);
-
-				// Set colors (Blue = has data, white = no data, red = current PC)		
-				if (cellAddress == theC64->getCPU()->Registers.PC){
-					SDL_SetRenderDrawColor(renderer, 255, 155, 155, 255);
-				}
-				else if (theC64->readMemory(cellAddress) != 0){
-
-					SDL_SetRenderDrawColor(renderer, 155, 155, 255, 255);
-				}
-				else{
-					SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-				}
-				SDL_RenderFillRect(renderer, &r);
-
-				// Render fonts (only if zoomed in because of performance and unreadable texts)			
-				if (cellsPerLine <= 64){
-
-					SDL_Color White = { 255, 255, 255 }; 
-					SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::hexify(cellAddress).c_str(), White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
-
-					SDL_Texture* text = SDL_CreateTextureFromSurface(renderer, surfaceMessage); // convert it into a texture
-
-					SDL_RenderCopy(renderer, text, NULL, &r);
-
-					// free texture memory
-					SDL_FreeSurface(surfaceMessage);
-					SDL_DestroyTexture(text);					
-					
-				}
-				
-			}				
-		
-		}
-
-		SDL_RenderPresent(renderer);
-	
-		SDL_Delay(REFRESH_INTERVAL);
+		drawGrid();
 	}
 
 
 	return;
+}
+
+void MemoryGrid::drawGrid()
+{
+	SDL_Renderer *renderer = SDL_GetRenderer(window);
+	if (renderer == nullptr)
+		renderer = SDL_CreateRenderer(window, 0, SDL_RENDERER_ACCELERATED);
+
+	// Set background color
+	SDL_SetRenderDrawColor(renderer, 88, 88, 88, 255);
+
+	// Clear winow
+	SDL_RenderClear(renderer);
+
+	// spanning up grid
+	for (int y = 0; y < cellsPerLine; y++){
+
+		for (int x = 0; x < cellsPerLine; x++){
+			// Create a rect for each memory cell			
+			SDL_Rect r;
+			rectWidth	= r.w	= (WINDOW_WIDTH / cellsPerLine);
+			rectHeight	= r.h	= (WINDOW_HEIGHT / cellsPerLine);
+			r.y			= y * (r.h + 1);		// height + 1 pixel spacing
+			r.x			= x * (r.w + 1);		// width + 1 pixel spacing
+			rectWidth++;
+			rectHeight++;
+
+			// calculate memory address of the cell
+			uint16_t cellAddress = ((y + this->zoomOffset.y) << 8) | (x + this->zoomOffset.x);
+			uint8_t cellValue = theC64->readMemory(cellAddress);
+
+			// Set colors (Blue = has data, white = no data, red = current PC)		
+			if (cellAddress == theC64->getCPU()->Registers.PC){
+				SDL_SetRenderDrawColor(renderer, 255, 155, 155, 255);
+			}
+			else if (cellValue != 0){
+
+				//SDL_SetRenderDrawColor(renderer, 155, 155, 255, 255);
+				SDL_SetRenderDrawColor(renderer, 22, 22, 22, 255);
+			}
+			else{
+				SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+			}
+			SDL_RenderFillRect(renderer, &r);
+
+			// Render fonts (only if zoomed in because of performance and unreadable texts)			
+			if (cellsPerLine <= 64){
+
+				SDL_Color White = { 222, 222, 222 }; 
+				//SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::hexify(cellAddress).c_str(), White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+				SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::stringify(cellValue).c_str(), White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+
+				SDL_Texture* text = SDL_CreateTextureFromSurface(renderer, surfaceMessage); // convert it into a texture
+
+				SDL_RenderCopy(renderer, text, NULL, &r);
+
+				// free texture memory
+				SDL_FreeSurface(surfaceMessage);
+				SDL_DestroyTexture(text);					
+					
+			}
+				
+		}				
+		
+	}
+
+	SDL_RenderPresent(renderer);
+	
+	SDL_Delay(REFRESH_INTERVAL);
+
+	return;
+}
+
+uint16_t MemoryGrid::getCellAtCoordinates(int x, int y){
+	uint8_t lowByte = zoomOffset.x + (x / rectWidth);
+	uint8_t highByte = zoomOffset.y + (y / rectHeight);
+	return Utils::makeWord(lowByte, highByte);
 }
