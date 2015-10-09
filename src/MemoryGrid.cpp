@@ -16,23 +16,21 @@ int threadFunc(void *pointer){
 MemoryGrid::MemoryGrid(C64* c64)
 	: theC64(c64), cellsPerLine(256)
 {
+	// spawn thread
 	SDL_Thread *refresh_thread = SDL_CreateThread(threadFunc, NULL, this);
 }
 
 
 MemoryGrid::~MemoryGrid(){
-	// Close and destroy the window
-	SDL_DestroyWindow(window);
 
-	// Clean up
-	SDL_Quit();
 }
 
 void MemoryGrid::init()
 {
-	SDL_Init(SDL_INIT_VIDEO);              // Initialize SDL2
+	// Init SDL & SDL_ttf
+	SDL_Init(SDL_INIT_VIDEO);
 	TTF_Init();
-	font = TTF_OpenFont("OpenSans.ttf", 22); //this opens a font style and sets a size
+	font = TTF_OpenFont("OpenSans.ttf", 22);	//this opens a font style and sets a size
 
 	// Create an application window with the following settings:
 	window = SDL_CreateWindow(
@@ -56,6 +54,7 @@ void MemoryGrid::init()
 }
 
 void MemoryGrid::handleZoom(int x, int y, int change){
+	// Zoom-levels: 1, 4, 16, 64, 256
 	if (cellsPerLine == 256 && change >= 1){
 		// max zoom reached
 	}
@@ -81,9 +80,8 @@ void MemoryGrid::drawGrid()
 	while (thread_exit == 0){
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
-			// handle your event here
 			switch (event.type)
-			{  /* Schau nach, welcher Event eingetroffen ist */
+			{ 
 			case SDL_KEYDOWN:
 			{
 				int y = 0;
@@ -106,13 +104,16 @@ void MemoryGrid::drawGrid()
 				else{
 					// unhandled button
 				}
-				/* Mausevent */
 				break;
 			}
 			case SDL_QUIT:
 			{
 				thread_exit = 1;
-				this->~MemoryGrid();
+				// Close and destroy the window
+				SDL_DestroyWindow(window);
+
+				// Clean up
+				SDL_Quit();
 				return;
 				break;
 			}
@@ -127,26 +128,27 @@ void MemoryGrid::drawGrid()
 		if (renderer == nullptr)
 			renderer = SDL_CreateRenderer(window, 0, SDL_RENDERER_ACCELERATED);
 
-
-		// Set render color to black ( background will be rendered in this color )
+		// Set background color
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
 		// Clear winow
 		SDL_RenderClear(renderer);
 
-		for (int y = 0; y <cellsPerLine; y++){
+		// spanning up grid
+		for (int y = 0; y < cellsPerLine; y++){
 
 			for (int x = 0; x < cellsPerLine; x++){
 				// Create a rect for each memory cell			
 				SDL_Rect r;
-				rectWidth = r.w = (WINDOW_WIDTH / cellsPerLine);
-				rectHeight = r.h = (WINDOW_HEIGHT / cellsPerLine);
-				r.y = y * (r.h + 1);
-				r.x = x * (r.w + 1);
+				rectWidth	= r.w	= (WINDOW_WIDTH / cellsPerLine);
+				rectHeight	= r.h	= (WINDOW_HEIGHT / cellsPerLine);
+				r.y			= y * (r.h + 1);		// width + 1 pixel spacing
+				r.x			= x * (r.w + 1);		// height + 1 pixel spacing
 
+				// calculate memory address of the cell
 				uint16_t cellAddress = ((y + this->zoomOffset.y) << 8) | (x + this->zoomOffset.x);
 
-				// Set render color to white ( rect will be rendered in this color )			
+				// Set colors (Blue = has data, white = no data, red = current PC)		
 				if (cellAddress == theC64->getCPU()->Registers.PC){
 					SDL_SetRenderDrawColor(renderer, 255, 155, 155, 255);
 				}
@@ -159,17 +161,17 @@ void MemoryGrid::drawGrid()
 				}
 				SDL_RenderFillRect(renderer, &r);
 
-				// Render rect			
+				// Render fonts (only if zoomed in because of performance and unreadable texts)			
 				if (cellsPerLine <= 64){
 
-					SDL_Color White = { 255, 255, 255 };  // this is the color in rgb format, maxing out all would give you the color white, and it will be your text's color
+					SDL_Color White = { 255, 255, 255 }; 
 					SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::hexify(cellAddress).c_str(), White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
 
-					SDL_Texture* text = SDL_CreateTextureFromSurface(renderer, surfaceMessage); //now you can convert it into a texture
+					SDL_Texture* text = SDL_CreateTextureFromSurface(renderer, surfaceMessage); // convert it into a texture
 
 					SDL_RenderCopy(renderer, text, NULL, &r);
 
-					// free texture
+					// free texture memory
 					SDL_FreeSurface(surfaceMessage);
 					SDL_DestroyTexture(text);					
 					
@@ -179,7 +181,8 @@ void MemoryGrid::drawGrid()
 		
 		}
 
-		SDL_RenderPresent(renderer);		
+		SDL_RenderPresent(renderer);
+	
 		SDL_Delay(REFRESH_INTERVAL);
 	}
 
