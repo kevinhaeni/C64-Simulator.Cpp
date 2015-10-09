@@ -6,6 +6,7 @@
 #include <cmath>
 #include <string>
 #include "SDL_ttf.h"
+#include <stack>
 
 
 const int REFRESH_INTERVAL = 600;				// mseconds
@@ -24,10 +25,15 @@ private:
 	int rectWidth = 0;
 	int rectHeight = 0;
 
+	int quadrant = 0;
+
 	struct ZoomOffset{
-		int x;
-		int y;
+		int x = 0;
+		int y = 0;
+
 	} zoomOffset;
+
+	std::stack<ZoomOffset> offsetStack;
 
 
 public:

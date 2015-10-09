@@ -4,6 +4,8 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <algorithm>
+#include <locale>
 
 
 namespace Utils
@@ -16,7 +18,14 @@ namespace Utils
 
 		// Cast to int is necessary to print '\0' for uint8_t (which is a typedef of char)!
 		stream << "0x" << std::setfill('0') << std::setw(sizeof(T) * 2)	<< std::hex << (int)val;
-		return stream.str();
+		std::string str = stream.str();
+		std::locale settings;
+		std::string converted;
+
+		for (short i = 0; i < str.size(); ++i)
+			converted += (std::toupper(str[i], settings));
+
+		return converted;
 	}
 
 	// combine two bytes to make a word

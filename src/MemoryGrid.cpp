@@ -64,14 +64,65 @@ void MemoryGrid::handleZoom(int x, int y, int change){
 	else if (cellsPerLine == 1 && change <= -1){
 		// max zoom reached
 	}
-	else{
-		zoomOffset.x = x / rectWidth;		// previous rectWidth
-		zoomOffset.y = y / rectHeight;		// previous rectHeight
+	else{	
+
+		int prevCellsPerLine = cellsPerLine;
 
 		if (change >= 1)
-			cellsPerLine *= 4;
+			cellsPerLine *= 2;
 		else
-			cellsPerLine /= 4;
+			cellsPerLine /= 2;
+
+		if (cellsPerLine == 256){
+			quadrant = 0;
+		}else{
+			quadrant = 1;
+			if (x > WINDOW_WIDTH / 2)
+				quadrant += 1;
+			if (y > WINDOW_HEIGHT / 2)
+				quadrant += 2;
+		}
+		
+		//zoomOffset.x = x / rectWidth;		// previous rectWidth
+		//zoomOffset.y = y / rectHeight;		// previous rectHeight		
+		if (change < 0){
+
+			offsetStack.push(zoomOffset);
+
+			switch (quadrant){
+			case 1:
+			{
+				//zoomOffset.x = zoomOffset.x;
+				break;
+			}
+			case 2:
+			{
+				zoomOffset.x = zoomOffset.x - change * (prevCellsPerLine / 2);
+				break;
+			}
+			case 3:
+			{
+				zoomOffset.y = zoomOffset.y - change * (prevCellsPerLine / 2);
+				break;
+			}
+			case 4:
+			{
+				zoomOffset.x = zoomOffset.x - change * (prevCellsPerLine / 2);
+				zoomOffset.y = zoomOffset.y - change * (prevCellsPerLine / 2);
+				break;
+			}
+			default:
+				zoomOffset.x = 0;
+				zoomOffset.y = 0;
+			};			
+		}
+		else{
+			ZoomOffset prevOffsetValues = offsetStack.top();
+			offsetStack.pop();
+			zoomOffset.x = prevOffsetValues.x;
+			zoomOffset.y = prevOffsetValues.y;
+		}
+			
 	}
 }
 
