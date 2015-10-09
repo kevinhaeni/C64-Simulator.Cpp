@@ -168,7 +168,13 @@ void MemoryGrid::drawGrid()
 					SDL_Texture* text = SDL_CreateTextureFromSurface(renderer, surfaceMessage); //now you can convert it into a texture
 
 					SDL_RenderCopy(renderer, text, NULL, &r);
+
+					// free texture
+					SDL_FreeSurface(surfaceMessage);
+					SDL_DestroyTexture(text);					
+					
 				}
+				
 			}				
 		
 		}
