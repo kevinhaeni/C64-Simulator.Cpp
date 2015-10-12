@@ -23,6 +23,10 @@ private:
 	SDL_Window *window;          // Declare a pointer
 	TTF_Font* font;
 
+	int thread_exit = 0;
+	bool pause_thread = false;
+
+
 	int loopCounter = 0;
 
 	int tilesPerLine;	
@@ -40,6 +44,8 @@ private:
 		int y = 0;	
 	} hoverTile;
 
+	int inputMode = 0;
+	uint8_t inputBuffer;
 	std::stack<ZoomOffset> offsetStack;			// "camera" history
 
 public:
@@ -52,6 +58,7 @@ public:
 	uint16_t getCellAtCoordinates(int x, int y);
 	int getCellXAtCoordinates(int x, int y);
 	int getCellYAtCoordinates(int x, int y);
+	void exit();
 
 };
 

@@ -6,8 +6,6 @@
 #include <sstream>
 #include <string>
 
-int thread_exit = 0;
-
 int threadFunc(void *pointer){
 	MemoryGrid* grid = (MemoryGrid*)pointer;
 	grid->init();
@@ -32,7 +30,22 @@ void MemoryGrid::init()
 	// Init SDL & SDL_ttf
 	SDL_Init(SDL_INIT_VIDEO);
 	TTF_Init();
-	font = TTF_OpenFont("sans.ttf", 72);	//this opens a font style and sets a size
+	
+	// Settings
+	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
+
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2);
+
+	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+
+
+	font = TTF_OpenFont("sans.ttf", 158);	//this opens a font style and sets a size
 
 	// Create an application window with the following settings:
 	window = SDL_CreateWindow(
@@ -117,13 +130,34 @@ void MemoryGrid::mainLoop()
 		while (SDL_PollEvent(&event)) {
 			switch (event.type)
 			{
-			case SDL_KEYDOWN:
+			case SDL_KEYDOWN:			
 			{
-				int y = 0;
+				if (event.key.keysym.scancode == SDL_SCANCODE_SPACE){
+					pause_thread = !pause_thread;
+				}
+				else if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){
+					exit();
+				}
+				else if (event.key.keysym.scancode == SDL_SCANCODE_RETURN){
+					if (pause_thread){
+						// submit
+						theC64->writeMemory(getCellAtCoordinates(hoverTile.x, hoverTile.y), inputBuffer);
+						drawGrid();
+					}
+				}
+				else{
+					if (pause_thread){
+						inputBuffer = event.key.keysym.sym;
+
+					}
+				}				
+
 				break;
 			}
 			case SDL_MOUSEMOTION:
 			{
+				if (pause_thread)
+					break;
 				// create hover rect
 				std::string title = WINDOW_TITLE + " " + Utils::hexify(getCellAtCoordinates(event.motion.x, event.motion.y));
 				SDL_SetWindowTitle(window, title.c_str());
@@ -139,8 +173,9 @@ void MemoryGrid::mainLoop()
 			}
 			case SDL_MOUSEBUTTONDOWN:
 			{
+
 				if (event.button.button == 1){
-					// left click (zoom in)
+					// left click (zoom in))
 					int xcoord = event.button.x;
 					int ycoord = event.button.y;
 					handleZoom(xcoord, ycoord, -1);
@@ -158,12 +193,7 @@ void MemoryGrid::mainLoop()
 			}
 			case SDL_QUIT:
 			{
-				thread_exit = 1;
-				// Close and destroy the window
-				SDL_DestroyWindow(window);
-
-				// Clean up
-				SDL_Quit();
+				exit();
 				return;
 				break;
 			}
@@ -173,7 +203,7 @@ void MemoryGrid::mainLoop()
 		}
 
 		loopCounter += 2;
-		if (loopCounter % REPAINTINTERVAL == 0)
+		if (loopCounter % REPAINTINTERVAL == 0 && !pause_thread)
 			drawGrid();
 	}
 
@@ -402,4 +432,12 @@ int MemoryGrid::getCellYAtCoordinates(int x, int y){
 	uint8_t highByte = zoomOffset.y + (y / rectHeight);
 
 	return highByte;
+}
+
+void MemoryGrid::exit(){
+	thread_exit = 1;
+	// Close and destroy the window
+	SDL_DestroyWindow(window);
+	// Clean up
+	SDL_Quit();
 }
