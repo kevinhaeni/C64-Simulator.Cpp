@@ -30,7 +30,7 @@ void MemoryGrid::init()
 	// Init SDL & SDL_ttf
 	SDL_Init(SDL_INIT_VIDEO);
 	TTF_Init();
-	font = TTF_OpenFont("OpenSans.ttf", 72);	//this opens a font style and sets a size
+	font = TTF_OpenFont("sans.ttf", 72);	//this opens a font style and sets a size
 
 	// Create an application window with the following settings:
 	window = SDL_CreateWindow(
@@ -57,73 +57,53 @@ void MemoryGrid::handleZoom(int x, int y, int change){
 	// Zoom-levels: 1, 4, 16, 64, 256
 	if (cellsPerLine == 256 && change >= 1){
 		// max zoom reached
+		return;
 	}
 	else if(change == 0){
 		// nothing to do
+		return;
 	}
 	else if (cellsPerLine == 1 && change <= -1){
 		// max zoom reached
+		return;
 	}
-	else{	
-
-		int prevCellsPerLine = cellsPerLine;
-
-		if (change >= 1)
-			cellsPerLine *= 2;
-		else
-			cellsPerLine /= 2;
-
-		if (cellsPerLine == 256){
-			quadrant = 0;
-		}else{
-			quadrant = 1;
-			if (x > WINDOW_WIDTH / 2)
-				quadrant += 1;
-			if (y > WINDOW_HEIGHT / 2)
-				quadrant += 2;
-		}
 		
-		//zoomOffset.x = x / rectWidth;		// previous rectWidth
-		//zoomOffset.y = y / rectHeight;		// previous rectHeight		
-		if (change < 0){
 
-			offsetStack.push(zoomOffset);
+	int prevCellsPerLine = cellsPerLine;
 
-			switch (quadrant){
-			case 1:
-			{
-				//zoomOffset.x = zoomOffset.x;
-				break;
-			}
-			case 2:
-			{
-				zoomOffset.x = zoomOffset.x - change * (prevCellsPerLine / 2);
-				break;
-			}
-			case 3:
-			{
-				zoomOffset.y = zoomOffset.y - change * (prevCellsPerLine / 2);
-				break;
-			}
-			case 4:
-			{
-				zoomOffset.x = zoomOffset.x - change * (prevCellsPerLine / 2);
-				zoomOffset.y = zoomOffset.y - change * (prevCellsPerLine / 2);
-				break;
-			}
-			default:
-				zoomOffset.x = 0;
-				zoomOffset.y = 0;
-			};			
+	if (change >= 1)
+		cellsPerLine *= 2;
+	else
+		cellsPerLine /= 2;
+
+		
+	//zoomOffset.x = x / rectWidth;		// previous rectWidth
+	//zoomOffset.y = y / rectHeight;		// previous rectHeight		
+	if (change < 0){
+
+		offsetStack.push(zoomOffset);
+
+		int distanceX = getCellXAtCoordinates(x, y) - zoomOffset.x;
+		if (distanceX % 2 != 0){
+			distanceX++;
 		}
-		else{
-			ZoomOffset prevOffsetValues = offsetStack.top();
-			offsetStack.pop();
-			zoomOffset.x = prevOffsetValues.x;
-			zoomOffset.y = prevOffsetValues.y;
+		int distanceY = getCellYAtCoordinates(x, y) - zoomOffset.y;
+
+		if (distanceY % 2 != 0){
+			distanceY++;
 		}
-			
+
+		zoomOffset.x += floor((float)distanceX / (float)2);
+		zoomOffset.y += floor((float)distanceY / (float)2);
 	}
+	else{
+		ZoomOffset prevOffsetValues = offsetStack.top();
+		offsetStack.pop();
+		zoomOffset.x = prevOffsetValues.x;
+		zoomOffset.y = prevOffsetValues.y;
+	}
+			
+
 }
 
 void MemoryGrid::mainLoop()
@@ -230,20 +210,70 @@ void MemoryGrid::drawGrid()
 			SDL_RenderFillRect(renderer, &r);
 
 			// Render fonts (only if zoomed in because of performance and unreadable texts)			
-			if (cellsPerLine <= 64){
+			switch (cellsPerLine){
+				case 256:
+				case 128:
+				case 64:	// Do not show any text
+					break;
+				case 32:	// Show address only
+				{					
 
-				SDL_Color White = { 222, 222, 222 }; 
-				//SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::hexify(cellAddress).c_str(), White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
-				SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::stringify(cellValue).c_str(), White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+					SDL_Color textColor;
+					if (cellValue != 0)			
+						textColor = { 222, 222, 222 };
+					else
+						textColor = { 44, 44, 44 };
+					SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::stringify(cellValue).c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+					SDL_Texture* text = SDL_CreateTextureFromSurface(renderer, surfaceMessage); // convert it into a texture
+					SDL_RenderCopy(renderer, text, NULL, &r);
+					SDL_FreeSurface(surfaceMessage);
+					SDL_DestroyTexture(text);
 
-				SDL_Texture* text = SDL_CreateTextureFromSurface(renderer, surfaceMessage); // convert it into a texture
+					break;
+				}
+				case 16 :
+				case 8:
+				case 4:
+				case 2:
+				case 1:		// Show address and data
+				{
+					SDL_Rect r1;
+					r1.w = rectWidth - 1;
+					r1.h = (rectHeight - 1) / 4;
+					r1.y = r.y;		// height + 1 pixel spacing
+					r1.x = r.x;		// width + 1 pixel spacing			
+					SDL_RenderCopy(renderer, NULL, &r1, &r);
 
-				SDL_RenderCopy(renderer, text, NULL, &r);
+					SDL_Rect r2;
+					r2.w = r1.w;
+					r2.h = r1.h*3;
+					r2.y = r1.y + r1.h;		// height + 1 pixel spacing
+					r2.x = r1.x;			// width + 1 pixel spacing			
+					SDL_RenderCopy(renderer, NULL, &r2, &r);
 
-				// free texture memory
-				SDL_FreeSurface(surfaceMessage);
-				SDL_DestroyTexture(text);					
-					
+					SDL_Color textColor;
+					if (cellValue != 0)
+						textColor = { 222, 222, 222 };
+					else
+						textColor = { 44, 44, 44 };
+
+					SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::hexify(cellAddress).c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+					SDL_Texture* addressText = SDL_CreateTextureFromSurface(renderer, surfaceMessage); // convert it into a texture
+					SDL_RenderCopy(renderer, addressText, NULL, &r1);
+					SDL_FreeSurface(surfaceMessage);
+					SDL_DestroyTexture(addressText);
+
+
+					//SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::hexify(cellAddress).c_str(), White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+					SDL_Surface* surfaceMessage2 = TTF_RenderText_Solid(font, Utils::stringify(cellValue).c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+					SDL_Texture* valueText = SDL_CreateTextureFromSurface(renderer, surfaceMessage2); // convert it into a texture
+					SDL_RenderCopy(renderer, valueText, NULL, &r2);
+					SDL_FreeSurface(surfaceMessage2);
+					SDL_DestroyTexture(valueText);
+
+					break;
+				}
+
 			}
 				
 		}				
@@ -261,4 +291,17 @@ uint16_t MemoryGrid::getCellAtCoordinates(int x, int y){
 	uint8_t lowByte = zoomOffset.x + (x / rectWidth);
 	uint8_t highByte = zoomOffset.y + (y / rectHeight);
 	return Utils::makeWord(lowByte, highByte);
+}
+
+int MemoryGrid::getCellXAtCoordinates(int x, int y){
+	uint8_t lowByte = zoomOffset.x + (x / rectWidth);
+
+	return lowByte;
+}
+
+
+int MemoryGrid::getCellYAtCoordinates(int x, int y){
+	uint8_t highByte = zoomOffset.y + (y / rectHeight);
+
+	return highByte;
 }

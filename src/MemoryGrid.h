@@ -9,7 +9,7 @@
 #include <stack>
 
 
-const int REFRESH_INTERVAL = 200;				// mseconds
+const int REFRESH_INTERVAL = 100;				// mseconds
 const int WINDOW_WIDTH = 1000;
 const int WINDOW_HEIGHT = 700;
 
@@ -45,6 +45,9 @@ public:
 	void drawGrid();
 	void handleZoom(int x, int y, int change);
 	uint16_t getCellAtCoordinates(int x, int y);
+	int getCellXAtCoordinates(int x, int y);
+	int getCellYAtCoordinates(int x, int y);
+
 };
 
 
