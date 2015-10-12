@@ -37,12 +37,12 @@ int main(int argc, char* argv[])
 	// put some data into memory
 
 	while (true){
+
 		for (uint16_t i = 0; i < MEMSIZE; i++){
-
+			//theC64.writeMemory(i, (uint8_t)rand());
 			theC64.writeMemory(i, (uint8_t)rand());
-
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
-		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 		
 	int a;
