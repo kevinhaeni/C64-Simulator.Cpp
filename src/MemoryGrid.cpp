@@ -3,6 +3,8 @@
 #include <iostream>
 #include "Utils.h"
 #include "CPU.h"
+#include <sstream>
+#include <string>
 
 int thread_exit = 0;
 
@@ -14,7 +16,7 @@ int threadFunc(void *pointer){
 }
 
 MemoryGrid::MemoryGrid(C64* c64)
-	: theC64(c64), cellsPerLine(256)
+	: theC64(c64), tilesPerLine(256)
 {
 	// spawn thread
 	SDL_Thread *refresh_thread = SDL_CreateThread(threadFunc, NULL, this);
@@ -34,7 +36,7 @@ void MemoryGrid::init()
 
 	// Create an application window with the following settings:
 	window = SDL_CreateWindow(
-		"C64 Memory Window",               // window title
+		WINDOW_TITLE.c_str(),  			   // window title
 		SDL_WINDOWPOS_UNDEFINED,           // initial x position
 		SDL_WINDOWPOS_UNDEFINED,           // initial y position
 		WINDOW_WIDTH,                      // width, in pixels
@@ -42,61 +44,63 @@ void MemoryGrid::init()
 		SDL_WINDOW_OPENGL                  // flags - see below
 		);
 
-	// Check that the window was successfully created
+	// Check if the window was successfully created
 	if (window == NULL) {
-		// In the case that the window could not be made...
+		// In case the window could not be created...
 		printf("Could not create window: %s\n", SDL_GetError());
 		return;
 	}
-	//SDL_CreateRenderer(window, 0, SDL_RENDERER_ACCELERATED);
-	mainLoop();
-	return;
+	else{
+		mainLoop();
+		return;
+	}	
 }
 
-void MemoryGrid::handleZoom(int x, int y, int change){
-	// Zoom-levels: 1, 4, 16, 64, 256
-	if (cellsPerLine == 256 && change >= 1){
-		// max zoom reached
+void MemoryGrid::handleZoom(int x, int y, int zoom){
+	// tilesPerLine indicates how many tiles are shown. It currently supports the zoom-levels 2^1 to 2^8:  256, 128, 64, 32, 16, 4, 2, 1
+	if (tilesPerLine == 256 && zoom >= 1){
+		// Zoom out of boundaries
 		return;
 	}
-	else if(change == 0){
-		// nothing to do
+	else if (zoom == 0){
+		// No change (initial zoom)
 		return;
 	}
-	else if (cellsPerLine == 1 && change <= -1){
-		// max zoom reached
+	else if (tilesPerLine == 1 && zoom <= -1){
+		// Zoom out of boundaries
 		return;
 	}
 		
+	// remember the old (=current) "camera" settings
+	int prevTilesPerLine = tilesPerLine;
 
-	int prevCellsPerLine = cellsPerLine;
-
-	if (change >= 1)
-		cellsPerLine *= 2;
+	// adjust new grid size
+	if (zoom >= 1)
+		tilesPerLine *= 2;
 	else
-		cellsPerLine /= 2;
+		tilesPerLine /= 2;
 
-		
-	//zoomOffset.x = x / rectWidth;		// previous rectWidth
-	//zoomOffset.y = y / rectHeight;		// previous rectHeight		
-	if (change < 0){
 
-		offsetStack.push(zoomOffset);
+	if (zoom < 0){
+		// If we are zooming in...
+		offsetStack.push(zoomOffset);			// remember history of camera settings
 
 		int distanceX = getCellXAtCoordinates(x, y) - zoomOffset.x;
-		if (distanceX % 2 != 0){
+		if (distanceX % 2 != 0){				// make sure distance is an even number
 			distanceX++;
 		}
 		int distanceY = getCellYAtCoordinates(x, y) - zoomOffset.y;
 
-		if (distanceY % 2 != 0){
+		if (distanceY % 2 != 0){				// make sure distance is an even number
 			distanceY++;
 		}
 
+		// calculate new offset
 		zoomOffset.x += floor((float)distanceX / (float)2);
 		zoomOffset.y += floor((float)distanceY / (float)2);
 	}
 	else{
+		// Zoom out: Restore camera history from stack
 		ZoomOffset prevOffsetValues = offsetStack.top();
 		offsetStack.pop();
 		zoomOffset.x = prevOffsetValues.x;
@@ -120,8 +124,17 @@ void MemoryGrid::mainLoop()
 			}
 			case SDL_MOUSEMOTION:
 			{
-				SDL_SetWindowTitle(window, Utils::hexify(getCellAtCoordinates(event.motion.x, event.motion.y)).c_str());
-				//SDL_UpdateTexture()
+				// create hover rect
+				std::string title = WINDOW_TITLE + " " + Utils::hexify(getCellAtCoordinates(event.motion.x, event.motion.y));
+				SDL_SetWindowTitle(window, title.c_str());
+
+				hoverTile.x = event.motion.x;
+				while (hoverTile.x % rectWidth != 0)
+					hoverTile.x--;
+				hoverTile.y = event.motion.y;
+				while (hoverTile.y % rectHeight != 0)
+					hoverTile.y--;
+
 				break;
 			}
 			case SDL_MOUSEBUTTONDOWN:
@@ -159,7 +172,9 @@ void MemoryGrid::mainLoop()
 			}
 		}
 
-		drawGrid();
+		loopCounter += 2;
+		if (loopCounter % REPAINTINTERVAL == 0)
+			drawGrid();
 	}
 
 
@@ -179,13 +194,13 @@ void MemoryGrid::drawGrid()
 	SDL_RenderClear(renderer);
 
 	// spanning up grid
-	for (int y = 0; y < cellsPerLine; y++){
+	for (int y = 0; y < tilesPerLine; y++){
 
-		for (int x = 0; x < cellsPerLine; x++){
+		for (int x = 0; x < tilesPerLine; x++){
 			// Create a rect for each memory cell			
 			SDL_Rect r;
-			rectWidth	= r.w	= (WINDOW_WIDTH / cellsPerLine);
-			rectHeight	= r.h	= (WINDOW_HEIGHT / cellsPerLine);
+			rectWidth	= r.w	= (WINDOW_WIDTH / tilesPerLine);
+			rectHeight	= r.h	= (WINDOW_HEIGHT / tilesPerLine);
 			r.y			= y * (r.h + 1);		// height + 1 pixel spacing
 			r.x			= x * (r.w + 1);		// width + 1 pixel spacing
 			rectWidth++;
@@ -210,7 +225,7 @@ void MemoryGrid::drawGrid()
 			SDL_RenderFillRect(renderer, &r);
 
 			// Render fonts (only if zoomed in because of performance and unreadable texts)			
-			switch (cellsPerLine){
+			switch (tilesPerLine){
 				case 256:
 				case 128:
 				case 64:	// Do not show any text
@@ -233,9 +248,6 @@ void MemoryGrid::drawGrid()
 				}
 				case 16 :
 				case 8:
-				case 4:
-				case 2:
-				case 1:		// Show address and data
 				{
 					SDL_Rect r1;
 					r1.w = rectWidth - 1;
@@ -246,7 +258,7 @@ void MemoryGrid::drawGrid()
 
 					SDL_Rect r2;
 					r2.w = r1.w;
-					r2.h = r1.h*3;
+					r2.h = r1.h * 3;
 					r2.y = r1.y + r1.h;		// height + 1 pixel spacing
 					r2.x = r1.x;			// width + 1 pixel spacing			
 					SDL_RenderCopy(renderer, NULL, &r2, &r);
@@ -270,15 +282,101 @@ void MemoryGrid::drawGrid()
 					SDL_RenderCopy(renderer, valueText, NULL, &r2);
 					SDL_FreeSurface(surfaceMessage2);
 					SDL_DestroyTexture(valueText);
+					break;
+
+				}
+				case 4:
+				case 2:
+				case 1:		// Show address and data
+				{
+					SDL_Rect r1;
+					r1.w = rectWidth - 1;
+					r1.h = (rectHeight - 1) / 4;
+					r1.y = r.y;		// height + 1 pixel spacing
+					r1.x = r.x;		// width + 1 pixel spacing			
+					SDL_RenderCopy(renderer, NULL, &r1, &r);
+
+					SDL_Rect r2;
+					r2.w = r1.w;
+					r2.h = r1.h*2;
+					r2.y = r1.y + r1.h;	
+					r2.x = r1.x;				
+					SDL_RenderCopy(renderer, NULL, &r2, &r);
+
+
+					SDL_Rect r3;
+					r3.w = (rectWidth - 1) / 3;
+					r3.h = r1.h;
+					r3.y = r1.y + r1.h + r2.h;	
+					r3.x = r.x;
+					SDL_RenderCopy(renderer, NULL, &r3, &r);
+
+					SDL_Rect r4;
+					r4.w = (rectWidth - 1) / 3;
+					r4.h = r1.h;
+					r4.y = r1.y + r1.h + r2.h;
+					r4.x = r.x + (((rectWidth - 1) / 3) * 2);
+					SDL_RenderCopy(renderer, NULL, &r4, &r);
+
+					SDL_Color textColor;
+					if (cellValue != 0)
+						textColor = { 222, 222, 222 };
+					else
+						textColor = { 44, 44, 44 };
+
+					SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::hexify(cellAddress).c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+					SDL_Texture* addressText = SDL_CreateTextureFromSurface(renderer, surfaceMessage); // convert it into a texture
+					SDL_RenderCopy(renderer, addressText, NULL, &r1);
+					SDL_FreeSurface(surfaceMessage);
+					SDL_DestroyTexture(addressText);
+
+
+					//SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::hexify(cellAddress).c_str(), White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+					SDL_Surface* surfaceMessage2 = TTF_RenderText_Solid(font, Utils::stringify(cellValue).c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+					SDL_Texture* valueText = SDL_CreateTextureFromSurface(renderer, surfaceMessage2); // convert it into a texture
+					SDL_RenderCopy(renderer, valueText, NULL, &r2);
+					SDL_FreeSurface(surfaceMessage2);
+					SDL_DestroyTexture(valueText);
+
+
+					std::string charRepresentation; 
+					std::ostringstream oss;			
+					oss << cellValue;
+					charRepresentation = oss.str();
+
+					SDL_Surface* surfaceMessage3 = TTF_RenderText_Solid(font, charRepresentation.c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+					SDL_Texture* charValueText = SDL_CreateTextureFromSurface(renderer, surfaceMessage3); // convert it into a texture
+					SDL_RenderCopy(renderer, charValueText, NULL, &r4);
+					SDL_FreeSurface(surfaceMessage3);
+					SDL_DestroyTexture(charValueText);
+
+					SDL_Surface* surfaceMessage4 = TTF_RenderText_Solid(font, std::to_string(cellValue).c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+					SDL_Texture* decValueText = SDL_CreateTextureFromSurface(renderer, surfaceMessage4); // convert it into a texture
+					SDL_RenderCopy(renderer, decValueText, NULL, &r3);
+					SDL_FreeSurface(surfaceMessage4);
+					SDL_DestroyTexture(decValueText);
 
 					break;
 				}
 
 			}
-				
-		}				
-		
+		}
 	}
+
+	// Draw Hover Tile
+
+	
+	// Set background color
+	SDL_SetRenderDrawColor(renderer, 255, 22, 22, 255);
+
+
+	SDL_Rect rHover;
+	rHover.w = rectWidth - 1;
+	rHover.h = rectHeight - 1;
+	rHover.x = hoverTile.x;
+	rHover.y = hoverTile.y;
+	SDL_RenderDrawRect(renderer, &rHover);
+
 
 	SDL_RenderPresent(renderer);
 	

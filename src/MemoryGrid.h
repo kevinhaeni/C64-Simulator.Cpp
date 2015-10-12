@@ -8,10 +8,13 @@
 #include "SDL_ttf.h"
 #include <stack>
 
+/* Constants */
+const int REFRESH_INTERVAL = 2;				// mseconds
+const int REPAINTINTERVAL = 200;			// mseconds
 
-const int REFRESH_INTERVAL = 100;				// mseconds
 const int WINDOW_WIDTH = 1000;
 const int WINDOW_HEIGHT = 700;
+const std::string WINDOW_TITLE = "C64 Memory Window";
 
 class MemoryGrid
 {
@@ -20,12 +23,11 @@ private:
 	SDL_Window *window;          // Declare a pointer
 	TTF_Font* font;
 
-	int cellsPerLine;
-	
+	int loopCounter = 0;
+
+	int tilesPerLine;	
 	int rectWidth = 1;
 	int rectHeight = 1;
-
-	int quadrant = 0;
 
 	struct ZoomOffset{
 		int x = 0;
@@ -33,9 +35,12 @@ private:
 
 	} zoomOffset;
 
-	std::stack<ZoomOffset> offsetStack;
-	
+	struct Tile{
+		int x = 0;
+		int y = 0;	
+	} hoverTile;
 
+	std::stack<ZoomOffset> offsetStack;			// "camera" history
 
 public:
 	MemoryGrid(C64* theC64);
