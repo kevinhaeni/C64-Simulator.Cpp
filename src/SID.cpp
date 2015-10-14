@@ -5,11 +5,31 @@ SID::SID()
 
 }
 
-uint8_t SID::read_byte(uint16_t adr){
-	return regs[adr];
+byte SID::read_byte(uint16_t adrLong){
+    byte adr = adrLong & 0xFF;
+    switch (adr) {
+        case 0x19:
+            // Pot X
+            break;
+        case 0x1A:
+            // Pot Y
+            break;
+        case 0x1B:
+            //return voice3.envelope.output();
+            break;
+        case 0x1C:
+            //return voice3.wave.output();
+            break;
+        default:
+            return 0x00;
+            break;
+    }
+    return 0x00;
 }
 
-void SID::write_byte(uint16_t adr, uint8_t value){
+void SID::write_byte(word adrLong, byte value){
+    
+    byte adr = adrLong & 0xFF;
     switch (adr) {
         case 0x00:
             voice1.wave.write_FREQ_LO(value);

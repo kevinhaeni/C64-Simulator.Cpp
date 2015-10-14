@@ -5,14 +5,16 @@
 #include "Voice.h"
 #include "Filter.h"
 
+
+typedef uint8_t byte;
+typedef uint16_t word;
+
 /*
 SID Class
 */
 class SID
 {
 private:
-	uint8_t regs[29];
-
     Voice voice1;
     Voice voice2;
     Voice voice3;
@@ -25,8 +27,8 @@ public:
 
 	SID();
 
-	uint8_t read_byte(uint16_t adr);
-	void write_byte(uint16_t adr, uint8_t data);
+	byte read_byte(word adr);
+	void write_byte(word adr, byte data);
 
     void updateRegisters();
 	void emulateCycles();
