@@ -30,29 +30,34 @@ struct SDLVoice{
 	uint8_t getSample(){
 
 		int time = (audioPosition * frequency) / 44100;
-
+        uint8_t rect_value = 0x00;
+        
+       // std::cout << audioPosition << " - ";
 		switch (waveForm){
 		case SINE:
 		{
 			float sineStep = 2 * M_PI * audioPosition * frequency / 44100;
-			return amp * std::sin(sineStep);
+			return amp * sin(sineStep);
 			break;
 		}			
 		case RECT:
-			return 0;		// not implemented yet
+            if(fmod((double)audioPosition, (double)frequency) >= 0.5 * frequency){
+                rect_value = 0xFF;
+            }
+            return amp * rect_value;
 			break;
 
 		case SAWTOOTH:
-			return 0;		// not implemented yet
+			return amp * fmod((double)audioPosition, (double)frequency);
 			break;
 
 		case TRIANGLE:
-			return 0;		// not implemented yet
+            return amp * abs(fmod((double)audioPosition, (double)frequency) - 0.5 * (double)frequency) ;
 			break;
 
 		default:
 			return 0;
-		}
+        }
 	}
 } voice;
 
@@ -98,10 +103,14 @@ void initSDL(){
 int main(int argc, char* argv[]){
 	initSDL();
 
-	voice.waveForm = SDLVoice::WaveForm::SINE;
-	voice.amp = 5;
+    voice.waveForm = SDLVoice::WaveForm::TRIANGLE;
+    voice.amp = 1;
 
-	voice.frequency = 500;	
+    voice.frequency = 440;
+    voice.playForNMicroSeconds(2000);
+    
+    
+	voice.frequency = 500;
 	voice.playForNMicroSeconds(300);
 	voice.frequency = 750;
 	voice.playForNMicroSeconds(300);
