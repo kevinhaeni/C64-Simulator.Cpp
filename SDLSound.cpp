@@ -3,10 +3,15 @@
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
+#include "Graph.h"
 
 SDL_AudioSpec desiredDeviceSpec;
 SDL_AudioSpec spec;
 SDL_AudioDeviceID dev;
+
+uint8_t graph[44100];
+int graphPointer = 0;
+Graph* g = new Graph(graph);;
 
 struct SDLVoice{
 	int frequency;				// the frequency of the voice
@@ -20,7 +25,8 @@ struct SDLVoice{
 		audioPosition = 0;					 // reset the counter
 		SDL_PauseAudioDevice(dev, 0);		 // play
 		SDL_Delay(n);						 // delay the program to prevent the voice to be overridden before it has been played to the end
-		SDL_PauseAudioDevice(dev, 1);		 // pause
+		SDL_PauseAudioDevice(dev, 1);		 // pause		
+
 	}
 
 	enum WaveForm{
@@ -37,7 +43,7 @@ struct SDLVoice{
 		case SINE:
 		{
 			float sineStep = 2 * M_PI * audioPosition * frequency / 44100;
-			return amp * sin(sineStep);
+			return amp * std::sin(sineStep) + 127;		// +127 because otherwise the negative values will be cut off
 			break;
 		}			
 		case RECT:
@@ -74,6 +80,12 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 		{
 			stream[i] = voice.getSample();
 			voice.audioPosition++;
+
+			
+			// Graph
+			if (graphPointer < 44099)
+				graph[graphPointer++] = stream[i];
+
 		}		
 
 
@@ -107,18 +119,10 @@ int main(int argc, char* argv[]){
     voice.amp = 1;
 
     voice.frequency = 440;
-    voice.playForNMicroSeconds(2000);
-    
-    
-	voice.frequency = 500;
-	voice.playForNMicroSeconds(300);
-	voice.frequency = 750;
-	voice.playForNMicroSeconds(300);
-	voice.frequency = 1000;
-	voice.playForNMicroSeconds(300);
-	voice.frequency = 300;
-	voice.playForNMicroSeconds(1000);
+    voice.playForNMicroSeconds(1000);
 
+	SDL_Delay(2222);
+			SDL_PauseAudioDevice(dev, 1);		 // pause
 	int i;
 	std::cin >> i;
 

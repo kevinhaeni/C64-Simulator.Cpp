@@ -65,4 +65,5 @@ byte Wave::output(){
         default:
             break;
     }
+	return 0;
 }

@@ -68,6 +68,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Graph.h" />
     <ClInclude Include="src\C64.h" />
     <ClInclude Include="src\CPU.h" />
     <ClInclude Include="src\Envelope.h" />
@@ -83,6 +84,7 @@
     <ClInclude Include="src\WaveGenerator.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Graph.cpp" />
     <ClCompile Include="SDLSound.cpp" />
     <ClCompile Include="src\C64.cpp" />
     <ClCompile Include="src\C64Sim.cpp" />
