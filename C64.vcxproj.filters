@@ -54,7 +54,7 @@
     <ClInclude Include="src\Voice.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="Graph.h">
+    <ClInclude Include="src\Graph.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>
@@ -101,10 +101,10 @@
     <ClCompile Include="src\Wave.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="SDLSound.cpp">
+    <ClCompile Include="src\Graph.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="Graph.cpp">
+    <ClCompile Include="src\SDLSound.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>
