@@ -11,7 +11,7 @@ const int REFRESH_INTERVAL = 2;				// mseconds
 const int REPAINTINTERVAL = 200;			// mseconds
 
 const int WINDOW_WIDTH = 1000;
-const int WINDOW_HEIGHT = 700;
+const int WINDOW_HEIGHT = 255;
 const std::string WINDOW_TITLE = "Wave Graph";
 
 class Graph

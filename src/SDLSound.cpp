@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
-//#include "Graph.h"
+#include "Graph.h"
 
 SDL_AudioSpec desiredDeviceSpec;
 SDL_AudioSpec spec;
@@ -118,14 +118,14 @@ void initSDL(){
 int main(int argc, char* argv[]){
 	initSDL();
 
+	Graph* g = new Graph(graph);
+
     voice.waveForm = SDLVoice::WaveForm::TRIANGLE;
-    voice.amp = 1;
+    voice.amp = 3;
 
     voice.frequency = 440;
     voice.playForNMicroSeconds(1000);
 
-	SDL_Delay(2222);
-			SDL_PauseAudioDevice(dev, 1);		 // pause
 	int i;
 	std::cin >> i;
 
