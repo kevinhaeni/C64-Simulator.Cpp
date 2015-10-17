@@ -1,26 +1,36 @@
 #Detect OS
 OS := $(shell uname)
 
-#OBJS specifies which files to compile as part of the project
-OBJS = src/C64Sim.cpp src/Utils.cpp src/C64.cpp src/CPU.cpp src/Flag.cpp src/Memory.cpp src/SID.cpp src/Instruction.cpp src/Voice.cpp src/WaveGenerator.cpp
-#CC specifies which compiler we're using
-CC = g++
+#CPP_FILES specifies which files to compile as part of the project
+CPP_FILES := $(wildcard src/*.cpp)
 
-#COMPILER_FLAGS specifies the additional compilation options we're using
-# -w suppresses all warnings
-COMPILER_FLAGS = -w
+#OBJ_FILES
+OBJ_FILES := $(addprefix obj/,$(notdir $(CPP_FILES:.cpp=.o)))
+
+#CC specifies which compiler we're using
+CC := g++
 
 #CC specifies which compiler version we're using
-CV = c++11
-
-#OBJ_NAME specifies the name of our exectuable
-OUTPUT = C64Sim
+CV := c++11
 
 ifeq ($(OS),Darwin)
 	# Define more Header File Paths
-	LIB = -framework SDL2 -I/Library/Frameworks/SDL2.framework/Versions/A/Headers  -I/Library/Frameworks/SDL2_ttf.framework/Versions/A/Headers
+	LIB := -framework SDL2 -I/Library/Frameworks/SDL2.framework/Versions/A/Headers  -I/Library/Frameworks/SDL2_ttf.framework/Versions/A/Headers
+
+	# Compiler Flags: specifies the additional compilation options we're using
+	# -w suppresses all warnings
+	CC_FLAGS := -w
+	LD_FLAGS :=
+else
+	# Define stuff for linux
+	LIB :=
+	CC_FLAGS := -I /usr/include/SDL2 -Wall -g -w
+	LD_FLAGS := -lSDL2 -lSDL2_ttf
+
 endif
 	
 
-all:
-	$(CC) -std=$(CV) $(OBJS) $(LIB)  $(COMPILER_FLAGS)  -o $(OUTPUT)
+C64Sim: $(OBJ_FILES)
+	g++ $(LD_FLAGS) -o $@ $^
+obj/%.o: src/%.cpp
+	$(CC) -std=$(CV) $(OBJS) $(LIB)  $(CC_FLAGS) -c -o $@ $<

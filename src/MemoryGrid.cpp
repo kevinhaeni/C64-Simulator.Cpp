@@ -54,7 +54,7 @@ void MemoryGrid::init()
 		SDL_WINDOWPOS_UNDEFINED,           // initial y position
 		WINDOW_WIDTH,                      // width, in pixels
 		WINDOW_HEIGHT,                     // height, in pixels
-		SDL_WINDOW_OPENGL                  // flags - see below
+		SDL_WINDOW_SHOWN                  // flags - see below
 		);
 
 	// Check if the window was successfully created
