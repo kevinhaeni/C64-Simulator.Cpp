@@ -3,7 +3,6 @@
 #include <cstdint>
 
 #include "Voice.h"
-#include "Filter.h"
 
 
 typedef uint8_t byte;
@@ -18,12 +17,26 @@ private:
     Voice voice1;
     Voice voice2;
     Voice voice3;
-    Filter filter;
+
     //ExternalFilter extfilter;
     //Potentiometer potx;
     //Potentiometer poty;
     
 public:
+    
+    /*
+     Filter Class
+     */
+    struct Filter
+    {
+    public:
+        Filter();
+        
+        void write_FC_LO(byte value);
+        void write_FC_HI(byte value);
+        void write_RES_FILT(byte value);
+        void write_MODE_VOL(byte value);
+    }Filter;
 
 	SID();
 

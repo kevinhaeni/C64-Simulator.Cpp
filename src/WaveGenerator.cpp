@@ -45,7 +45,7 @@ void WaveGenerator::generateSamples(Sint16 *stream, int length){
 		bo.samplesLeft -= samplesToDo - i;
 
 		while (i < samplesToDo) {
-			stream[i] = AMPLITUDE * std::sin(v * 2 * M_PI / FREQUENCY);
+			stream[i] = AMPLITUDE * sin(v * 2 * M_PI / FREQUENCY);
 			i++;
 			v += bo.freq;
 		}

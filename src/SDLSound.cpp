@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
-#include "Graph.h"
+//#include "Graph.h"
 
 SDL_AudioSpec desiredDeviceSpec;
 SDL_AudioSpec spec;
@@ -11,7 +11,7 @@ SDL_AudioDeviceID dev;
 
 uint8_t graph[44100];
 int graphPointer = 0;
-Graph* g = new Graph(graph);;
+//Graph* g = new Graph(graph);;
 
 struct SDLVoice{
 	int frequency;				// the frequency of the voice
@@ -33,38 +33,41 @@ struct SDLVoice{
 		SINE, RECT, SAWTOOTH, TRIANGLE
 	} waveForm;
 
-	uint8_t getSample(){
-
-		int time = (audioPosition * frequency) / 44100;
+    
+    uint8_t getSample(){
+        
+        int time = (audioPosition * frequency) / 44100;
+        double step = 44100.0 / (double)frequency;
+        
         uint8_t rect_value = 0x00;
         
-       // std::cout << audioPosition << " - ";
-		switch (waveForm){
-		case SINE:
-		{
-			float sineStep = 2 * M_PI * audioPosition * frequency / 44100;
-			return amp * std::sin(sineStep) + 127;		// +127 because otherwise the negative values will be cut off
-			break;
-		}			
-		case RECT:
-            if(fmod((double)audioPosition, (double)frequency) >= 0.5 * frequency){
-                rect_value = 0xFF;
+        //std::cout << step << " - ";
+        switch (waveForm){
+            case SINE:
+            {
+                float sineStep = 2 * M_PI * audioPosition * frequency / 44100;
+                return amp * sin(sineStep) + 127;		// +127 because otherwise the negative values will be cut off
+                break;
             }
-            return amp * rect_value;
-			break;
-
-		case SAWTOOTH:
-			return amp * fmod((double)audioPosition, (double)frequency);
-			break;
-
-		case TRIANGLE:
-            return amp * abs(fmod((double)audioPosition, (double)frequency) - 0.5 * (double)frequency) ;
-			break;
-
-		default:
-			return 0;
+            case RECT:
+                if(fmod((double)audioPosition, step) >= 0.5 * step){
+                    rect_value = 0xFF;
+                }
+                return amp * rect_value;
+                break;
+                
+            case SAWTOOTH:
+                return amp * fmod((double)audioPosition, step );
+                break;
+                
+            case TRIANGLE:
+                return amp * abs(fmod((double)audioPosition, step) - 0.5 * step) ;
+                break;
+                
+            default:
+                return 0;
         }
-	}
+    }
 } voice;
 
 

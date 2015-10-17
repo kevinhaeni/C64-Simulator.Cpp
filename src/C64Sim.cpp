@@ -6,6 +6,7 @@
 #include "WaveGenerator.h"
 #include "SDL.h"
 #include "MemoryGrid.h"
+
 #include <thread>
 
 #define DEBUG 0
@@ -32,7 +33,7 @@ int main(int argc, char* argv[])
 
 	// init a memory grid window
 	//std::thread t(&MemoryGrid::init, grid);
-	MemoryGrid *grid = new MemoryGrid(&theC64);
+	//MemoryGrid *grid = new MemoryGrid(&theC64);
 
 	// put some data into memory
 
