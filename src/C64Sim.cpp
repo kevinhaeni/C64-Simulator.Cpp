@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <iostream>
 #include "C64.h"
-#include "WaveGenerator.h"
 #include "SDL.h"
 #include "MemoryGrid.h"
 
@@ -12,16 +11,6 @@
 #define DEBUG 0
 
 C64 theC64;
-void soundTest() {
-	WaveGenerator* waveGenerator = new WaveGenerator();;
-
-	int duration = 1000;
-	double Hz = 600;
-	waveGenerator->playSound(Hz, duration);
-	waveGenerator->wait();
-}
-
-
 //
 //int main(int argc, char* argv[])
 //{

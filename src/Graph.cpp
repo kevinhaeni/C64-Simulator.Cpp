@@ -27,7 +27,7 @@ void Graph::init()
 	SDL_Init(SDL_INIT_VIDEO);
 
 	// Settings
-	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+	/*SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
@@ -38,7 +38,7 @@ void Graph::init()
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2);
 
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-
+*/
 	// Create an application window with the following settings:
 	window = SDL_CreateWindow(
 		WINDOW_TITLE.c_str(),  			   // window title
