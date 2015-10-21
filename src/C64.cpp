@@ -45,7 +45,7 @@
 		do{
 			// Check for interrupts...
 			// VIC.emulateCycles();
-			sid->emulateCycles();			
+			sid->emulateCycles(2);
 			previousCycles = cpu->emulateCycles(10 + previousCycles);
 			
 		} while (true);

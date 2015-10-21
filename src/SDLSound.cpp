@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
-#include "Graph.h"
+//#include "Graph.h"
 
 SDL_AudioSpec desiredDeviceSpec;
 SDL_AudioSpec spec;
@@ -17,6 +17,9 @@ struct SDLVoice{
 	int frequency;				// the frequency of the voice
 	int amp;					// the amplitude of the voice
 
+    double pwn = 0.5;            // Square wave width, 0 - 1.0
+    double maxWaveValue;  //
+    
 	int samplesLeft;			// number of samples to be played, eg: 1.2 seconds * 44100 samples per second
 	int audioPosition = 0;		// counter
 
@@ -37,11 +40,10 @@ struct SDLVoice{
     uint8_t getSample(){
         
         int time = (audioPosition * frequency) / 44100;
-        double step = 44100.0 / (double)frequency;
+        double stepsPerPeriod = 44100.0 / (double)frequency;
         
-        uint8_t rect_value = 0x00;
+        uint8_t rect_value = 0x02;
         
-        //std::cout << step << " - ";
         switch (waveForm){
             case SINE:
             {
@@ -50,18 +52,18 @@ struct SDLVoice{
                 break;
             }
             case RECT:
-                if(fmod((double)audioPosition, step) >= 0.5 * step){
-                    rect_value = 0xFF;
+                if(fmod((double)audioPosition, stepsPerPeriod) > pwn * stepsPerPeriod){
+                    rect_value = 0x00;
                 }
                 return amp * rect_value;
                 break;
                 
             case SAWTOOTH:
-                return amp * fmod((double)audioPosition, step );
+                return amp * fmod((maxWaveValue / stepsPerPeriod * (double)audioPosition),maxWaveValue);
                 break;
                 
             case TRIANGLE:
-                return amp * abs(fmod((double)audioPosition, step) - 0.5 * step) ;
+                return amp * fabs(fmod((2.0 * maxWaveValue / stepsPerPeriod) * (double)audioPosition, 2.0 * maxWaveValue) - maxWaveValue)  ;
                 break;
                 
             default:
@@ -86,8 +88,8 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 
 			
 			// Graph
-			if (graphPointer < 44099)
-				graph[graphPointer++] = stream[i];
+			//if (graphPointer < 44099)
+			//	graph[graphPointer++] = stream[i];
 
 		}		
 
@@ -118,13 +120,16 @@ void initSDL(){
 int main(int argc, char* argv[]){
 	initSDL();
 
-	Graph* g = new Graph(graph);
+	//Graph* g = new Graph(graph);
 
-    voice.waveForm = SDLVoice::WaveForm::TRIANGLE;
-    voice.amp = 3;
-
+    voice.waveForm = SDLVoice::WaveForm::RECT;
+    voice.amp = 100;
+    voice.pwn = 0.5;
+    
+    voice.maxWaveValue = 2;
+    
     voice.frequency = 440;
-    voice.playForNMicroSeconds(1000);
+    voice.playForNMicroSeconds(10000);
 
 	int i;
 	std::cin >> i;
