@@ -2,7 +2,7 @@
 OS := $(shell uname)
 
 #OBJS specifies which files to compile as part of the project
-OBJS = src/C64Sim.cpp src/Utils.cpp src/C64.cpp src/CPU.cpp src/Flag.cpp src/Memory.cpp src/SID.cpp src/Instruction.cpp src/Voice.cpp src/WaveGenerator.cpp
+OBJS = src/SDLSound.cpp src/Graph.cpp #src/C64Sim.cpp src/Utils.cpp src/C64.cpp src/CPU.cpp src/Flag.cpp src/#Memory.cpp src/SID.cpp src/Instruction.cpp src/Voice.cpp src/WaveGenerator.cpp
 #CC specifies which compiler we're using
 CC = g++
 
@@ -14,7 +14,7 @@ COMPILER_FLAGS = -w
 CV = c++11
 
 #OBJ_NAME specifies the name of our exectuable
-OUTPUT = C64Sim
+OUTPUT = SDLSound
 
 ifeq ($(OS),Darwin)
 	# Define more Header File Paths
