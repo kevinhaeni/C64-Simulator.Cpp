@@ -4,6 +4,17 @@
 #include <sstream>
 #include <string>
 
+
+int main(int argc, char* argv[]){
+
+	Graph* g = new Graph();
+
+	int i;
+	std::cin >> i;
+
+	return 0;
+}
+
 int graphThreadFunc(void *pointer){
 	Graph* grid = (Graph*)pointer;
 	grid->init();
@@ -11,12 +22,44 @@ int graphThreadFunc(void *pointer){
 	return 0;
 }
 
-Graph::Graph(uint8_t* buffer)
-	: tilesPerLine(256), buffer(buffer)
+
+
+// SDL calls this function whenever it wants its buffer to be filled with samples
+void SDLAudioCallback(void *data, Uint8 *buffer, int length){
+	uint8_t *stream = (uint8_t*)buffer;
+
+	Graph* graph = (Graph*)data;
+
+
+	for (int i = 0; i <= length; i++){
+
+
+		if (graph->voice.audioLength <= 0)
+			stream[i] = 0;
+		else
+		{
+			stream[i] = graph->voice.getSample();
+			graph->voice.audioPosition++;
+
+
+			// Graph
+			if (graph->graphPointer < 999)
+				graph->graphBuffer[graph->graphPointer++] = stream[i];
+
+		}
+
+
+	}
+}
+
+
+Graph::Graph()
 {
 	//memcpy(buffer, buffer, 44100);
 	// spawn thread
 	SDL_Thread *refresh_thread = SDL_CreateThread(graphThreadFunc, NULL, this);
+	//init();
+
 }
 
 
@@ -24,21 +67,26 @@ Graph::Graph(uint8_t* buffer)
 void Graph::init()
 {
 	// Init SDL & SDL_ttf
-	SDL_Init(SDL_INIT_VIDEO);
+	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
+	SDL_zero(desiredDeviceSpec);
 
-	// Settings
-	/*SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+	desiredDeviceSpec.freq = 44100;			// Sample Rate
+	desiredDeviceSpec.format = AUDIO_U8;	// Unsigned 8-Bit Samples
+	desiredDeviceSpec.channels = 1;			// Mono
+	desiredDeviceSpec.samples = 2048;		// The size of the Audio Buffer (in number of samples, eg: 2048 * 1 Byte (AUDIO_U8)
+	desiredDeviceSpec.callback = SDLAudioCallback;
+	desiredDeviceSpec.userdata = this;
 
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
 
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2);
+	dev = SDL_OpenAudioDevice(NULL, 0, &desiredDeviceSpec, &spec, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
+	if (dev == 0) {
+		printf("\nFailed to open audio: %s\n", SDL_GetError());
+	}
+	else {
+		SDL_PauseAudioDevice(dev, 1); /* pause! */
+		SDL_PauseAudio(1);
+	}
 
-	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-*/
 	// Create an application window with the following settings:
 	window = SDL_CreateWindow(
 		WINDOW_TITLE.c_str(),  			   // window title
@@ -56,121 +104,89 @@ void Graph::init()
 		return;
 	}
 	else{
+		voice.waveForm = Graph::Voice::WaveForm::SINE;
+		voice.amp = 1;
+		voice.frequency = 440;
+		SDL_PauseAudioDevice(dev, 1);		 // play
+		graphPointer = 0;
+
+		voice.playForNMicroSeconds(2000);
+		SDL_PauseAudioDevice(dev, 0);		 // play
+		SDL_Delay(200);
+
+		drawGraph();
+
+
 		mainLoop();
 		return;
 	}
-}
-
-void Graph::handleZoom(int x, int y, int zoom){
-	// tilesPerLine indicates how many tiles are shown. It currently supports the zoom-levels 2^1 to 2^8:  256, 128, 64, 32, 16, 4, 2, 1
-	if (tilesPerLine == 256 && zoom >= 1){
-		// Zoom out of boundaries
-		return;
-	}
-	else if (zoom == 0){
-		// No change (initial zoom)
-		return;
-	}
-	else if (tilesPerLine == 1 && zoom <= -1){
-		// Zoom out of boundaries
-		return;
-	}
-
-	// remember the old (=current) "camera" settings
-	int prevTilesPerLine = tilesPerLine;
-
-	// adjust new grid size
-	if (zoom >= 1)
-		tilesPerLine *= 2;
-	else
-		tilesPerLine /= 2;
-
-
-	if (zoom < 0){
-		// If we are zooming in...
-		offsetStack.push(zoomOffset);			// remember history of camera settings
-
-		int distanceX = getCellXAtCoordinates(x, y) - zoomOffset.x;
-		if (distanceX % 2 != 0){				// make sure distance is an even number
-			distanceX++;
-		}
-		int distanceY = getCellYAtCoordinates(x, y) - zoomOffset.y;
-
-		if (distanceY % 2 != 0){				// make sure distance is an even number
-			distanceY++;
-		}
-
-		// calculate new offset
-		zoomOffset.x += floor((float)distanceX / (float)2);
-		zoomOffset.y += floor((float)distanceY / (float)2);
-	}
-	else{
-		// Zoom out: Restore camera history from stack
-		ZoomOffset prevOffsetValues = offsetStack.top();
-		offsetStack.pop();
-		zoomOffset.x = prevOffsetValues.x;
-		zoomOffset.y = prevOffsetValues.y;
-	}
-
-
 }
 
 void Graph::mainLoop()
 {
 	while (thread_exit == 0){
 		SDL_Event event;
+		bool hasChanged = false;
+
 		while (SDL_PollEvent(&event)) {
 			switch (event.type)
 			{
 			case SDL_KEYDOWN:
 			{
+				hasChanged = true;
+
 				if (event.key.keysym.scancode == SDL_SCANCODE_SPACE){
-					pause_thread = !pause_thread;
+					//pause_thread = !pause_thread;
+					switch (voice.waveForm){
+					case Voice::SINE:
+					{
+						voice.waveForm = Graph::Voice::WaveForm::TRIANGLE;
+						break;
+					}
+					case Voice::TRIANGLE:
+					{
+						voice.waveForm = Graph::Voice::WaveForm::RECT;
+						break;
+					}
+					case Voice::RECT:
+					{
+						voice.waveForm = Graph::Voice::WaveForm::SAWTOOTH;
+						break;
+					}
+					case Voice::SAWTOOTH:
+					{
+						voice.waveForm = Graph::Voice::WaveForm::SINE;
+						break;
+					}
+					default:
+						break;
+					}				
 				}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){
 					exit();
 				}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_RETURN){
-					if (pause_thread){
-						// submit
-						//theC64->writeMemory(getCellAtCoordinates(hoverTile.x, hoverTile.y), inputBuffer);
-						drawGrid();
-					}
+					
+				}
+				else if (event.key.keysym.scancode == SDL_SCANCODE_LEFT){
+					voice.frequency -= 2;
+				}
+				else if (event.key.keysym.scancode == SDL_SCANCODE_RIGHT){
+					voice.frequency += 2;
+				}
+				else if (event.key.keysym.scancode == SDL_SCANCODE_UP){
+					voice.amp += 2;
+				}
+				else if (event.key.keysym.scancode == SDL_SCANCODE_DOWN){
+					voice.amp -= 2;
 				}
 				else{
-					if (pause_thread){
-						inputBuffer = event.key.keysym.sym;
-
-					}
+					
 				}
 
 				break;
 			}
-			case SDL_MOUSEMOTION:
-			{
-				
-				break;
-			}
-			case SDL_MOUSEBUTTONDOWN:
-			{
-
-				if (event.button.button == 1){
-					// left click (zoom in))
-					int xcoord = event.button.x;
-					int ycoord = event.button.y;
-					handleZoom(xcoord, ycoord, -1);
-				}
-				else if (event.button.button == 3){
-					// right click (zoom out)
-					int xcoord = event.button.x;
-					int ycoord = event.button.y;
-					handleZoom(xcoord, ycoord, +1);
-				}
-				else{
-					// unhandled button
-				}
-				break;
-			}
+	
 			case SDL_QUIT:
 			{
 				exit();
@@ -182,17 +198,36 @@ void Graph::mainLoop()
 			}
 		}
 
-		loopCounter += 2;
-		if (loopCounter % REPAINTINTERVAL == 0 && !pause_thread)
-			drawGrid();
+		if (!pause_thread && hasChanged)
+		{
+			
+			//SDL_PauseAudioDevice(dev, 1);		 // play
+			graphPointer = 0;
+
+			voice.playForNMicroSeconds(2000);
+			SDL_PauseAudioDevice(dev, 0);		 // play
+			SDL_Delay(200);
+
+			drawGraph();
+		}	
+
+
+		//voice.waveForm = Voice::WaveForm::TRIANGLE;		
+		
+		//SDL_Delay(n);						 // delay the program to prevent the voice to be overridden before it has been played to the end
+		//SDL_PauseAudioDevice(dev, 1);		 // pause	
+
+		SDL_Delay(REFRESH_INTERVAL);
+		//SDL_PauseAudioDevice(dev, 1);		 // pause	
 	}
 
 
 	return;
 }
 
-void Graph::drawGrid()
+void Graph::drawGraph()
 {
+
 	SDL_Renderer *renderer = SDL_GetRenderer(window);
 	if (renderer == nullptr)
 		renderer = SDL_CreateRenderer(window, 0, SDL_RENDERER_ACCELERATED);
@@ -203,53 +238,18 @@ void Graph::drawGrid()
 	// Clear winow
 	SDL_RenderClear(renderer);
 
-	/*float RMS = 0;
-	int BlockSize = 2000 / WINDOW_WIDTH;
-	for (int x = 0; x < WINDOW_WIDTH; x++){
-		for (int a = 0; a < BlockSize; a++)
-		{
-			RMS += buffer[a + x*BlockSize] * buffer[a + x*BlockSize];
-		}
-		RMS = sqrt(RMS / BlockSize);
-
-		SDL_SetRenderDrawColor(renderer, 22, 22, 22, 255);
-
-
-		if (x != 0 && RMS != 0)
-			SDL_RenderDrawPoint(renderer, x, WINDOW_HEIGHT-RMS);
-	}*/
 
 	SDL_SetRenderDrawColor(renderer, 22, 22, 22, 255);
 	for (int x = 0; x < WINDOW_WIDTH; x++){
-		uint8_t y = buffer[x];
+		uint8_t y = graphBuffer[x];
 		SDL_RenderDrawPoint(renderer, x, WINDOW_HEIGHT - y);
 	}
 	
 
 	SDL_RenderPresent(renderer);
 
-	SDL_Delay(REFRESH_INTERVAL);
 
 	return;
-}
-
-uint16_t Graph::getCellAtCoordinates(int x, int y){
-	uint8_t lowByte = zoomOffset.x + (x / rectWidth);
-	uint8_t highByte = zoomOffset.y + (y / rectHeight);
-	return (highByte << 8 + lowByte);
-}
-
-int Graph::getCellXAtCoordinates(int x, int y){
-	uint8_t lowByte = zoomOffset.x + (x / rectWidth);
-
-	return lowByte;
-}
-
-
-int Graph::getCellYAtCoordinates(int x, int y){
-	uint8_t highByte = zoomOffset.y + (y / rectHeight);
-
-	return highByte;
 }
 
 void Graph::exit(){
@@ -258,4 +258,52 @@ void Graph::exit(){
 	SDL_DestroyWindow(window);
 	// Clean up
 	SDL_Quit();
+}
+
+void Graph::Voice::playForNMicroSeconds(int n){		 // calculates the number of samples and delays the program
+	//samplesLeft = 44100 * n / 1000;
+	audioLength = 44100;
+	// Waveform length = Sampling rate / frequency
+	audioLength = 44100 / frequency;
+
+	audioPosition = 0;					 // reset the counter
+	//SDL_PauseAudioDevice(dev, 0);		 // play
+	//SDL_Delay(n);						 // delay the program to prevent the voice to be overridden before it has been played to the end
+	//SDL_PauseAudioDevice(dev, 1);		 // pause		
+
+}
+
+uint8_t Graph::Voice::getSample(){
+
+	int time = (audioPosition * frequency) / 44100;
+	double step = 44100.0 / (double)frequency;
+
+	uint8_t rect_value = 0x00;
+
+	//std::cout << step << " - ";
+	switch (waveForm){
+	case SINE:
+	{
+		float sineStep = 2 * M_PI * audioPosition * frequency / 44100;
+		return (amp * sin(sineStep)) + 127;		// +127 because otherwise the negative values will be cut off
+		break;
+	}
+	case RECT:
+		if (fmod((double)audioPosition, step) >= 0.5 * step){
+			rect_value = 0xFF;
+		}
+		return amp * rect_value;
+		break;
+
+	case SAWTOOTH:
+		return amp * fmod((double)audioPosition, step);
+		break;
+
+	case TRIANGLE:
+		return amp * abs(fmod((double)audioPosition, step) - 0.5 * step);
+		break;
+
+	default:
+		return 0;
+	}
 }
