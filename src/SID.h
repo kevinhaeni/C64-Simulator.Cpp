@@ -1,9 +1,8 @@
 #ifndef SID_H
 #define SID_H
 #include <cstdint>
-
+#include <iostream>
 #include "Voice.h"
-
 
 typedef uint8_t byte;
 typedef uint16_t word;
@@ -17,10 +16,13 @@ private:
     Voice voice1;
     Voice voice2;
     Voice voice3;
-
+    
+    Voice* voices[3];
     //ExternalFilter extfilter;
     //Potentiometer potx;
     //Potentiometer poty;
+    
+    
     
 public:
     
@@ -39,12 +41,14 @@ public:
     }Filter;
 
 	SID();
-
+    
+    
 	byte read_byte(word adr);
 	void write_byte(word adr, byte data);
 
     void updateRegisters();
-	void emulateCycles();
+	void emulateCycles(int cyclesTodo);
+    void emulateCycle();
 };
 
 #endif

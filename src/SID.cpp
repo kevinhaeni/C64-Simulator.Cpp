@@ -2,8 +2,11 @@
 
 SID::SID()
 {
-
+    voices[0] = &voice1;
+    voices[1] = &voice2;
+    voices[2] = &voice3;
 }
+
 
 byte SID::read_byte(uint16_t adrLong){
     byte adr = adrLong & 0xFF;
@@ -115,8 +118,27 @@ void SID::updateRegisters(){
     
 }
 
-void SID::emulateCycles(){
+void SID::emulateCycles(int cyclesToDo){
+    for (int i = 0; i < cyclesToDo; i++) {
+        this->emulateCycle();
+    }
+}
+
+void SID::emulateCycle(){
     
+    // calc all envelopes
+    // Todo
+    
+    // calc all waves
+    for (int i = 0; i < 1; i++) {
+        voices[i]->Wave.clock();
+    }
+    
+    // syncronize waves
+    // Todo
+    
+    // filter the output
+    // Todo
 }
 
 
