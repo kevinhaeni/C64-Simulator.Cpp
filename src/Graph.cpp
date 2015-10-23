@@ -30,7 +30,7 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 	Graph* graph = (Graph*)data;
 
 
-	for (int i = 0; i <= length; i++){
+	for (int i = 0; i < length; i++){
 
 		if (graph->voice.audioLength <= 0)
 			stream[i] = graph->getSpec()->silence;      // 128 is silence in a uint8 stream
@@ -264,6 +264,11 @@ void Graph::exit(){
 
 
 uint8_t Graph::Voice::getSample(){
+	int time = (audioPosition * frequency) / 44100;
+	double stepsPerPeriod = 44100.0 / (double)frequency;
+
+	uint8_t rect_value = 0x02;
+
 	switch (waveForm){
 	case SINE:
 	{
@@ -272,12 +277,18 @@ uint8_t Graph::Voice::getSample(){
 		break;
 	}
 	case RECT:
+		if (fmod((double)audioPosition, stepsPerPeriod) > pwn * stepsPerPeriod){
+			rect_value = 0x00;
+		}
+		return amp * rect_value;
 		break;
 
 	case SAWTOOTH:
+		return amp * fmod((maxWaveValue / stepsPerPeriod * (double)audioPosition), maxWaveValue);
 		break;
 
 	case TRIANGLE:
+		return amp * fabs(fmod((2.0 * maxWaveValue / stepsPerPeriod) * (double)audioPosition, 2.0 * maxWaveValue) - maxWaveValue);
 		break;
 
 	default:

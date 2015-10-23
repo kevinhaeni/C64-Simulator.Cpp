@@ -5,7 +5,7 @@ Voice::Voice()
 }
 
 byte Voice::output(){
-    
+	return 0;
 }
 
 /* Wave */

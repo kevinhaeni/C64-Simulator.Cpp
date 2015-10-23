@@ -39,6 +39,10 @@ public:
 		int frequency;              // the frequency of the voice
 		int amp;                    // the amplitude of the voice
 
+		double pwn = 0.5;            // Square wave width, 0 - 1.0
+		double maxWaveValue;  //
+
+
 		int audioLength;            // number of samples to be played, eg: 1.2 seconds * 44100 samples per second
 		int audioPosition = 0;      // counter
 
