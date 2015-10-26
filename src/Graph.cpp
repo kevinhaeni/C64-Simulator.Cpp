@@ -110,6 +110,7 @@ void Graph::init()
 
 		voice.audioLength = 44100;
 		voice.audioPosition = 0;
+		voice.maxWaveValue = 2;
 
 		SDL_PauseAudioDevice(dev, 0);        // play
 		SDL_Delay(200);
@@ -264,10 +265,7 @@ void Graph::exit(){
 
 
 uint8_t Graph::Voice::getSample(){
-	int time = (audioPosition * frequency) / 44100;
 	double stepsPerPeriod = 44100.0 / (double)frequency;
-
-	uint8_t rect_value = 0x02;
 
 	switch (waveForm){
 	case SINE:
@@ -277,18 +275,19 @@ uint8_t Graph::Voice::getSample(){
 		break;
 	}
 	case RECT:
-		if (fmod((double)audioPosition, stepsPerPeriod) > pwn * stepsPerPeriod){
-			rect_value = 0x00;
-		}
-		return amp * rect_value;
+		if (fmod((double)audioPosition, stepsPerPeriod) > pwn * stepsPerPeriod)
+			return (amp * 1) + 128;
+		else
+			return (amp * -1) + 128;
+		
 		break;
 
 	case SAWTOOTH:
-		return amp * fmod((maxWaveValue / stepsPerPeriod * (double)audioPosition), maxWaveValue);
+		return amp * (fmod((maxWaveValue / stepsPerPeriod * (double)audioPosition), maxWaveValue) - maxWaveValue / 2) + 128;
 		break;
 
 	case TRIANGLE:
-		return amp * fabs(fmod((2.0 * maxWaveValue / stepsPerPeriod) * (double)audioPosition, 2.0 * maxWaveValue) - maxWaveValue);
+		return amp * (fabs(fmod((2.0 * maxWaveValue / stepsPerPeriod) * (double)audioPosition, 2.0 * maxWaveValue) - maxWaveValue) - maxWaveValue / 2) + 128;
 		break;
 
 	default:

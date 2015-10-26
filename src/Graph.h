@@ -39,7 +39,7 @@ public:
 		int frequency;              // the frequency of the voice
 		int amp;                    // the amplitude of the voice
 
-		double pwn = 0.5;            // Square wave width, 0 - 1.0
+		double pwn = 0.2;            // Square wave width, 0 - 1.0
 		double maxWaveValue;  //
 
 
