@@ -66,6 +66,12 @@ void Graph::init()
 {
 	// Init SDL & SDL_ttf
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
+
+#ifdef TTF_ENABLED
+	TTF_Init();
+	font = TTF_OpenFont("sans.ttf", 48);	//this opens a font style and sets a size
+#endif
+
 	SDL_zero(desiredDeviceSpec);
 
 	desiredDeviceSpec.freq = 44100;         // Sample Rate
@@ -170,10 +176,10 @@ void Graph::mainLoop()
 
 				}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_LEFT){
-					voice.frequency -= 2;
+					voice.frequency -= 10;
 				}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_RIGHT){
-					voice.frequency += 2;
+					voice.frequency += 10;
 				}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_UP){
 					voice.amp += 2;
@@ -245,9 +251,64 @@ void Graph::drawGraph()
 	SDL_SetRenderDrawColor(renderer, 22, 22, 22, 255);
 	for (int x = 0; x < WINDOW_WIDTH; x++){
 		uint8_t y = graphBuffer[x];
-		SDL_RenderDrawPoint(renderer, x, WINDOW_HEIGHT - y);
+		//SDL_RenderDrawPoint(renderer, x, WINDOW_HEIGHT - y);
+		if (x > 0)
+			SDL_RenderDrawLine(renderer, prevX, prevY, x, WINDOW_HEIGHT - y);
+		prevX = x;
+		prevY = WINDOW_HEIGHT - y;
 	}
 
+
+	/* Texts */
+#ifdef TTF_ENABLED
+	SDL_Color textColor = { 222, 22, 22 };
+	
+	int w = 0;
+
+	std::string waveform;
+	switch (voice.waveForm){
+	case Voice::WaveForm::SINE:{
+		waveform = "Sine";
+		w = 48;
+		break;
+	}
+	case Voice::WaveForm::RECT:{
+		waveform = "Rect";
+		w = 48;
+		break;
+	}
+	case Voice::WaveForm::TRIANGLE:{
+		waveform = "Triangle";
+		w = 48*2;
+		break;
+	}
+	case Voice::WaveForm::SAWTOOTH:{
+		waveform = "Sawtooth";
+		w = 48*2;
+		break;
+	}
+	}
+	std::string amp = "Amp = " + std::to_string(this->voice.amp);
+	w += 48 * 3;
+	std::string freq = "Freq = " + std::to_string(this->voice.frequency) + " Hz";
+	w += 48 * 3;
+
+	std::string result = waveform + "  (" + amp + "," + freq + ")";
+
+	SDL_Rect posWaveForm = { 10, 10, w, 15 };
+	SDL_Surface* surfaceMessageWaveForm = TTF_RenderText_Solid(font, result.c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+	SDL_Texture* waveFormText = SDL_CreateTextureFromSurface(renderer, surfaceMessageWaveForm); // convert it into a texture
+	SDL_RenderCopy(renderer, waveFormText, NULL, &posWaveForm);
+	SDL_FreeSurface(surfaceMessageWaveForm);
+	SDL_DestroyTexture(waveFormText);
+
+
+
+
+
+
+
+#endif
 
 	SDL_RenderPresent(renderer);
 

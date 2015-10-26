@@ -13,6 +13,12 @@ const int WINDOW_WIDTH = 1000;
 const int WINDOW_HEIGHT = 255;
 const std::string WINDOW_TITLE = "Wave Graph";
 
+#define TTF_ENABLED 1
+
+#ifdef TTF_ENABLED
+#include "SDL_ttf.h"
+#endif
+
 class Graph
 {
 private:
@@ -25,6 +31,10 @@ private:
 
 	int thread_exit = 0;
 	bool pause_thread = false;
+
+#ifdef TTF_ENABLED
+	TTF_Font* font;
+#endif
 
 public:
 	Graph();
@@ -55,7 +65,8 @@ public:
 	} voice;
 	int graphPointer = 0;
 	uint8_t graphBuffer[1000];
-
+	int prevX = 0;
+	int prevY = 0;
 
 };
 
