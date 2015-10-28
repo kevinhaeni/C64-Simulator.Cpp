@@ -187,6 +187,20 @@ void Graph::mainLoop()
 				else if (event.key.keysym.scancode == SDL_SCANCODE_DOWN){
 					voice.amp -= 2;
 				}
+				else if (event.key.keysym.scancode == SDL_SCANCODE_P){
+					if(voice.waveForm == Voice::WaveForm::RECT){
+						if(voice.pwn + 0.05 < 1.05){
+							voice.pwn += 0.05;
+						}
+					}
+				}
+				else if (event.key.keysym.scancode == SDL_SCANCODE_O){
+					if(voice.waveForm == Voice::WaveForm::RECT){
+						if(voice.pwn - 0.05 > -0.05){
+							voice.pwn -= 0.05;
+						}
+					}
+				}
 				else{
 
 				}
@@ -288,12 +302,21 @@ void Graph::drawGraph()
 		break;
 	}
 	}
+
+
 	std::string amp = "Amp = " + std::to_string(this->voice.amp);
 	w += 48 * 3;
 	std::string freq = "Freq = " + std::to_string(this->voice.frequency) + " Hz";
 	w += 48 * 3;
 
 	std::string result = waveform + "  (" + amp + "," + freq + ")";
+
+	// Different Display for Rectangle Waveform
+	if(voice.waveForm == Voice::WaveForm::RECT){
+			std::string pwn = "PWN = " + std::to_string(this->voice.pwn);
+			w += 48 * 3;
+			result = waveform + "  (" + amp + "," + freq + "," + pwn + ")";
+	}
 
 	SDL_Rect posWaveForm = { 10, 10, w, 15 };
 	SDL_Surface* surfaceMessageWaveForm = TTF_RenderText_Solid(font, result.c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
@@ -336,7 +359,7 @@ uint8_t Graph::Voice::getSample(){
 		break;
 	}
 	case RECT:
-		if (fmod((double)audioPosition, stepsPerPeriod) > pwn * stepsPerPeriod)
+		if (fmod((double)audioPosition, stepsPerPeriod) < pwn * stepsPerPeriod)
 			return (amp * 1) + 128;
 		else
 			return (amp * -1) + 128;

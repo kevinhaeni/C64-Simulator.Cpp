@@ -31,6 +31,6 @@ endif
 	
 
 C64Sim: $(OBJ_FILES)
-	g++ $(LD_FLAGS) -o $@ $^
+	g++  -o $@ $^ $(LD_FLAGS) 
 obj/%.o: src/%.cpp
-	$(CC) -std=$(CV) $(OBJS) $(LIB)  $(CC_FLAGS) -c -o $@ $<
+	$(CC) -std=$(CV)  $(OBJS) $(LIB) $(CC_FLAGS)  -c -o $@ $< 
