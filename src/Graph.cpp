@@ -108,7 +108,7 @@ void Graph::init()
 		return;
 	}
 	else{
-		voice.waveForm = Graph::Voice::WaveForm::SINE;
+		voice.waveForm = Graph::Voice::WaveForm::NOISE;
 		voice.amp = 120;
 		voice.frequency = 440;
 		SDL_PauseAudioDevice(dev, 1);        // play
@@ -161,6 +161,11 @@ void Graph::mainLoop()
 						break;
 					}
 					case Voice::SAWTOOTH:
+					{
+						voice.waveForm = Graph::Voice::WaveForm::NOISE;
+						break;
+					}
+					case Voice::NOISE:
 					{
 						voice.waveForm = Graph::Voice::WaveForm::SINE;
 						break;
@@ -301,6 +306,11 @@ void Graph::drawGraph()
 		w = 48*2;
 		break;
 	}
+	case Voice::WaveForm::NOISE:{
+		waveform = "Noise";
+		w = 48*2;
+		break;
+	}
 	}
 
 
@@ -350,6 +360,7 @@ void Graph::exit(){
 
 uint8_t Graph::Voice::getSample(){
 	double stepsPerPeriod = 44100.0 / (double)frequency;
+	int min;
 
 	switch (waveForm){
 	case SINE:
@@ -363,9 +374,7 @@ uint8_t Graph::Voice::getSample(){
 			return (amp * 1) + 128;
 		else
 			return (amp * -1) + 128;
-		
 		break;
-
 	case SAWTOOTH:
 		return amp * (fmod((maxWaveValue / stepsPerPeriod * (double)audioPosition), maxWaveValue) - maxWaveValue / 2) + 128;
 		break;
@@ -373,7 +382,10 @@ uint8_t Graph::Voice::getSample(){
 	case TRIANGLE:
 		return amp * (fabs(fmod((2.0 * maxWaveValue / stepsPerPeriod) * (double)audioPosition, 2.0 * maxWaveValue) - maxWaveValue) - maxWaveValue / 2) + 128;
 		break;
-
+	case NOISE:
+		// maxWaveValue 2 -> Random number between -1.0 and 1.0
+		return amp * (fmod((double)rand(), (maxWaveValue + 1.0)) - maxWaveValue / 2) + 128;
+		break;
 	default:
 		return 0;
 	}

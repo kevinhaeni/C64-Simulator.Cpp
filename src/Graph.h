@@ -57,12 +57,14 @@ public:
 		int audioPosition = 0;      // counter
 
 		enum WaveForm{
-			SINE = 0, RECT = 1, SAWTOOTH = 2, TRIANGLE = 3
+			SINE = 0, RECT = 1, SAWTOOTH = 2, TRIANGLE = 3, NOISE = 4
 		} waveForm;
 
 
 		uint8_t getSample();
 	} voice;
+
+
 	int graphPointer = 0;
 	uint8_t graphBuffer[1000];
 	int prevX = 0;
