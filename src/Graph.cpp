@@ -400,11 +400,11 @@ Graph::Voice::Voice(){
 
 Graph::Voice::Envelope::Envelope(){
 	// Xylophone, Triangle
-	Instrument * i1 = new Instrument("Xylophone (Triangle)",0,9,0,0);
+	Instrument * i1 = new Instrument("Piano (Pulse)",0,9,0,0);
 	// Trumpet, Sawtooth
-	Instrument * i2 = new Instrument("Trumpet (Sawtooth)",6,0,0,0);
+	Instrument * i2 = new Instrument("Trumpet (Sawtooth)",6,0,4,0);
 	// Accordion, Triangle
-	Instrument * i3 = new Instrument("Accordion (Triangle)",6,6,0,0);
+	Instrument * i3 = new Instrument("Flute (Triangle)",6,0,4,0);
 
 	instruments.push_back(*i1);
 	instruments.push_back(*i2);
