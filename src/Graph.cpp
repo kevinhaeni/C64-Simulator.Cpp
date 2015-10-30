@@ -413,19 +413,29 @@ Graph::Voice::Envelope::Envelope(){
 
 
 uint8_t Graph::Voice::getSample(){
-	double stepsPerPeriod = 44100.0 / (double)frequency;
+	uint16_t stepsPerPeriod = 44100 / frequency;
 	uint16_t stepCounter = audioPosition % 44100;
 
 	int min;
+	double env;
 
-	double env = 1;
 
 	if(envelope.active == true){
-		if(stepCounter % envelope.cyclesWhenToChangeEnvelopeCounter == 0){
-			envelope.doStep(stepCounter);
+		// check if we are at the beginning of a new wave period -> 0/440Hz
+		// we can only adjust the envelope value at the beginning of a Wave
+		// 440hz -> we change the envelope 440times per second
+		if(stepCounter % stepsPerPeriod == 0){
+			envelope.envelope_counter_forWave = envelope.get_envelope_counter();
 		}
-		// calculate envelope value
-		env = envelope.get_envelope_counter();
+		// we calculate a new envelope value if we reach the "cycles when to change the envelope counter" defined in the table
+		if(stepCounter % envelope.cyclesWhenToChangeEnvelopeCounter == 0){
+			envelope.doStep();
+		}
+		env = envelope.envelope_counter_forWave;
+
+	}else
+	{
+		env = 1;
 	}
 
 
@@ -458,7 +468,7 @@ uint8_t Graph::Voice::getSample(){
 }
 
 
-void Graph::Voice::Envelope::doStep(uint16_t stepCounter){
+void Graph::Voice::Envelope::doStep(){
 
 	// counter stays at zero
 	if(holdZero == true){

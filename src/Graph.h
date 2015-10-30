@@ -70,6 +70,8 @@ public:
 
 		bool gate = false;
 
+
+
 		struct Envelope
 			{
 				bool active = false;
@@ -92,12 +94,13 @@ public:
 				void set_gate(bool setIt);
 				void reset();
 				// do a cycle step
-				void doStep(uint16_t stepCounter);
+				void doStep();
 
 				// bug, sets 0 as default, float error
 				uint16_t cyclesWhenToChangeEnvelopeCounter;
 
 				uint8_t envelope_counter;
+				double envelope_counter_forWave;
 				double get_envelope_counter();
 
 				enum State{
