@@ -6,16 +6,20 @@
 #include <cmath>
 #include <string>
 #include <stack>
-#include <unistd.h>
+#include <io.h>	// unistd.h for mac/linux, io.h for windows
 #include <vector>
+#include <fstream>
 
-/* Constants */
-const int REFRESH_INTERVAL = 50;                // mseconds
-const int WINDOW_WIDTH = 1000;
-const int WINDOW_HEIGHT = 255;
+/* Window Constants */
 const std::string WINDOW_TITLE = "Wave Graph";
+const int REFRESH_INTERVAL = 50;                // mseconds
+const int WINDOW_WIDTH = 1980;
+const int WINDOW_HEIGHT = 255;
 
-#define TTF_ENABLED 1
+/* Audio Constants */
+const int SAMPLING_RATE = 44100;				// number of samples per second
+
+#define TTF_ENABLED 1							// disable TTF on systems without sdl_ttf extension
 
 #ifdef TTF_ENABLED
 #include "SDL_ttf.h"
@@ -24,7 +28,7 @@ const std::string WINDOW_TITLE = "Wave Graph";
 class Graph
 {
 private:
-	SDL_Window *window;          // Declare a pointer
+	SDL_Window *window;
 
 	// SDL audio stuff
 	SDL_AudioSpec desiredDeviceSpec;
@@ -49,39 +53,31 @@ public:
 	void exit();
 	SDL_AudioSpec* getSpec();
 
+
+	// SDL audio members
 	struct Voice{
 		Voice();
 
-		int frequency;              // the frequency of the voice
-		int amp;                    // the amplitude of the voice
-
-		double pwn = 0.7;            // Square wave width, 0 - 1.0
-		double maxWaveValue;  //
-
-
-		int audioLength;            // number of samples to be played, eg: 1.2 seconds * 44100 samples per second
-		int audioPosition = 0;      // counter
-
+		// WaveForm parameters
 		enum WaveForm{
 			SINE = 0, RECT = 1, SAWTOOTH = 2, TRIANGLE = 3, NOISE = 4
 		} waveForm;
+		int frequency;              // the frequency of the voice
+		int amp;                    // the amplitude of the voice
+		double pwn = 0.7;            // Square wave width, 0 - 1.0
+		double maxWaveValue;  //
+
+		// SDL buffer handling members
+		int audioLength;            // number of samples to be played, eg: 1.2 seconds * 44100 samples per second
+		int audioPosition = 0;      // counter
+		bool gate = false;
 
 		uint8_t getSample();
 
-		bool gate = false;
-
-
-
+		// ADSR Envelope extension
 		struct Envelope
 			{
-				bool active = false;
-
-				// SDL Frequency
-				int systemFrequency = 44100;
-
-				Envelope();
-
-
+				bool active = false;				
 				// 0-16 Value
 				uint8_t attack_index;
 				uint8_t decay_index;
@@ -91,6 +87,7 @@ public:
 				bool gate;
 				bool holdZero;
 
+				Envelope();
 				void set_gate(bool setIt);
 				void reset();
 				// do a cycle step
@@ -104,85 +101,17 @@ public:
 				double get_envelope_counter();
 
 				enum State{
-					ATTACK,DECAY_SUSTAIN,RELEASE
+					ATTACK, DECAY_SUSTAIN, RELEASE
 				} state;
 
+				static const uint8_t sustain_level[16];
 
-				uint8_t sustain_level[16] = {
-				  0x00,
-				  0x11,
-				  0x22,
-				  0x33,
-				  0x44,
-				  0x55,
-				  0x66,
-				  0x77,
-				  0x88,
-				  0x99,
-				  0xaa,
-				  0xbb,
-				  0xcc,
-				  0xdd,
-				  0xee,
-				  0xff,
-				};
-
-				uint8_t decreasePerEnvelopeValue[256] = {
-				  /* 0x00: */   1, 30, 30, 30, 30, 30, 30, 16,  // 0x06
-				  /* 0x08: */  16, 16, 16, 16, 16, 16, 16,  8,  // 0x0e
-				  /* 0x10: */   8,  8,  8,  8,  8,  8,  8,  8,
-				  /* 0x18: */   8,  8,  8,  4,  4,  4,  4,  4,  // 0x1a
-				  /* 0x20: */   4,  4,  4,  4,  4,  4,  4,  4,
-				  /* 0x28: */   4,  4,  4,  4,  4,  4,  4,  4,
-				  /* 0x30: */   4,  4,  4,  4,  4,  4,  4,  2,  // 0x36
-				  /* 0x38: */   2,  2,  2,  2,  2,  2,  2,  2,
-				  /* 0x40: */   2,  2,  2,  2,  2,  2,  2,  2,
-				  /* 0x48: */   2,  2,  2,  2,  2,  2,  2,  2,
-				  /* 0x50: */   2,  2,  2,  2,  2,  2,  2,  2,
-				  /* 0x58: */   2,  2,  2,  2,  2,  2,  1,  1,  // 0x5d
-				  /* 0x60: */   1,  1,  1,  1,  1,  1,  1,  1,
-				  /* 0x68: */   1,  1,  1,  1,  1,  1,  1,  1,
-				  /* 0x70: */   1,  1,  1,  1,  1,  1,  1,  1,
-				  /* 0x78: */   1,  1,  1,  1,  1,  1,  1,  1,
-				  /* 0x80: */   1,  1,  1,  1,  1,  1,  1,  1,
-				  /* 0x88: */   1,  1,  1,  1,  1,  1,  1,  1,
-				  /* 0x90: */   1,  1,  1,  1,  1,  1,  1,  1,
-				  /* 0x98: */   1,  1,  1,  1,  1,  1,  1,  1,
-				  /* 0xa0: */   1,  1,  1,  1,  1,  1,  1,  1,
-				  /* 0xa8: */   1,  1,  1,  1,  1,  1,  1,  1,
-				  /* 0xb0: */   1,  1,  1,  1,  1,  1,  1,  1,
-				  /* 0xb8: */   1,  1,  1,  1,  1,  1,  1,  1,
-				  /* 0xc0: */   1,  1,  1,  1,  1,  1,  1,  1,
-				  /* 0xc8: */   1,  1,  1,  1,  1,  1,  1,  1,
-				  /* 0xd0: */   1,  1,  1,  1,  1,  1,  1,  1,
-				  /* 0xd8: */   1,  1,  1,  1,  1,  1,  1,  1,
-				  /* 0xe0: */   1,  1,  1,  1,  1,  1,  1,  1,
-				  /* 0xe8: */   1,  1,  1,  1,  1,  1,  1,  1,
-				  /* 0xf0: */   1,  1,  1,  1,  1,  1,  1,  1,
-				  /* 0xf8: */   1,  1,  1,  1,  1,  1,  1,  1
-				};
+				static const uint8_t decreasePerEnvelopeValue[256];
 
 				// Todo: should be fixed coded
 
 				// number of cycles till the next increase of the enveloper_counter
-				uint16_t cyclesWhenToChangeEnvelopeCounter_Attack[16] = {
-					  1, //Bug < 0 //abs(2*systemFrequency/256/1000),  //   2ms*1.0MHz/256 =     7.81
-					  abs(8*systemFrequency/256/1000),  //   8ms*1.0MHz/256 =    31.25
-					  abs(16*systemFrequency/256/1000),  //  16ms*1.0MHz/256 =    62.50
-					  abs(24*systemFrequency/256/1000),  //  24ms*1.0MHz/256 =    93.75
-					  abs(38*systemFrequency/256/1000),  //  38ms*1.0MHz/256 =   148.44
-					  abs(56*systemFrequency/256/1000),  //  56ms*1.0MHz/256 =   218.75
-					  abs(68*systemFrequency/256/1000),  //  68ms*1.0MHz/256 =   265.63
-					  abs(80*systemFrequency/256/1000),  //  80ms*1.0MHz/256 =   312.50
-					  abs(100*systemFrequency/256/1000),  // 100ms*1.0MHz/256 =   390.63
-					  abs(250*systemFrequency/256/1000),  // 250ms*1.0MHz/256 =   976.56
-					  abs(500*systemFrequency/256/1000),  // 500ms*1.0MHz/256 =  1953.13
-					  abs(800*systemFrequency/256/1000),  // 800ms*1.0MHz/256 =  3125.00
-					  abs(1000*systemFrequency/256/1000),  //   1 s*1.0MHz/256 =  3906.25
-					  abs(3000*systemFrequency/256/1000),  //   3 s*1.0MHz/256 = 11718.75
-					  abs(5000*systemFrequency/256/1000),  //   5 s*1.0MHz/256 = 19531.25
-					  abs(8000*systemFrequency/256/1000)   //   8 s*1.0MHz/256 = 31250.00
-				};
+				static const uint16_t cyclesWhenToChangeEnvelopeCounter_Attack[16];
 
 				struct Instrument{
 					std::string name;
@@ -201,10 +130,18 @@ public:
 			} envelope;
 	} voice;
 
+	int graphDisplayLength = 39600;
+
+	// Graph members
 	int graphPointer = 0;
-	uint8_t graphBuffer[1000];
-	int prevX = 0;
-	int prevY = 0;
+	uint8_t* graphBuffer;		// size must be a multiple of the window width (default 1980)
+	int graphBufferSize = graphDisplayLength;
+
+	//int prevX = 0;
+	//int prevY = 0;
+
+	std::ofstream logFile;
+	int logCounter = 0;
 };
 
 

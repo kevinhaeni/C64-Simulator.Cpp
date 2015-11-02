@@ -3,7 +3,82 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <algorithm>    // std::min
 
+
+const uint8_t Graph::Voice::Envelope::sustain_level[16] = {
+	0x00,
+	0x11,
+	0x22,
+	0x33,
+	0x44,
+	0x55,
+	0x66,
+	0x77,
+	0x88,
+	0x99,
+	0xaa,
+	0xbb,
+	0xcc,
+	0xdd,
+	0xee,
+	0xff,
+};
+
+const uint8_t Graph::Voice::Envelope::decreasePerEnvelopeValue[256] = {
+	/* 0x00: */   1, 30, 30, 30, 30, 30, 30, 16, // 0x06
+	/* 0x08: */  16, 16, 16, 16, 16, 16, 16, 8,  // 0x0e
+	/* 0x10: */   8, 8, 8, 8, 8, 8, 8, 8,
+	/* 0x18: */   8, 8, 8, 4, 4, 4, 4, 4,		 // 0x1a
+	/* 0x20: */   4, 4, 4, 4, 4, 4, 4, 4,
+	/* 0x28: */   4, 4, 4, 4, 4, 4, 4, 4,
+	/* 0x30: */   4, 4, 4, 4, 4, 4, 4, 2,		 // 0x36
+	/* 0x38: */   2, 2, 2, 2, 2, 2, 2, 2,
+	/* 0x40: */   2, 2, 2, 2, 2, 2, 2, 2,
+	/* 0x48: */   2, 2, 2, 2, 2, 2, 2, 2,
+	/* 0x50: */   2, 2, 2, 2, 2, 2, 2, 2,
+	/* 0x58: */   2, 2, 2, 2, 2, 2, 1, 1,		  // 0x5d
+	/* 0x60: */   1, 1, 1, 1, 1, 1, 1, 1,
+	/* 0x68: */   1, 1, 1, 1, 1, 1, 1, 1,
+	/* 0x70: */   1, 1, 1, 1, 1, 1, 1, 1,
+	/* 0x78: */   1, 1, 1, 1, 1, 1, 1, 1,
+	/* 0x80: */   1, 1, 1, 1, 1, 1, 1, 1,
+	/* 0x88: */   1, 1, 1, 1, 1, 1, 1, 1,
+	/* 0x90: */   1, 1, 1, 1, 1, 1, 1, 1,
+	/* 0x98: */   1, 1, 1, 1, 1, 1, 1, 1,
+	/* 0xa0: */   1, 1, 1, 1, 1, 1, 1, 1,
+	/* 0xa8: */   1, 1, 1, 1, 1, 1, 1, 1,
+	/* 0xb0: */   1, 1, 1, 1, 1, 1, 1, 1,
+	/* 0xb8: */   1, 1, 1, 1, 1, 1, 1, 1,
+	/* 0xc0: */   1, 1, 1, 1, 1, 1, 1, 1,
+	/* 0xc8: */   1, 1, 1, 1, 1, 1, 1, 1,
+	/* 0xd0: */   1, 1, 1, 1, 1, 1, 1, 1,
+	/* 0xd8: */   1, 1, 1, 1, 1, 1, 1, 1,
+	/* 0xe0: */   1, 1, 1, 1, 1, 1, 1, 1,
+	/* 0xe8: */   1, 1, 1, 1, 1, 1, 1, 1,
+	/* 0xf0: */   1, 1, 1, 1, 1, 1, 1, 1,
+	/* 0xf8: */   1, 1, 1, 1, 1, 1, 1, 1
+};
+
+// number of cycles till the next increase of the enveloper_counter
+const uint16_t Graph::Voice::Envelope::cyclesWhenToChangeEnvelopeCounter_Attack[16] = {
+	1, //Bug < 0 //abs(2*SAMPLING_RATE/256/1000),  //   2ms*1.0MHz/256 =     7.81
+	abs(8 * SAMPLING_RATE / 256 / 1000),  //   8ms*1.0MHz/256 =    31.25
+	abs(16 * SAMPLING_RATE / 256 / 1000),  //  16ms*1.0MHz/256 =    62.50
+	abs(24 * SAMPLING_RATE / 256 / 1000),  //  24ms*1.0MHz/256 =    93.75
+	abs(38 * SAMPLING_RATE / 256 / 1000),  //  38ms*1.0MHz/256 =   148.44
+	abs(56 * SAMPLING_RATE / 256 / 1000),  //  56ms*1.0MHz/256 =   218.75
+	abs(68 * SAMPLING_RATE / 256 / 1000),  //  68ms*1.0MHz/256 =   265.63
+	abs(80 * SAMPLING_RATE / 256 / 1000),  //  80ms*1.0MHz/256 =   312.50
+	abs(100 * SAMPLING_RATE / 256 / 1000),  // 100ms*1.0MHz/256 =   390.63
+	abs(250 * SAMPLING_RATE / 256 / 1000),  // 250ms*1.0MHz/256 =   976.56
+	abs(500 * SAMPLING_RATE / 256 / 1000),  // 500ms*1.0MHz/256 =  1953.13
+	abs(800 * SAMPLING_RATE / 256 / 1000),  // 800ms*1.0MHz/256 =  3125.00
+	abs(1000 * SAMPLING_RATE / 256 / 1000),  //   1 s*1.0MHz/256 =  3906.25
+	abs(3000 * SAMPLING_RATE / 256 / 1000),  //   3 s*1.0MHz/256 = 11718.75
+	abs(5000 * SAMPLING_RATE / 256 / 1000),  //   5 s*1.0MHz/256 = 19531.25
+	abs(8000 * SAMPLING_RATE / 256 / 1000)   //   8 s*1.0MHz/256 = 31250.00
+};
 
 int main(int argc, char* argv[]){
 
@@ -37,13 +112,17 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 		else
 		{
 			stream[i] = graph->voice.getSample();
-			graph->voice.audioPosition++;
 
-
-			// Fill the graphBuffer with the first 1000 bytes of the wave for plotting
-			if (graph->graphPointer < 999)
+			// Fill the graphBuffer with the first 9900 bytes of the wave for plotting
+			if (graph->graphPointer < graph->graphBufferSize)
 				graph->graphBuffer[graph->graphPointer++] = stream[i];
+
+			// write buffer value to logfile for debugging purposes
+			/*if (graph->logCounter++ <= SAMPLING_RATE)
+				graph->logFile << (int)stream[i] << std::endl;*/
 		}
+
+		graph->voice.audioPosition++;
 	}
 }
 
@@ -61,20 +140,22 @@ SDL_AudioSpec* Graph::getSpec(){
 
 void Graph::init()
 {
+	logFile.open("c:\\temp\\graphLog.txt");
+
 	// Init SDL & SDL_ttf
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
 
 #ifdef TTF_ENABLED
 	TTF_Init();
-	font = TTF_OpenFont("sans.ttf", 48);	//this opens a font style and sets a size
+	font = TTF_OpenFont("sans.ttf", 48);		//this opens a font style and sets a size
 #endif
 
 	SDL_zero(desiredDeviceSpec);
 
-	desiredDeviceSpec.freq = 44100;         // Sample Rate
-	desiredDeviceSpec.format = AUDIO_U8;    // Unsigned 8-Bit Samples
-	desiredDeviceSpec.channels = 1;         // Mono
-	desiredDeviceSpec.samples = 2048;       // The size of the Audio Buffer (in number of samples, eg: 2048 * 1 Byte (AUDIO_U8)
+	desiredDeviceSpec.freq = SAMPLING_RATE;		// Sample Rate
+	desiredDeviceSpec.format = AUDIO_U8;		// Unsigned 8-Bit Samples
+	desiredDeviceSpec.channels = 1;				// Mono
+	desiredDeviceSpec.samples = 2048;			// The size of the Audio Buffer (in number of samples, eg: 2048 * 1 Byte (AUDIO_U8)
 	desiredDeviceSpec.callback = SDLAudioCallback;
 	desiredDeviceSpec.userdata = this;
 
@@ -105,19 +186,22 @@ void Graph::init()
 		return;
 	}
 	else{
-		voice.waveForm = Graph::Voice::WaveForm::SAWTOOTH;
+		// Initial wave parameters
+		voice.waveForm = Graph::Voice::WaveForm::SINE;
 		voice.amp = 120;
 		voice.frequency = 440;
-		SDL_PauseAudioDevice(dev, 1);        // play
-		graphPointer = 0;
-
-		voice.audioLength = 44100;
+		SDL_PauseAudioDevice(dev, 1);        // pause		
+		voice.audioLength = SAMPLING_RATE;
 		voice.audioPosition = 0;
 		voice.maxWaveValue = 2;
-
+		
+		
+		graphBuffer = new uint8_t[graphDisplayLength];
+		graphBufferSize = graphDisplayLength;
+		graphPointer = 0;
 
 		SDL_PauseAudioDevice(dev, 0);        // play
-		SDL_Delay(200);
+		SDL_Delay(SAMPLING_RATE / voice.audioLength * 1000);	// 44100 / length of the audio  * 1000 (to get milliseconds)
 
 		drawGraph();
 
@@ -128,18 +212,19 @@ void Graph::init()
 
 void Graph::mainLoop()
 {
+	// poll SDL events until we terminate the thread
 	while (thread_exit == 0){
 		SDL_Event event;
-		bool hasChanged = false;
+
+		bool forceRedraw = false;		// set to true when the audio wave changes and its graph should be redrawn
 
 		while (SDL_PollEvent(&event)) {
 			switch (event.type)
 			{
 			case SDL_KEYDOWN:
-			{
-				hasChanged = true;
-
+			{		
 				if (event.key.keysym.scancode == SDL_SCANCODE_SPACE){
+					forceRedraw = true;
 					//pause_thread = !pause_thread;
 					switch (voice.waveForm){
 					case Voice::SINE:
@@ -178,27 +263,38 @@ void Graph::mainLoop()
 
 				}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_LEFT){
+					forceRedraw = true;
 					voice.frequency -= 10;
 				}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_RIGHT){
+					forceRedraw = true;
 					voice.frequency += 10;
 				}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_UP){
+					forceRedraw = true;
 					voice.amp += 2;
 				}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_DOWN){
+					forceRedraw = true;
 					voice.amp -= 2;
 				}
 
-				else if (event.key.keysym.scancode == SDL_SCANCODE_G){
+				else if (event.key.keysym.scancode == SDL_SCANCODE_G){				
 					// toggle gate ON
+					//graphPointer = 0;
 					if(keyGpressed == false){
 						voice.envelope.set_gate(true);
+
+						graphPointer = 0;
+						voice.audioLength = SAMPLING_RATE;
+						voice.audioPosition = 0;
+						SDL_PauseAudioDevice(dev, 0);        // play
 					}
 					keyGpressed = true;
 				}
 
 				else if (event.key.keysym.scancode == SDL_SCANCODE_E){
+					forceRedraw = true;
 					if(voice.envelope.active == true){
 						voice.envelope.active = false;
 					} else{
@@ -207,6 +303,7 @@ void Graph::mainLoop()
 				}
 
 				else if (event.key.keysym.scancode == SDL_SCANCODE_I){
+					forceRedraw = true;
 					if(++voice.envelope.active_instrument_index >= voice.envelope.instruments.size()){
 						voice.envelope.active_instrument_index = 0;
 					}
@@ -214,6 +311,7 @@ void Graph::mainLoop()
 				}
 
 				else if (event.key.keysym.scancode == SDL_SCANCODE_P){
+					forceRedraw = true;
 					if(voice.waveForm == Voice::WaveForm::RECT){
 						if(voice.pwn + 0.05 < 1.05){
 							voice.pwn += 0.05;
@@ -221,6 +319,7 @@ void Graph::mainLoop()
 					}
 				}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_O){
+					forceRedraw = true;
 					if(voice.waveForm == Voice::WaveForm::RECT){
 						if(voice.pwn - 0.05 > -0.05){
 							voice.pwn -= 0.05;
@@ -242,30 +341,35 @@ void Graph::mainLoop()
 			}
 			case SDL_KEYUP:
 			{
-				hasChanged = true;
+//				hasChanged = true;
 
 				if (event.key.keysym.scancode == SDL_SCANCODE_G){
+//					hasChanged = true;
 					// toggle gate OFF
 					voice.envelope.set_gate(false);
 					keyGpressed = false;
+					
+					SDL_Delay(SAMPLING_RATE / voice.audioLength * 1000);
+
+					drawGraph();
 				}
-			}
+			}	
 			default: /* unhandled event */
 				break;
 			}
 		}
 
-		if (!pause_thread && hasChanged)
+		if (!pause_thread && forceRedraw)
 		{
 
 			//SDL_PauseAudioDevice(dev, 1);      // play
 			graphPointer = 0;
 
-			voice.audioLength = 44100;
+			voice.audioLength = SAMPLING_RATE;
 			voice.audioPosition = 0;
 
 			SDL_PauseAudioDevice(dev, 0);        // play
-			SDL_Delay(200);
+			SDL_Delay(SAMPLING_RATE / voice.audioLength * 1000);
 
 			drawGraph();
 		}
@@ -299,14 +403,65 @@ void Graph::drawGraph()
 
 
 	SDL_SetRenderDrawColor(renderer, 22, 22, 22, 255);
-	for (int x = 0; x < WINDOW_WIDTH; x++){
-		uint8_t y = graphBuffer[x];
-		//SDL_RenderDrawPoint(renderer, x, WINDOW_HEIGHT - y);
-		if (x > 0)
-			SDL_RenderDrawLine(renderer, prevX, prevY, x, WINDOW_HEIGHT - y);
-		prevX = x;
-		prevY = WINDOW_HEIGHT - y;
+	
+	// old approach:
+
+	//for (int x = 0; x < WINDOW_WIDTH; x++){
+	//	uint8_t y = graphBuffer[x];
+	//	//SDL_RenderDrawPoint(renderer, x, WINDOW_HEIGHT - y);
+	//	if (x > 0)
+	//		SDL_RenderDrawLine(renderer, prevX, prevY, x, WINDOW_HEIGHT - y);
+	//	prevX = x;
+	//	prevY = WINDOW_HEIGHT - y;
+	//}
+	
+	int x = 0;	// x-pixel loop
+	int i = 0;	// graphArray index
+
+	while (x < WINDOW_WIDTH){
+		int condensing = graphDisplayLength / WINDOW_WIDTH;	// example: if we want to show 10000 samples on a 2000 pixel screen, we need to condense 5 pixels together
+
+		uint8_t* condensingValues = new uint8_t[condensing];
+		for (int j = 0; j < condensing; j++)
+		{
+			uint8_t value = graphBuffer[i+j];
+			condensingValues[j] = value;
+		}		
+		
+		int x1 = x;
+		int x2 = x+1;
+		x++;
+		i += condensing-1;
+		
+
+		uint8_t min = condensingValues[0];
+		uint8_t max = condensingValues[0];
+		for (int j = 0; j < condensing; j++)
+		{
+			if (condensingValues[j] <= min)
+				min = condensingValues[j];
+			if (condensingValues[j] >= max)
+				max = condensingValues[j];
+		}
+		
+		bool rising = false;
+		if ((int)condensingValues[0] <= (int)condensingValues[condensing-1])
+			rising = true;
+		else
+			rising = false;
+
+		int y1 = WINDOW_HEIGHT - min;
+		int y2 = WINDOW_HEIGHT - max;
+
+		if (rising){
+			SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
+		}
+		else{
+			SDL_RenderDrawLine(renderer, x1, y2, x2, y1);
+		}
+		
 	}
+
 
 
 	/* Texts */
@@ -413,8 +568,8 @@ Graph::Voice::Envelope::Envelope(){
 
 
 uint8_t Graph::Voice::getSample(){
-	uint16_t stepsPerPeriod = 44100 / frequency;
-	uint16_t stepCounter = audioPosition % 44100;
+	uint16_t stepsPerPeriod = SAMPLING_RATE / frequency;
+	uint16_t stepCounter = audioPosition % SAMPLING_RATE;
 
 	int min;
 	double env;
@@ -442,7 +597,7 @@ uint8_t Graph::Voice::getSample(){
 	switch (waveForm){
 	case SINE:
 	{
-		float sineStep = 2 * M_PI * audioPosition * frequency / 44100;
+		float sineStep = 2 * M_PI * audioPosition * frequency / SAMPLING_RATE;
 		return (amp * env * sin(sineStep)) + 128;
 		break;
 	}
