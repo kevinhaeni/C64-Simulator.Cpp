@@ -20,6 +20,7 @@ const int WINDOW_HEIGHT = 255;
 const int SAMPLING_RATE = 44100;				// number of samples per second
 
 #define TTF_ENABLED 1							// disable TTF on systems without sdl_ttf extension
+#define DEBUG 0
 
 #ifdef TTF_ENABLED
 #include "SDL_ttf.h"
@@ -58,6 +59,7 @@ public:
 	struct Voice{
 		Voice();
 
+		bool silent = false;
 		// WaveForm parameters
 		enum WaveForm{
 			SINE = 0, RECT = 1, SAWTOOTH = 2, TRIANGLE = 3, NOISE = 4
@@ -66,6 +68,8 @@ public:
 		int amp;                    // the amplitude of the voice
 		double pwn = 0.7;            // Square wave width, 0 - 1.0
 		double maxWaveValue;  //
+		long double phase;
+		long double phaseInc;
 
 		// SDL buffer handling members
 		int audioLength;            // number of samples to be played, eg: 1.2 seconds * 44100 samples per second
@@ -76,66 +80,67 @@ public:
 
 		// ADSR Envelope extension
 		struct Envelope
-			{
-				bool active = false;				
-				// 0-16 Value
+		{
+			bool active = false;
+			// 0-16 Value
+			uint8_t attack_index;
+			uint8_t decay_index;
+			uint8_t sustain_index;
+			uint8_t release_index;
+
+			bool gate;
+			bool holdZero;
+
+			Envelope();
+			void set_gate(bool setIt);
+			void reset();
+			// do a cycle step
+			void doStep();
+
+			// bug, sets 0 as default, float error
+			uint16_t cyclesWhenToChangeEnvelopeCounter;
+
+			uint8_t envelope_counter;
+			double envelope_counter_forWave;
+			double get_envelope_counter() const;
+
+			enum State{
+				ATTACK, DECAY_SUSTAIN, RELEASE
+			} state;
+
+			static const uint8_t sustain_level[16];
+
+			static const uint8_t decreasePerEnvelopeValue[256];
+
+			// Todo: should be fixed coded
+
+			// number of cycles till the next increase of the enveloper_counter
+			static const uint16_t cyclesWhenToChangeEnvelopeCounter_Attack[16];
+
+			struct Instrument{
+				std::string name;
 				uint8_t attack_index;
 				uint8_t decay_index;
 				uint8_t sustain_index;
 				uint8_t release_index;
+				Instrument(std::string, uint8_t, uint8_t, uint8_t, uint8_t);
+			};
 
-				bool gate;
-				bool holdZero;
+			std::vector <Instrument> instruments;
+			int active_instrument_index;
+			void next_instrument();
+			void set_instrument();
 
-				Envelope();
-				void set_gate(bool setIt);
-				void reset();
-				// do a cycle step
-				void doStep();
-
-				// bug, sets 0 as default, float error
-				uint16_t cyclesWhenToChangeEnvelopeCounter;
-
-				uint8_t envelope_counter;
-				double envelope_counter_forWave;
-				double get_envelope_counter();
-
-				enum State{
-					ATTACK, DECAY_SUSTAIN, RELEASE
-				} state;
-
-				static const uint8_t sustain_level[16];
-
-				static const uint8_t decreasePerEnvelopeValue[256];
-
-				// Todo: should be fixed coded
-
-				// number of cycles till the next increase of the enveloper_counter
-				static const uint16_t cyclesWhenToChangeEnvelopeCounter_Attack[16];
-
-				struct Instrument{
-					std::string name;
-					uint8_t attack_index;
-					uint8_t decay_index;
-					uint8_t sustain_index;
-					uint8_t release_index;
-					Instrument(std::string,uint8_t,uint8_t,uint8_t,uint8_t);
-				};
-
-				std::vector <Instrument> instruments;
-				int active_instrument_index;
-				void next_instrument();
-				void set_instrument();
-
-			} envelope;
+		} envelope;
 	} voice;
 
-	int graphDisplayLength = 39600;
+	int graphDisplayLength = 9900;
 
 	// Graph members
 	int graphPointer = 0;
 	uint8_t* graphBuffer;		// size must be a multiple of the window width (default 1980)
-	int graphBufferSize = graphDisplayLength;
+	int graphBufferSize = SAMPLING_RATE;
+	void resetGraphBuffer();
 
 	//int prevX = 0;
 	//int prevY = 0;

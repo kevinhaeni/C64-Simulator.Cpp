@@ -54,6 +54,9 @@
     <ClInclude Include="src\Graph.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="src\WaveGenerator.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\C64.cpp">
@@ -90,6 +93,9 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="src\SDLSound.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\WaveGenerator.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>
