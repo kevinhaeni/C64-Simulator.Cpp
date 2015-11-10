@@ -3,6 +3,7 @@
 #include <string>
 #include <algorithm>    // std::min
 
+double cotan(double i) { return(1 / tan(i)); }
 
 const uint8_t Graph::Voice::Envelope::sustain_level[16] = {
 	0x00,
@@ -121,9 +122,11 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 			if (graph->logCounter++ <= SAMPLING_RATE)
 				graph->logFile << (int)stream[i] << std::endl;
 #endif
+
+			graph->voice.audioPosition++;
 		}
 
-		graph->voice.audioPosition++;
+		
 	}
 }
 
@@ -191,12 +194,14 @@ void Graph::init()
 	}
 	else{
 
+		envFile = new std::ifstream("adsr.txt");
+
 		graphBuffer = new uint8_t[graphBufferSize];
 		//graphBufferSize = graphDisplayLength;
 		graphPointer = 0;
 
 		SDL_PauseAudioDevice(dev, 0);        // play
-		SDL_Delay(SAMPLING_RATE / voice.audioLength * 1000);	// 44100 / length of the audio  * 1000 (to get milliseconds)
+		SDL_Delay(1000);	// 44100 / length of the audio  * 1000 (to get milliseconds)
 
 		drawGraph();
 
@@ -278,12 +283,14 @@ void Graph::mainLoop()
 					// toggle gate ON
 					//graphPointer = 0;
 					if (keyGpressed == false){
-						voice.envelope.set_gate(true);
-
+						voice.silent = false;
+					
 						graphPointer = 0;
-						voice.audioLength = SAMPLING_RATE;
 						voice.audioPosition = 0;
 						voice.phase = 0;
+						voice.phaseInc = static_cast<double>(voice.frequency) / static_cast<double>(SAMPLING_RATE);
+						voice.envelope.set_gate(true);
+
 						SDL_PauseAudioDevice(dev, 0);        // play
 					}
 					keyGpressed = true;
@@ -292,6 +299,7 @@ void Graph::mainLoop()
 				else if (event.key.keysym.scancode == SDL_SCANCODE_E){
 					forceRedraw = true;
 					voice.envelope.active = !voice.envelope.active;
+					voice.silent = true;
 				}
 
 				else if (event.key.keysym.scancode == SDL_SCANCODE_I){
@@ -308,6 +316,45 @@ void Graph::mainLoop()
 						if (voice.pwn + 0.05 < 1.05){
 							voice.pwn += 0.05;
 						}
+					}
+				}
+				else if (event.key.keysym.scancode == SDL_SCANCODE_R){					
+					if (voice.envelope.active){
+						// read values from file
+						int waveform, a, f, pwn, attack, decay, sustain, release, gateOpenDuration;
+
+						if (*envFile >> waveform >> a >> f >> pwn >> attack >> decay >> sustain >> release >> gateOpenDuration)
+						{
+							voice.waveForm = static_cast<Voice::WaveForm>(waveform);
+							voice.amp = a;
+							voice.frequency = f;
+							voice.pwn = pwn;
+							voice.phase = 0;
+							voice.phaseInc = static_cast<double>(voice.frequency) / static_cast<double>(SAMPLING_RATE);
+
+							voice.envelope.attack_index = attack;
+							voice.envelope.decay_index = decay;
+							voice.envelope.sustain_index = sustain;
+							voice.envelope.release_index = release;
+														
+							voice.envelope.set_gate(true);
+							graphPointer = 0;
+							voice.audioPosition = 0;							
+							SDL_PauseAudioDevice(dev, 0);        // play
+
+							// wait to close gate
+							SDL_Delay(gateOpenDuration);
+							voice.envelope.set_gate(false);
+
+							SDL_Delay(500);	// wait to allow the graph buffer to be filled
+
+							drawGraph();
+
+						} else
+						{
+							// reopen file
+						}					
+
 					}
 				}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_O){
@@ -340,7 +387,7 @@ void Graph::mainLoop()
 					voice.envelope.set_gate(false);
 					keyGpressed = false;
 
-					SDL_Delay(SAMPLING_RATE / voice.audioLength * 1000);
+					SDL_Delay(1000);
 
 					drawGraph();
 				}
@@ -356,12 +403,11 @@ void Graph::mainLoop()
 			//SDL_PauseAudioDevice(dev, 1);      // play
 			graphPointer = 0;
 
-			voice.audioLength = SAMPLING_RATE;
 			voice.audioPosition = 0;
 			voice.phaseInc = static_cast<double>(voice.frequency) / static_cast<double>(SAMPLING_RATE);
 
 			SDL_PauseAudioDevice(dev, 0);        // play
-			SDL_Delay(SAMPLING_RATE / voice.audioLength * 1000);
+			SDL_Delay(1000);
 
 			drawGraph();
 		}
@@ -522,7 +568,6 @@ Graph::Voice::Voice(){
 	waveForm = Graph::Voice::WaveForm::SINE;
 	amp = 120;
 	frequency = 440;
-	audioLength = SAMPLING_RATE;
 	audioPosition = 0;
 	maxWaveValue = 2;
 	phase = 0;
@@ -550,16 +595,18 @@ uint8_t Graph::Voice::getSample(){
 	//uint16_t stepsPerPeriod = SAMPLING_RATE / frequency;
 	uint16_t stepsPerPeriod = 1 / phaseInc;
 	//uint16_t stepCounter = audioPosition % SAMPLING_RATE;
-	uint16_t stepCounter = audioPosition % SAMPLING_RATE;
+	int stepCounter = audioPosition % SAMPLING_RATE;
 
 	double env;
-
 
 	if (envelope.active == true){
 		// check if we are at the beginning of a new wave period -> 0/440Hz
 		// we can only adjust the envelope value at the beginning of a Wave
 		// 440hz -> we change the envelope 440times per second
-		if (stepCounter % stepsPerPeriod == 0){
+
+		//if (stepCounter % stepsPerPeriod == 0){
+		float rounded_up_phase = ceilf(fmod(phase,1) * 100) / 100;
+		if (fmod(rounded_up_phase, 1) >= 0.99){
 			envelope.envelope_counter_forWave = envelope.get_envelope_counter();
 		}
 		// we calculate a new envelope value if we reach the "cycles when to change the envelope counter" defined in the table
@@ -588,7 +635,7 @@ uint8_t Graph::Voice::getSample(){
 	{
 		//if (fmod(static_cast<double>(audioPosition), stepsPerPeriod) < pwn * stepsPerPeriod)
 		uint8_t sample;
-		if (fmod((double)phase, (double)stepsPerPeriod*(double)phaseInc) <= pwn * stepsPerPeriod*phaseInc)
+		if (fmod(phase, stepsPerPeriod*phaseInc) < pwn * stepsPerPeriod*phaseInc)
 		{
 			phase += phaseInc;
 			sample = (amp * env * 1) + 128;
@@ -601,14 +648,10 @@ uint8_t Graph::Voice::getSample(){
 		return sample;
 	}
 	case SAWTOOTH:
-	{
-
-		double oldValue = stepsPerPeriod * static_cast<double>(audioPosition);
-		double newValue = stepsPerPeriod*(double)phaseInc * static_cast<double>(phase);
-
+	{		
 		//return  amp * env * (fmod((maxWaveValue / stepsPerPeriod * static_cast<double>(audioPosition)), maxWaveValue) - maxWaveValue / 2) + 128;
 		uint8_t sample;
-		sample = amp * env * (fmod((maxWaveValue / stepsPerPeriod*(double)phaseInc * static_cast<double>(phase)), maxWaveValue) - maxWaveValue / 2) + 128;
+		sample = env* -(2 * amp) / M_PI * atan(cotan(phase*M_PI)) + 128;
 		phase += phaseInc;
 		return sample;
 	}

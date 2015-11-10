@@ -62,17 +62,16 @@ public:
 		bool silent = false;
 		// WaveForm parameters
 		enum WaveForm{
-			SINE = 0, RECT = 1, SAWTOOTH = 2, TRIANGLE = 3, NOISE = 4
+			SINE = 1, RECT = 2, SAWTOOTH = 3, TRIANGLE = 4, NOISE = 5
 		} waveForm;
 		int frequency;              // the frequency of the voice
 		int amp;                    // the amplitude of the voice
-		double pwn = 0.7;            // Square wave width, 0 - 1.0
+		double pwn = 0.5;            // Square wave width, 0 - 1.0
 		double maxWaveValue;  //
 		long double phase;
 		long double phaseInc;
 
 		// SDL buffer handling members
-		int audioLength;            // number of samples to be played, eg: 1.2 seconds * 44100 samples per second
 		int audioPosition = 0;      // counter
 		bool gate = false;
 
@@ -103,6 +102,8 @@ public:
 			uint8_t envelope_counter;
 			double envelope_counter_forWave;
 			double get_envelope_counter() const;
+
+			int cycleCounter;
 
 			enum State{
 				ATTACK, DECAY_SUSTAIN, RELEASE
@@ -146,6 +147,8 @@ public:
 	//int prevY = 0;
 
 	std::ofstream logFile;
+	std::ifstream* envFile;
+
 	int logCounter = 0;
 };
 
