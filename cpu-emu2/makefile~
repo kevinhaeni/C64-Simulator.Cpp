@@ -1,0 +1,48 @@
+# makefile for cpu-emu2
+# 2015/BHO1
+# initial
+# TODO: make a blody cp4students target/script
+#
+# 22.4.2012/BHO1
+# for compiling on linux:
+# sudo apt-get install build-essential make libsdl-image1.2-dev
+#
+
+#name of alu main test program
+alu_main=alu-main
+
+CC        := gcc
+LD        := ld
+
+MODULES   := cpu printers alu test ui
+SRC_DIR   := $(addprefix src/,$(MODULES))
+BUILD_DIR := $(addprefix build/,$(MODULES))
+
+SRC       := $(foreach sdir,$(SRC_DIR),$(wildcard $(sdir)/*.c))
+OBJ       := $(patsubst src/%.c,build/%.o,$(SRC))
+INCLUDES  := $(addprefix -I,$(SRC_DIR))
+
+vpath %.cpp $(SRC_DIR)
+
+define make-goal
+$1/%.o: %.c
+    $(CC) $(INCLUDES) -c $$< -o $$@
+endef
+
+.PHONY: all checkdirs clean
+
+all: checkdirs build/test.exe
+
+build/test.exe: $(OBJ)
+    $(LD) $^ -o $@
+
+
+checkdirs: $(BUILD_DIR)
+
+$(BUILD_DIR):
+    @mkdir -p $@
+
+clean:
+    @rm -rf $(BUILD_DIR)
+
+$(foreach bdir,$(BUILD_DIR),$(eval $(call make-goal,$(bdir))))

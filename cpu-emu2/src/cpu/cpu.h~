@@ -1,0 +1,91 @@
+/*
+  cpu.h
+  bho1 16.8.2015
+  GPL
+*/
+
+
+#define ADDR_WIDTH 16
+
+#define VFLAG 0
+#define ZFLAG 1
+#define SFLAG 2
+#define CFLAG 3
+#define DFLAG 4
+#define IFLAG 5
+#define NFLAG 2
+
+struct _6510_cpu {
+  char pcl[9];
+  char pch[9];
+  char regx[9];
+  char regy[9];
+  char rega[9];
+  char flags[9];
+  char sp[9];
+
+  char abrl[9];
+  char abrh[9];
+  char dbr[9];
+  char ir[9];
+  char rw;
+
+  int cycles;
+};
+
+int pc2int(struct _6510_cpu*cpu);
+int fetch( struct _6510_cpu* cpu, char memory[][9] ) ;
+int exec( struct _6510_cpu* cpu, char memory[][9]  ) ;
+void fetch_exec_step( struct _6510_cpu* cpu, char memory[][9] ) ;
+void fetch_exec_cycle( struct _6510_cpu* cpu, char memory[][9]  ) ;
+void reset_cpu(struct _6510_cpu* cpu) ;
+int imp_adr_mode(struct _6510_cpu* cpu, char memory[][9] );
+int imm_adr_mode(struct _6510_cpu* cpu, char memory[][9] ); 
+int rel_adr_mode(struct _6510_cpu* cpu, char memory[][9] ); 
+int izx_adr_mode(struct _6510_cpu* cpu, char memory[][9] ); 
+int izy_adr_mode(struct _6510_cpu* cpu, char memory[][9] ); 
+int zp_adr_mode(struct _6510_cpu* cpu, char memory[][9] ); 
+int zpx_adr_mode(struct _6510_cpu* cpu, char memory[][9] ); 
+int zpy_adr_mode(struct _6510_cpu* cpu, char memory[][9] ); 
+int abs_adr_mode(struct _6510_cpu* cpu, char memory[][9] ); 
+int abx_adr_mode(struct _6510_cpu* cpu, char memory[][9] ); 
+int aby_adr_mode(struct _6510_cpu* cpu, char memory[][9] ); 
+int ind_adr_mode(struct _6510_cpu* cpu, char memory[][9] ); 
+void cpu_6502_illegal(struct _6510_cpu* cpu, char memory[][9] ); 
+void reset_cpu(struct _6510_cpu* cpu);
+
+/*
+  Registers used in 6502 CPU
+*/
+
+/*
+  hidden register
+*/
+// Databus Register, shared with memory.c
+//extern char *databus_register;
+//extern char *dbr;
+
+// Addressbus Register Low byte, shared with memory.c
+//extern char *abrl;
+// Addressbus Register High byte, shared with memory.c
+//extern char *abrh;
+// Read/Write bit
+//extern char read_write;
+//Instruction Register
+//extern char *ir;
+
+/*
+  User register
+*/
+// Accumulator
+
+// index register
+
+//stack pointer SP
+
+//programm counter
+
+//flags
+
+
+

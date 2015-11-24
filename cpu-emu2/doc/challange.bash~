@@ -1,0 +1,12 @@
+#!/bin/bash
+
+awk -F'@' -e '{
+    {
+	std=$1;
+	if(std[0]=='*') {
+	    print $6;
+	} else {
+	    print $2 $4 $5 $6;
+	}
+
+} > codebase-c64.txt 

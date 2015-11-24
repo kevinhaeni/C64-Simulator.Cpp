@@ -1,0 +1,263 @@
+/*
+  op:      ORA
+  ex:      25 ORA af -> fe and flags setting 
+  flags:   *----*-
+           NVBDIZC
+  short:   or with accumulator 
+  form1:   A:=A or {adr} 
+  form2:   A <- (A) V M               
+  form3:   *       A = A | M 
+           *       P.N = A.7 
+           *       P.Z = (A==0) ? 1:0  
+           *    
+          
+*/
+
+void alu_op_ORA(char rega[], char regb[], char accumulator[], char flags[]){
+
+}
+
+
+/*
+  op:      ASL
+  ex:      25 ASL af -> fe and flags setting 
+  flags:   *----**
+           NVBDIZC
+  short:   arithmetic shift left 
+  form1:   {adr}:={adr}*2 
+  form2:   C <- A7, A <- (A) << 1     
+  form3:   *       P.C = B.7 
+           *       B = (B << 1) & $FE 
+           *       P.N = B.7 
+           *       P.Z = (B==0) ? 1:0  
+           *    
+          
+*/
+
+void alu_op_ASL(char rega[], char regb[], char accumulator[], char flags[]){
+
+}
+
+
+/*
+  op:      AND
+  ex:      25 AND af -> fe and flags setting 
+  flags:   *----*-
+           NVBDIZC
+  short:   and (with accumulator) 
+  form1:   A:=A\&{adr} 
+  form2:   A <- (A) /\ M              
+  form3:   *       A = A & M 
+           *       P.N = A.7 
+           *       P.Z = (A==0) ? 1:0  
+           *    
+          
+*/
+
+void alu_op_AND(char rega[], char regb[], char accumulator[], char flags[]){
+
+}
+
+
+/*
+  op:      ROL
+  ex:      25 ROL af -> fe and flags setting 
+  flags:   *----**
+           NVBDIZC
+  short:   rotate left 
+  form1:   {adr}:={adr}*2+C 
+  form2:   C <- A7 & A <- A << 1 + C  
+  form3:   *       t = B.7 
+           *       B = (B << 1) & $FE 
+           *       B = B | P.C 
+           *       P.C = t 
+           *       P.Z = (B==0) ? 1:0 
+           *       P.N = B.7           
+           *    
+          
+*/
+
+void alu_op_ROL(char rega[], char regb[], char accumulator[], char flags[]){
+
+}
+
+
+/*
+  op:      EOR
+  ex:      25 EOR af -> fe and flags setting 
+  flags:   *----*-
+           NVBDIZC
+  short:   exclusive or (with accumulator) 
+  form1:   A:=A exor {adr} 
+  form2:   A <- (A) \-/ M             
+  form3:   *       A = A ^ M 
+           *       P.N = A.7 
+           *       P.Z = (A==0) ? 1:0  
+           *    
+          
+*/
+
+void alu_op_EOR(char rega[], char regb[], char accumulator[], char flags[]){
+
+}
+
+
+/*
+  op:      LSR
+  ex:      25 LSR af -> fe and flags setting 
+  flags:   *----**
+           NVBDIZC
+  short:   logical shift right 
+  form1:   {adr}:={adr}/2 
+  form2:   C <- A0, A <- (A) >> 1     
+  form3:   *       P.N = 0 
+           *       P.C = B.0 
+           *       B = (B >> 1) & $7F 
+           *       P.Z = (B==0) ? 1:0  
+           *    
+          
+*/
+
+void alu_op_LSR(char rega[], char regb[], char accumulator[], char flags[]){
+
+}
+
+
+/*
+  op:      ADC
+  ex:      25 ADC af -> fe and flags setting 
+  flags:   **---**
+           NVBDIZC
+  short:   add with carry 
+  form1:   A:=A+{adr} 
+  form2:   A <- (A) + M + C           
+  form3:   *       t = A + M + P.C 
+           *       P.V = (A.7!=t.7) ? 1:0 
+           *       P.N = A.7 
+           *       P.Z = (t==0) ? 1:0 
+           *       IF (P.D) 
+           *         t = bcd(A) + bcd(M) + P.C 
+           *         P.C = (t>99) ? 1:0 
+           *       ELSE 
+           *         P.C = (t>255) ? 1:0 
+           *       A = t & 0xFF                 
+           *    
+          
+*/
+
+void alu_op_ADC(char rega[], char regb[], char accumulator[], char flags[]){
+
+}
+
+
+/*
+  op:      ROR
+  ex:      25 ROR af -> fe and flags setting 
+  flags:   *----**
+           NVBDIZC
+  short:   rotate right 
+  form1:   {adr}:={adr}/2+C*128 
+  form2:   C<-A0 & A<- (A7=C + A>>1)  
+  form3:   *       t = B.0 
+           *       B = (B >> 1) & $7F 
+           *       B = B | ((P.C) ? $80:$00) 
+           *       P.C = t 
+           *       P.Z = (B==0) ? 1:0 
+           *       P.N = B.7                  
+           *    
+          
+*/
+
+void alu_op_ROR(char rega[], char regb[], char accumulator[], char flags[]){
+
+}
+
+
+/*
+  op:      CMP
+  ex:      25 CMP af -> fe and flags setting 
+  flags:   *----**
+           NVBDIZC
+  short:   compare (with accumulator) 
+  form1:   A-{adr} 
+  form2:   (A - M) -> NZC             
+  form3:   *       t = A - M 
+           *       P.N = t.7 
+           *       P.C = (A>=M) ? 1:0 
+           *       P.Z = (t==0) ? 1:0  
+           *    
+          
+*/
+
+void alu_op_CMP(char rega[], char regb[], char accumulator[], char flags[]){
+
+}
+
+
+/*
+  op:      DEC
+  ex:      25 DEC af -> fe and flags setting 
+  flags:   *----*-
+           NVBDIZC
+  short:   decrement 
+  form1:   {adr}:={adr}-1 
+  form2:   M <- (M) - 1               
+  form3:   *       M = (M - 1) & $FF 
+           *       P.N = M.7 
+           *       P.Z = (M==0) ? 1:0  
+           *    
+          
+*/
+
+void alu_op_DEC(char rega[], char regb[], char accumulator[], char flags[]){
+
+}
+
+
+/*
+  op:      SBC
+  ex:      25 SBC af -> fe and flags setting 
+  flags:   **---**
+           NVBDIZC
+  short:   subtract with carry 
+  form1:   A:=A-{adr} 
+  form2:   A <- (A) - M - ~C          
+  form3:   *       IF (P.D) 
+           *         t = bcd(A) - bcd(M) - !P.C 
+           *         P.V = (t>99 OR t<0) ? 1:0 
+           *       ELSE 
+           *         t = A - M - !P.C 
+           *         P.V = (t>127 OR t<-128) ? 1:0 
+           *       P.C = (t>=0) ? 1:0 
+           *       P.N = t.7 
+           *       P.Z = (t==0) ? 1:0 
+           *       A = t & 0xFF                     
+           *    
+          
+*/
+
+void alu_op_SBC(char rega[], char regb[], char accumulator[], char flags[]){
+
+}
+
+
+/*
+  op:      INC
+  ex:      25 INC af -> fe and flags setting 
+  flags:   *----*-
+           NVBDIZC
+  short:   increment 
+  form1:   {adr}:={adr}+1 
+  form2:   M <- (M) + 1               
+  form3:   *       M = (M + 1) & $FF 
+           *       P.N = M.7 
+           *       P.Z = (M==0) ? 1:0  
+           *    
+          
+*/
+
+void alu_op_INC(char rega[], char regb[], char accumulator[], char flags[]){
+
+}
+
+

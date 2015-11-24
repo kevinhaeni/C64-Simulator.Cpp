@@ -1,0 +1,200 @@
+0600   A9 FE      LDA #$FE
+0602   85 02      STA $02
+0604   A9 EE      LDA #$EE
+0606   85 03      STA $03
+0608   A9 00      LDA #$00
+060A   85 00      STA $00
+060C   A9 02      LDA #$02
+060E   85 01      STA $01
+0610   A2 20      LDX #$20
+0612   A9 02      LDA #$02
+0614   9D FF 01   STA $01FF,X
+0617   9D DF 05   STA $05DF,X
+061A   A0 00      LDY #$00
+061C   91 00      STA ($00),Y
+061E   A0 1F      LDY #$1F
+0620   91 00      STA ($00),Y
+0622   E0 01      CPX #$01
+0624   F0 15      BEQ $063B
+0626   A9 03      LDA #$03
+0628   A0 17      LDY #$17
+062A   91 00      STA ($00),Y
+062C   A9 04      LDA #$04
+062E   C8         INY
+062F   91 00      STA ($00),Y
+0631   A9 05      LDA #$05
+0633   C8         INY
+0634   91 00      STA ($00),Y
+0636   A9 06      LDA #$06
+0638   C8         INY
+0639   91 00      STA ($00),Y
+063B   18         CLC
+063C   A5 00      LDA $00
+063E   69 20      ADC #$20
+0640   85 00      STA $00
+0642   A5 01      LDA $01
+0644   69 00      ADC #$00
+0646   85 01      STA $01
+0648   CA         DEX
+0649   D0 C7      BNE $0612
+064B   A6 02      LDX $02
+064D   A4 03      LDY $03
+064F   A9 44      LDA #$44
+0651   85 00      STA $00
+0653   A9 02      LDA #$02
+0655   85 01      STA $01
+0657   8A         TXA
+0658   48         PHA
+0659   A9 01      LDA #$01
+065B   A2 00      LDX #$00
+065D   81 00      STA ($00,X)
+065F   68         PLA
+0660   AA         TAX
+0661   CA         DEX
+0662   F0 46      BEQ $06AA
+0664   88         DEY
+0665   D0 FA      BNE $0661
+0667   8A         TXA
+0668   48         PHA
+0669   20 D5 06   JSR $06D5
+066C   A5 03      LDA $03
+066E   29 01      AND #$01
+0670   D0 0D      BNE $067F
+0672   18         CLC
+0673   A5 00      LDA $00
+0675   69 20      ADC #$20
+0677   85 00      STA $00
+0679   90 11      BCC $068C
+067B   E6 01      INC $01
+067D   D0 0D      BNE $068C
+067F   38         SEC
+0680   A5 00      LDA $00
+0682   E9 20      SBC #$20
+0684   85 00      STA $00
+0686   A5 01      LDA $01
+0688   E9 00      SBC #$00
+068A   85 01      STA $01
+068C   A2 00      LDX #$00
+068E   A1 00      LDA ($00,X)
+0690   D0 07      BNE $0699
+0692   A4 03      LDY $03
+0694   68         PLA
+0695   AA         TAX
+0696   4C 57 06   JMP $0657
+0699   C9 02      CMP #$02
+069B   F0 04      BEQ $06A1
+069D   A9 00      LDA #$00
+069F   81 00      STA ($00,X)
+06A1   A9 01      LDA #$01
+06A3   45 03      EOR $03
+06A5   85 03      STA $03
+06A7   4C 6C 06   JMP $066C
+06AA   20 D5 06   JSR $06D5
+06AD   A5 02      LDA $02
+06AF   29 01      AND #$01
+06B1   D0 04      BNE $06B7
+06B3   E6 00      INC $00
+06B5   D0 02      BNE $06B9
+06B7   C6 00      DEC $00
+06B9   A2 00      LDX #$00
+06BB   A1 00      LDA ($00,X)
+06BD   D0 05      BNE $06C4
+06BF   A6 02      LDX $02
+06C1   4C 57 06   JMP $0657
+06C4   C9 02      CMP #$02
+06C6   F0 04      BEQ $06CC
+06C8   A2 00      LDX #$00
+06CA   A0 00      LDY #$00
+06CC   A5 FE      LDA $FE
+06CE   29 03      AND #$03
+06D0   C9 03      CMP #$03
+06D2   D0 03      BNE $06D7
+06D4   4C 04 06   JMP $0604
+06D7   48         PHA
+06D8   0A         ASL A
+06D9   0A         ASL A
+06DA   0A         ASL A
+06DB   85 F3      STA $F3
+06DD   68         PLA
+06DE   29 01      AND #$01
+06E0   0A         ASL A
+06E1   0A         ASL A
+06E2   0A         ASL A
+06E3   0A         ASL A
+06E4   85 F4      STA $F4
+06E6   8A         TXA
+06E7   4A         LSR A
+06E8   65 F3      ADC $F3
+06EA   AA         TAX
+06EB   98         TYA
+06EC   4A         LSR A
+06ED   65 F4      ADC $F4
+06EF   A8         TAY
+06F0   20 2E 06   JSR $062E
+06F3   4C 04 06   JMP $0604
+06F6   48         PHA
+06F7   8A         TXA
+06F8   48         PHA
+06F9   98         TYA
+06FA   48         PHA
+06FB   48         PHA
+06FC   48         PHA
+06FD   86 F2      STX $F2
+06FF   A4 F2      LDY $F2
+0701   A9 00      LDA #$00
+0703   85 F0      STA $F0
+0705   A9 02      LDA #$02
+0707   85 F1      STA $F1
+0709   A9 00      LDA #$00
+070B   68         PLA
+070C   29 07      AND #$07
+070E   0A         ASL A
+070F   0A         ASL A
+0710   0A         ASL A
+0711   0A         ASL A
+0712   0A         ASL A
+0713   18         CLC
+0714   65 F0      ADC $F0
+0716   85 F0      STA $F0
+0718   90 02      BCC $071C
+071A   E6 F1      INC $F1
+071C   18         CLC
+071D   68         PLA
+071E   29 18      AND #$18
+0720   4A         LSR A
+0721   4A         LSR A
+0722   4A         LSR A
+0723   65 F1      ADC $F1
+0725   85 F1      STA $F1
+0727   18         CLC
+0728   98         TYA
+0729   65 F0      ADC $F0
+072B   65 F1      ADC $F1
+072D   A9 01      LDA #$01
+072F   20 72 06   JSR $0672
+0732   91 F0      STA ($F0),Y
+0734   68         PLA
+0735   A8         TAY
+0736   68         PLA
+0737   AA         TAX
+0738   68         PLA
+0739   60         RTS
+073A   B1 F0      LDA ($F0),Y
+073C   C9 00      CMP #$00
+073E   D0 03      BNE $0743
+0740   A9 0B      LDA #$0B
+0742   60         RTS
+0743   C9 0B      CMP #$0B
+0745   D0 03      BNE $074A
+0747   A9 0C      LDA #$0C
+0749   60         RTS
+074A   C9 0C      CMP #$0C
+074C   D0 03      BNE $0751
+074E   A9 0F      LDA #$0F
+0750   60         RTS
+0751   C9 0F      CMP #$0F
+0753   D0 03      BNE $0758
+0755   A9 01      LDA #$01
+0757   60         RTS
+0758   60         RTS
+0759              .END
