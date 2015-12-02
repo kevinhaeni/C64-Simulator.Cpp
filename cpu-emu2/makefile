@@ -1,83 +1,74 @@
 # makefile for cpu-emu2
 # 2015/BHO1
-# initial
-# TODO: make a blody cp4students target/script
-#
-# 22.4.2012/BHO1
-# for compiling on linux:
+# 18.8.1015: adding rules 
 # sudo apt-get install build-essential make libsdl-image1.2-dev
 # sudo apt-get install cdecl
 
 #name of alu main test program
 
 CC        := gcc
+LLVMCC	  := clang
 LD        := ld
 
-MODULES   := cpu printers alu test ui
-SRC_DIR   := $(addprefix src/,$(MODULES))
-BUILD_DIR := $(addprefix build/,$(MODULES))
-
-SRC       := $(foreach sdir,$(SRC_DIR),$(filter-out $(sdir)/alu.student.c, $(wildcard $(sdir)/*.c)))
-
-#SRC       := $(foreach sdir,$(SRC_DIR),$(wildcard $(sdir)/*.c))
-#SCR       := $(filter-out $(SRC_DIR)/alu/alu.student.c, $(SRC))
-OBJ       := $(patsubst src/%.c,build/%.o,$(SRC))
-#INCLUDES  := $(addprefix -I,src/include)
-INCLUDES  := $(addprefix -I,$(SRC_DIR))
-
 #alu
-ALU_MODULES   := printers alu test ui
+ALU_MODULES   := cpu printers alu memory
 ALU_SRC_DIR   := $(addprefix src/,$(ALU_MODULES))
 ALU_BUILD_DIR := $(addprefix build/,$(ALU_MODULES))
 
-ALU_SRC       := $(foreach sdir,$(ALU_SRC_DIR),$(filter-out $(sdir)/alu.student.c, $(wildcard $(sdir)/*.c)))
+ALU_SRC       := $(foreach sdir,$(ALU_SRC_DIR), $(filter-out $(sdir)/alu-main.c, $(filter-out $(sdir)/alu.student.c, $(wildcard $(sdir)/*.c))))
 
 ALU_OBJ       := $(patsubst src/%.c,build/%.o,$(ALU_SRC))
 ALU_INCLUDES  := $(addprefix -I,$(ALU_SRC_DIR))
+INCLUDES  := $(ALU_INCLUDES)
 
 
 
-#vpath %.c $(ALU_SRC_DIR)
-
-vpath %.c $(SRC_DIR)
-
-define make-goal
-$1/%.o: %.c
-	@echo $< 
-	$(CC) $(INCLUDES) -c $$< -o $$@
-endef
-
-.PHONY: all alu alutest checkdirs clean
-
-all: checkdirs build/test.exe
-
-alu: checkdirs build/alu.exe
-
-build/test.exe: $(OBJ)
-	$(CC) -o $@ $^ 
-
-build/alu.exe: $(ALU_OBJ)
-	$(CC) -o $@ $^ 
 
 
-checkdirs: $(BUILD_DIR)
 
-# $(ALU_BUILD_DIR)
+MODULES = cpu printers alu memory graphic sid
+BDIR    = build
+SRC_DIR   := $(addprefix src/,$(MODULES))
+DEPS := $(addprefix -I,$(SRC_DIR))
 
-#$(ALU_BUILD_DIR):
-#	@mkdir -p $@
+_OBJ = graphic-main.o graphic.o cpu.o cpu-util.o decode.o mu-code.o opcode_tbl.o register.o print-cpu.o memory.o flags.o alu.o disassemble.o parser.o
+_SRC = graphic/graphic-main.c graphic/graphic.c cpu/cpu.c cpu/cpu-util.c cpu/decode.c cpu/mu-code.c cpu/opcode_tbl.c cpu/register.c cpu/disassemble.c cpu/parser.c printers/print-cpu.c memory/memory.c alu/flags.c alu/alu.c 
 
-$(BUILD_DIR):
-	@mkdir -p $@
+#$(patsubst src/%.c,build/%.o,$(_OBJ))
+OBJ = $(patsubst %,$(BDIR)/%,$(_OBJ))
 
-alutest: checkdirs build/alu.exe
-	@echo "\n running alutest"	 $@	$^ 
-	cat test/alu/alu-test-minimal.txt | build/alu.exe  | diff - test/alu/alu-test-minimal-results.txt
+vpath %.c $(ALU_SRC_DIR)
+VPATH = src/cpu src/printers src/alu src/memory src/graphic
+LIBS := -lreadline 
+#$(BDIR)/%.o: scr/cpu/%.c src/memory/%.c src/printers/%.c src/alu/%.c src/graphic/%.c $(DEPS)
+$(BDIR)/%.o: %.c
+	@echo adasdasd
+	@echo $(CC) -W -Wall -g  $(ALU_INCLUDES) `sdl2-config --cflags --libs` -c $^ 
+	$(CC) -bbb -W -Wall -g  $(ALU_INCLUDES) `sdl2-config --cflags --libs` -c $^ 
+#build/graphic-main.o: graphic-main.c
+#$(CC) -W -Wall -g -o $@ $^ 
+
+%.o: %.c
+	@echo o2c
+	@echo $(CC) -W -Wall -g  $(ALU_INCLUDES) `sdl2-config --cflags --libs` -c $^ 
+	$(CC) -W -Wall -Wunused-variable -Wunused-parameter -g  $(ALU_INCLUDES) `sdl2-config --cflags --libs` -c $^ 
+
+
+graphic: $(_OBJ) 
+	@echo linking 
+	#@echo text $(CC) -W -Wall -g  $(ALU_INCLUDES) `sdl2-config --cflags --libs` -c $^ 
+	g++ -o $@ $^ $(CFLAGS) sid.o $(LIBS) `sdl2-config --cflags --libs`
+
+
+
+.PHONY: all checkdirs clean 
+
+#checkdirs: $(BUILD_DIR)
+
+checkdirs:  $(ALU_BUILD_DIR)
+
 
 clean:
 	@echo "\n ram -rf $(ALU_BUILD_DIR) $(BUILD_DIR) running alu-test minimal" $@	$^ 
 	@rm -rf $(ALU_BUILD_DIR)
 	@rm -rf $(BUILD_DIR)
-
-# ALU_BUILD_DIR   := $(BUILD_DIR)
-$(foreach bdir,$(BUILD_DIR),$(eval $(call make-goal,$(bdir))))
