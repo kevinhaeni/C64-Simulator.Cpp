@@ -73,9 +73,6 @@ public:
 		long double phase;
 		long double phaseInc;
 		
-		int activeWaveValue;
-		int getActiveWaveValue();
-
 		bool ring;
 		bool sync;
 
@@ -89,8 +86,7 @@ public:
 		int audioPosition = 0;      // counter
 		bool gate = false;
 
-		double getWaveValue();
-		double getEnvelopeValue();
+		uint8_t getSample();
 
 		// ADSR Envelope extension
 		struct Envelope
@@ -148,7 +144,7 @@ public:
 			void set_instrument();
 
 		} envelope;
-	} voice, voice2, voice3;
+	} voice;
 
 	int graphDisplayLength = 9900;
 

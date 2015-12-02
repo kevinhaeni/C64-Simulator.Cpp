@@ -124,38 +124,14 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 				graph->voice3.setFrequency(graph->voice2.getFrequency());
 			}
 
-			// ***** WAVES
-			double waveValue1 = graph->voice.getWaveValue();
-			double waveValue2 = graph->voice2.getWaveValue();
-			double waveValue3 = graph->voice3.getWaveValue();
+			// ***** RING			
 
-			// ***** RING MODE
-			// ring bit set and the Waveform is Triangle
-			if(graph->voice.isRing()){
-				if(waveValue3 < 0.0){ waveValue1 *= -1.0;}
-			}
-
-			// ***** ENVELOPES
-			double envelope1 = graph->voice.getEnvelopeValue();
-			double envelope2 = graph->voice2.getEnvelopeValue();
-			double envelope3 = graph->voice3.getEnvelopeValue();
-
-			// ***** FINAL VOICE
-			// final Voice = Envelope * Amplitude * WaveValue + 128
-			int finalVoice1 =  envelope1 * graph->voice.amp * waveValue1 + 128;
-			int finalVoice2 =  envelope2 * graph->voice2.amp * waveValue2 + 128;
-			int finalVoice3 =  envelope3 * graph->voice3.amp * waveValue3 + 128;
-
-
-			// ***** SDL OUT
-			// ToDO: combine all 3 Voices to one output stream
-			stream[i] = finalVoice1;
-
+			stream[i] = graph->voice.getSample();		// calculate the next sample value
 
 			// graph plotting extension:
 			// Fill the graphBuffer with the first 9900 bytes of the wave for plotting
 			if (graph->graphPointer < graph->graphBufferSize)
-				graph->graphBuffer[graph->graphPointer++] = finalVoice3;
+				graph->graphBuffer[graph->graphPointer++] = stream[i];
 
 #ifdef DEBUG
 			// write buffer value to logfile for debugging purposes
@@ -165,6 +141,8 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 
 			graph->voice.audioPosition++;
 		}
+
+		
 	}
 }
 
@@ -203,10 +181,6 @@ void Graph::init()
 	desiredDeviceSpec.samples = 2048;			// The size of the Audio Buffer (in number of samples, eg: 2048 * 1 Byte (AUDIO_U8)
 	desiredDeviceSpec.callback = SDLAudioCallback;
 	desiredDeviceSpec.userdata = this;
-
-	// init voices
-
-	voice3.waveForm = Voice::RECT;
 
 	// request audioDeviceSpec
 	dev = SDL_OpenAudioDevice(nullptr, 0, &desiredDeviceSpec, &spec, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
@@ -360,15 +334,7 @@ void Graph::mainLoop()
 						}
 					}
 				}
-				else if(event.key.keysym.scancode == SDL_SCANCODE_S){
-					forceRedraw = true;
-					voice.sync = !voice.sync;
-				}
-				else if(event.key.keysym.scancode == SDL_SCANCODE_R){
-					forceRedraw = true;
-					voice.ring = !voice.ring;
-				}
-				else if (event.key.keysym.scancode == SDL_SCANCODE_F){
+				else if (event.key.keysym.scancode == SDL_SCANCODE_R){					
 					if (voice.envelope.active){
 						// read values from file
 						int waveform, a, f, pwn, attack, decay, sustain, release, gateOpenDuration;
@@ -418,6 +384,7 @@ void Graph::mainLoop()
 				else{
 
 				}
+
 				break;
 			}
 
@@ -428,7 +395,7 @@ void Graph::mainLoop()
 			}
 			case SDL_KEYUP:
 			{
-				//hasChanged = true;
+				//				hasChanged = true;
 
 				if (event.key.keysym.scancode == SDL_SCANCODE_G){
 					//					hasChanged = true;
@@ -524,6 +491,7 @@ void Graph::drawGraph()
 		else{
 			SDL_RenderDrawLine(renderer, x1, y2, x2, y1);
 		}
+
 	}
 
 
@@ -536,31 +504,31 @@ void Graph::drawGraph()
 
 	std::string waveform;
 	switch (voice.waveForm){
-		case Voice::WaveForm::SINE:{
-			waveform = "Sine";
-			w = 48;
-			break;
-		}
-		case Voice::WaveForm::RECT:{
-			waveform = "Rect";
-			w = 48;
-			break;
-		}
-		case Voice::WaveForm::TRIANGLE:{
-			waveform = "Triangle";
-			w = 48 * 2;
-			break;
-		}
-		case Voice::WaveForm::SAWTOOTH:{
-			waveform = "Sawtooth";
-			w = 48 * 2;
-			break;
-		}
-		case Voice::WaveForm::NOISE:{
-			waveform = "Noise";
-			w = 48 * 2;
-			break;
-		}
+	case Voice::WaveForm::SINE:{
+		waveform = "Sine";
+		w = 48;
+		break;
+	}
+	case Voice::WaveForm::RECT:{
+		waveform = "Rect";
+		w = 48;
+		break;
+	}
+	case Voice::WaveForm::TRIANGLE:{
+		waveform = "Triangle";
+		w = 48 * 2;
+		break;
+	}
+	case Voice::WaveForm::SAWTOOTH:{
+		waveform = "Sawtooth";
+		w = 48 * 2;
+		break;
+	}
+	case Voice::WaveForm::NOISE:{
+		waveform = "Noise";
+		w = 48 * 2;
+		break;
+	}
 	}
 
 
@@ -570,12 +538,8 @@ void Graph::drawGraph()
 	w += 48 * 3;
 	std::string env = "Envelope = " + std::to_string(this->voice.envelope.active);
 	w += 48 * 3;
-	std::string sync = "Sync = " + std::to_string(this->voice.isSync());
-	w += 48 * 3;
-	std::string ring = "Ring = " + std::to_string(this->voice.isRing());
-	w += 48 * 3;
 
-	std::string result = waveform + " : " + amp + ", " + freq + ", " + env + ", " + sync + ", " + ring;
+	std::string result = waveform + " : " + amp + ", " + freq + ", " + env;
 
 	// Different Display for Rectangle Waveform
 	if (voice.waveForm == Voice::WaveForm::RECT){
@@ -617,16 +581,13 @@ void Graph::exit(){
 
 Graph::Voice::Voice(){
 	// Initial wave parameters
-	waveForm = Graph::Voice::WaveForm::TRIANGLE;
+	waveForm = Graph::Voice::WaveForm::SINE;
 	amp = 120;
-	frequency = 60;
+	frequency = 440;
 	audioPosition = 0;
 	maxWaveValue = 2;
 	phase = 0;
 	phaseInc = static_cast<double>(frequency) / static_cast<double>(SAMPLING_RATE);
-
-	ring = false;
-	sync = false;
 
 	envelope.reset();
 	envelope.set_instrument();
@@ -645,7 +606,11 @@ Graph::Voice::Envelope::Envelope(){
 	instruments.push_back(*i3);
 }
 
-double Graph::Voice::getEnvelopeValue(){
+
+uint8_t Graph::Voice::getSample(){
+	//uint16_t stepsPerPeriod = SAMPLING_RATE / frequency;
+	uint16_t stepsPerPeriod = 1 / phaseInc;
+	//uint16_t stepCounter = audioPosition % SAMPLING_RATE;
 	int stepCounter = audioPosition % SAMPLING_RATE;
 
 	double env;
@@ -665,60 +630,66 @@ double Graph::Voice::getEnvelopeValue(){
 			envelope.doStep();
 		}
 		env = envelope.envelope_counter_forWave;
+
 	}
 	else
 	{
 		env = 1;
 	}
-	phase += phaseInc;
-	return env;
-}
 
-double Graph::Voice::getWaveValue(){
-	uint16_t stepsPerPeriod = 1 / phaseInc;
-	double sample;
 
 	switch (waveForm){
 	case SINE:
 	{
 		/*float sineStep = 2 * M_PI * audioPosition * frequency / SAMPLING_RATE;
 		return (amp * env * sin(sineStep)) + 128;*/
-		sample = sin(2 * M_PI * phase);
-		break;
+		uint8_t sample = (amp * env * sin(2 * M_PI * phase)) + 128;
+		phase += phaseInc;
+		return sample;
 	}
 	case RECT:
 	{
 		//if (fmod(static_cast<double>(audioPosition), stepsPerPeriod) < pwn * stepsPerPeriod)
-		if (fmod(phase, stepsPerPeriod*phaseInc) < pwn * stepsPerPeriod*phaseInc){
-			sample =  1;
+		uint8_t sample;
+		if (fmod(phase, stepsPerPeriod*phaseInc) < pwn * stepsPerPeriod*phaseInc)
+		{
+			phase += phaseInc;
+			sample = (amp * env * 1) + 128;
 		}
-		else{
-			sample = -1;
+		else
+		{
+			phase += phaseInc;
+			sample = (amp * env * -1) + 128;
 		}
-		break;
+		return sample;
 	}
 	case SAWTOOTH:
 	{		
 		//return  amp * env * (fmod((maxWaveValue / stepsPerPeriod * static_cast<double>(audioPosition)), maxWaveValue) - maxWaveValue / 2) + 128;
-		sample = -2 / M_PI * atan(cotan(phase*M_PI));
-		break;
+		uint8_t sample;
+		sample = env* -(2 * amp) / M_PI * atan(cotan(phase*M_PI)) + 128;
+		phase += phaseInc;
+		return sample;
 	}
 	case TRIANGLE:
 	{
 		// sine-to-triangle equation from wikipedia (https://en.wikipedia.org/wiki/Triangle_wave)
-		double sinevalue = sin(2 * M_PI * phase);
-		sample =  2 / M_PI * asin(sinevalue);
-		break;
+		uint8_t sample;
+		double sinevalue = (sin(2 * M_PI * phase));
+
+		sample = env * (2 * amp) / M_PI * asin(sinevalue) + 128;
+
+		phase += phaseInc;
+		return sample;
+
 	}
+
 	case NOISE:
 		// maxWaveValue 2 -> Random number between -1.0 and 1.0
-		sample = fmod(static_cast<double>(rand()), (maxWaveValue + 1.0)) - maxWaveValue / 2;
-		break;
+		return amp * env * (fmod(static_cast<double>(rand()), (maxWaveValue + 1.0)) - maxWaveValue / 2) + 128;
 	default:
 		return 0;
 	}
-	activeWaveValue = sample;
-	return sample;
 }
 
 
@@ -809,7 +780,7 @@ void Graph::Voice::Envelope::set_instrument(){
 }
 
 bool Graph::Voice::isRing(){
-	return ring && waveForm == WaveForm::TRIANGLE;
+	return ring;
 }
 
 bool Graph::Voice::isSync(){
@@ -818,11 +789,6 @@ bool Graph::Voice::isSync(){
 
 int Graph::Voice::getFrequency(){
 	return frequency;
-}
-
-
-int Graph::Voice::getActiveWaveValue(){
-	return activeWaveValue;
 }
 
 void Graph::Voice::setFrequency(int newFrequency){
