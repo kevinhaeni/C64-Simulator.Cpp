@@ -151,7 +151,7 @@ public:
 			void set_instrument();
 
 		} envelope;
-	} voice, voice2, voice3;
+	} voice1, voice2, voice3;
 
 	int graphDisplayLength = 9900;
 

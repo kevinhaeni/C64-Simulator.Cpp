@@ -153,40 +153,40 @@ void SID::updateRegisters()
 	uint8_t v1_freqLo = readMemory(0xD400);
 	uint8_t v1_freqHi = readMemory(0xD401);
 	uint16_t v1_freq = Utils::makeWord(v1_freqLo, v1_freqHi);
-	voice.setFrequency(v1_freq);
+	voice1.setFrequency(v1_freq);
 
 	uint8_t v1_pwLo = readMemory(0xD402);
 	uint8_t v1_pwHi = readMemory(0xD403);
 	uint16_t v1_pw = Utils::makeWord(v1_pwLo, v1_pwHi);
-	voice.pwn = v1_freq;
+	voice1.pwn = v1_freq;
 
-	voice.phaseInc = static_cast<double>(voice.frequency) / static_cast<double>(SAMPLING_RATE);
+	voice1.phaseInc = static_cast<double>(voice1.frequency) / static_cast<double>(SAMPLING_RATE);
 
 	char* v1_control = readMemoryBitwise(0xD404);	// returns an array of 8 chars [0=NOISE,1=PULSE,2=SAW,3=TRI,4=TEST,5=RING,6=SYNC,7=GATE]
 	if (v1_control[0] != 0)
-		voice.waveForm = Voice::WaveForm::NOISE;
+		voice1.waveForm = Voice::WaveForm::NOISE;
 	if (v1_control[1] != 0)
-		voice.waveForm = Voice::WaveForm::RECT;
+		voice1.waveForm = Voice::WaveForm::RECT;
 	if (v1_control[2] != 0)
-		voice.waveForm = Voice::WaveForm::SAWTOOTH;
+		voice1.waveForm = Voice::WaveForm::SAWTOOTH;
 	if (v1_control[3] != 0)
-		voice.waveForm = Voice::WaveForm::TRIANGLE;
+		voice1.waveForm = Voice::WaveForm::TRIANGLE;
 	//if (v1_control[4] != 0)
 		// WTF is test?
 	if (v1_control[5] != 0)
-		voice.ring = true;
+		voice1.ring = true;
 	else
-		voice.ring = false;
+		voice1.ring = false;
 
 	if (v1_control[6] != 0)
-		voice.sync = true;
+		voice1.sync = true;
 	else
-		voice.sync = false;
+		voice1.sync = false;
 
 	if (v1_control[7] != 0)
-		voice.envelope.set_gate(true);
+		voice1.envelope.set_gate(true);
 	else
-		voice.envelope.set_gate(false);
+		voice1.envelope.set_gate(false);
 
 
 	//case 0x05:
@@ -264,18 +264,18 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 
 	for (int i = 0; i < length; i++){
 
-		if (sid->voice.silent)
+		if (sid->voice1.silent)
 			stream[i] = sid->getSpec()->silence;      // silence in uint8 is represented by the value 128
 		else
 		{
 			// ***** SYNC
 			// voice 1
-			if (sid->voice.isSync()){
-				sid->voice.setFrequency(sid->voice3.getFrequency());
+			if (sid->voice1.isSync()){
+				sid->voice1.setFrequency(sid->voice3.getFrequency());
 			}
 			// voice 2
 			if (sid->voice2.isSync()){
-				sid->voice2.setFrequency(sid->voice.getFrequency());
+				sid->voice2.setFrequency(sid->voice1.getFrequency());
 			}
 			// voice 3
 			if (sid->voice3.isSync()){
@@ -283,24 +283,24 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 			}
 
 			// ***** WAVES
-			double waveValue1 = sid->voice.getWaveValue();
+			double waveValue1 = sid->voice1.getWaveValue();
 			double waveValue2 = sid->voice2.getWaveValue();
 			double waveValue3 = sid->voice3.getWaveValue();
 
 			// ***** RING MODE
 			// ring bit set and the Waveform is Triangle
-			if (sid->voice.isRing()){
+			if (sid->voice1.isRing()){
 				if(waveValue3 < 0.0){ waveValue1 *= -1.0;}
 			}
 
 			// ***** ENVELOPES
-			double envelope1 = sid->voice.getEnvelopeValue();
+			double envelope1 = sid->voice1.getEnvelopeValue();
 			double envelope2 = sid->voice2.getEnvelopeValue();
 			double envelope3 = sid->voice3.getEnvelopeValue();
 
 			// ***** FINAL VOICE
 			// final Voice = Envelope * Amplitude * WaveValue + 128
-			int finalVoice1 = envelope1 * sid->voice.amp * waveValue1 + 128;
+			int finalVoice1 = envelope1 * sid->voice1.amp * waveValue1 + 128;
 			int finalVoice2 = envelope2 * sid->voice2.amp * waveValue2 + 128;
 			int finalVoice3 = envelope3 * sid->voice3.amp * waveValue3 + 128;
 
@@ -324,7 +324,7 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 				sid->logFile << (int)stream[i] << std::endl;
 #endif
 
-			sid->voice.audioPosition++;
+			sid->voice1.audioPosition++;
 		}
 	}
 }
@@ -371,7 +371,7 @@ void SID::init()
 
 	// init voices
 
-	voice.waveForm = Voice::SINE;
+	voice1.waveForm = Voice::SINE;
 
 	// request audioDeviceSpec
 	dev = SDL_OpenAudioDevice(nullptr, 0, &desiredDeviceSpec, &spec, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
@@ -443,30 +443,30 @@ void SID::mainLoop()
 				if (event.key.keysym.scancode == SDL_SCANCODE_SPACE){
 					forceRedraw = true;
 					//pause_thread = !pause_thread;
-					switch (voice.waveForm){
+					switch (voice1.waveForm){
 					case Voice::SINE:
 					{
-						voice.waveForm = SID::Voice::WaveForm::TRIANGLE;
+						voice1.waveForm = SID::Voice::WaveForm::TRIANGLE;
 						break;
 					}
 					case Voice::TRIANGLE:
 					{
-						voice.waveForm = SID::Voice::WaveForm::RECT;
+						voice1.waveForm = SID::Voice::WaveForm::RECT;
 						break;
 					}
 					case Voice::RECT:
 					{
-						voice.waveForm = SID::Voice::WaveForm::SAWTOOTH;
+						voice1.waveForm = SID::Voice::WaveForm::SAWTOOTH;
 						break;
 					}
 					case Voice::SAWTOOTH:
 					{
-						voice.waveForm = SID::Voice::WaveForm::NOISE;
+						voice1.waveForm = SID::Voice::WaveForm::NOISE;
 						break;
 					}
 					case Voice::NOISE:
 					{
-						voice.waveForm = SID::Voice::WaveForm::SINE;
+						voice1.waveForm = SID::Voice::WaveForm::SINE;
 						break;
 					}
 					default:
@@ -481,32 +481,32 @@ void SID::mainLoop()
 				}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_LEFT){
 					forceRedraw = true;
-					voice.frequency -= 10;
+					voice1.frequency -= 10;
 				}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_RIGHT){
 					forceRedraw = true;
-					voice.frequency += 10;
+					voice1.frequency += 10;
 				}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_UP){
 					forceRedraw = true;
-					voice.amp += 2;
+					voice1.amp += 2;
 				}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_DOWN){
 					forceRedraw = true;
-					voice.amp -= 2;
+					voice1.amp -= 2;
 				}
 
 				else if (event.key.keysym.scancode == SDL_SCANCODE_G){
 					// toggle gate ON
 					//graphPointer = 0;
 					if (keyGpressed == false){
-						voice.silent = false;
+						voice1.silent = false;
 					
 						graphPointer = 0;
-						voice.audioPosition = 0;
-						voice.phase = 0;
-						voice.phaseInc = static_cast<double>(voice.frequency) / static_cast<double>(SAMPLING_RATE);
-						voice.envelope.set_gate(true);
+						voice1.audioPosition = 0;
+						voice1.phase = 0;
+						voice1.phaseInc = static_cast<double>(voice1.frequency) / static_cast<double>(SAMPLING_RATE);
+						voice1.envelope.set_gate(true);
 
 						SDL_PauseAudioDevice(dev, 0);        // play
 					}
@@ -515,33 +515,33 @@ void SID::mainLoop()
 
 				else if (event.key.keysym.scancode == SDL_SCANCODE_E){
 					forceRedraw = true;
-					voice.envelope.active = !voice.envelope.active;
-					voice.silent = true;
+					voice1.envelope.active = !voice1.envelope.active;
+					voice1.silent = true;
 				}
 
 				else if (event.key.keysym.scancode == SDL_SCANCODE_I){
 					forceRedraw = true;
-					if (++voice.envelope.active_instrument_index >= voice.envelope.instruments.size()){
-						voice.envelope.active_instrument_index = 0;
+					if (++voice1.envelope.active_instrument_index >= voice1.envelope.instruments.size()){
+						voice1.envelope.active_instrument_index = 0;
 					}
-					voice.envelope.set_instrument();
+					voice1.envelope.set_instrument();
 				}
 
 				else if (event.key.keysym.scancode == SDL_SCANCODE_P){
 					forceRedraw = true;
-					if (voice.waveForm == Voice::WaveForm::RECT){
-						if (voice.pwn + 0.05 < 1.05){
-							voice.pwn += 0.05;
+					if (voice1.waveForm == Voice::WaveForm::RECT){
+						if (voice1.pwn + 0.05 < 1.05){
+							voice1.pwn += 0.05;
 						}
 					}
 				}
 				else if(event.key.keysym.scancode == SDL_SCANCODE_S){
 					forceRedraw = true;
-					voice.sync = !voice.sync;
+					voice1.sync = !voice1.sync;
 				}
 				else if(event.key.keysym.scancode == SDL_SCANCODE_R){
 					forceRedraw = true;
-					voice.ring = !voice.ring;
+					voice1.ring = !voice1.ring;
 				}
 				//else if (event.key.keysym.scancode == SDL_SCANCODE_F){
 				//	if (voice.envelope.active){
@@ -584,9 +584,9 @@ void SID::mainLoop()
 				//}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_O){
 					forceRedraw = true;
-					if (voice.waveForm == Voice::WaveForm::RECT){
-						if (voice.pwn - 0.05 > -0.05){
-							voice.pwn -= 0.05;
+					if (voice1.waveForm == Voice::WaveForm::RECT){
+						if (voice1.pwn - 0.05 > -0.05){
+							voice1.pwn -= 0.05;
 						}
 					}
 				}
@@ -608,7 +608,7 @@ void SID::mainLoop()
 				if (event.key.keysym.scancode == SDL_SCANCODE_G){
 					//					hasChanged = true;
 					// toggle gate OFF
-					voice.envelope.set_gate(false);
+					voice1.envelope.set_gate(false);
 					keyGpressed = false;
 
 					SDL_Delay(1000);
@@ -627,8 +627,8 @@ void SID::mainLoop()
 			//SDL_PauseAudioDevice(dev, 1);      // play
 			graphPointer = 0;
 
-			voice.audioPosition = 0;
-			voice.phaseInc = static_cast<double>(voice.frequency) / static_cast<double>(SAMPLING_RATE);
+			voice1.audioPosition = 0;
+			voice1.phaseInc = static_cast<double>(voice1.frequency) / static_cast<double>(SAMPLING_RATE);
 
 			SDL_PauseAudioDevice(dev, 0);        // play
 			SDL_Delay(1000);
@@ -710,7 +710,7 @@ void SID::drawGraph()
 	int w = 0;
 
 	std::string waveform;
-	switch (voice.waveForm){
+	switch (voice1.waveForm){
 		case Voice::WaveForm::SINE:{
 			waveform = "Sine";
 			w = 48;
@@ -739,30 +739,30 @@ void SID::drawGraph()
 	}
 
 
-	std::string amp = "Amp = " + std::to_string(this->voice.amp);
+	std::string amp = "Amp = " + std::to_string(this->voice1.amp);
 	w += 48 * 3;
-	std::string freq = "Freq = " + std::to_string(this->voice.frequency) + " Hz";
+	std::string freq = "Freq = " + std::to_string(this->voice1.frequency) + " Hz";
 	w += 48 * 3;
-	std::string env = "Envelope = " + std::to_string(this->voice.envelope.active);
+	std::string env = "Envelope = " + std::to_string(this->voice1.envelope.active);
 	w += 48 * 3;
-	std::string sync = "Sync = " + std::to_string(this->voice.isSync());
+	std::string sync = "Sync = " + std::to_string(this->voice1.isSync());
 	w += 48 * 3;
-	std::string ring = "Ring = " + std::to_string(this->voice.isRing());
+	std::string ring = "Ring = " + std::to_string(this->voice1.isRing());
 	w += 48 * 3;
 
 	std::string result = waveform + " : " + amp + ", " + freq + ", " + env + ", " + sync + ", " + ring;
 
 	// Different Display for Rectangle Waveform
-	if (voice.waveForm == Voice::WaveForm::RECT){
-		std::string pwn = "PWN = " + std::to_string(this->voice.pwn);
+	if (voice1.waveForm == Voice::WaveForm::RECT){
+		std::string pwn = "PWN = " + std::to_string(this->voice1.pwn);
 		w += 48 * 3;
 		result = result + ", " + pwn;
 	}
 	// Different Display for Envelope
-	if (voice.envelope.active == true){
-		std::string gate = "Gate = " + std::to_string(this->voice.envelope.gate);
+	if (voice1.envelope.active == true){
+		std::string gate = "Gate = " + std::to_string(this->voice1.envelope.gate);
 
-		std::string inst = "Instrument = " + this->voice.envelope.instruments[this->voice.envelope.active_instrument_index].name;
+		std::string inst = "Instrument = " + this->voice1.envelope.instruments[this->voice1.envelope.active_instrument_index].name;
 		w += 48 * 3;
 		result = result + ", " + gate + ", " + inst;
 	}
