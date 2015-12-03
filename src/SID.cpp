@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <algorithm>    // std::min
+#include "Utils.h"
 
 double cotan(double i) { return(1 / tan(i)); }
 
@@ -81,7 +82,36 @@ const uint16_t SID::Voice::Envelope::cyclesWhenToChangeEnvelopeCounter_Attack[16
 
 int main(int argc, char* argv[]){
 
-	SID* g = new SID();
+	char memory[0x10000][9];		// the memory
+	memory[0xD400][0] = 1;
+	memory[0xD400][1] = 1;
+	memory[0xD400][2] = 1;
+	memory[0xD400][3] = 1;
+	memory[0xD400][4] = 1;
+	memory[0xD400][5] = 1;
+	memory[0xD400][6] = 1;
+	memory[0xD400][7] = 1;
+
+
+	memory[0xD401][0] = 0;
+	memory[0xD401][1] = 0;
+	memory[0xD401][2] = 0;
+	memory[0xD401][3] = 0;
+	memory[0xD401][4] = 0;
+	memory[0xD401][5] = 0;
+	memory[0xD401][6] = 0;
+	memory[0xD401][7] = 0;
+
+	memory[0xD404][0] = 0;
+	//memory[0xD404][1] = ;
+	//memory[0xD404][2] = ;
+	memory[0xD404][3] = 1;
+	memory[0xD404][4] = 0;
+	memory[0xD404][5] = 1;
+	memory[0xD404][6] = 0;
+	memory[0xD404][7] = 0;
+
+	SID* g = new SID(&memory, 50, true);
 
 	int i;
 	std::cin >> i;
@@ -96,6 +126,133 @@ int sidThreadFunc(void *pointer){
 }
 
 
+// Reads the value at the given memory address
+char* SID::readMemoryBitwise(uint16_t addr) const
+{
+	return (*_mem)[addr];
+}
+
+// Reads the value at the given memory address
+// also converts the [9] bitwise representation (e.g.: "01011101\0") into a unsigned decimal number
+uint8_t SID::readMemory(uint16_t addr) const
+{
+	uint8_t val = 0;
+
+	for (int i = 7; i >= 0; i--)
+	{		
+		val += (*_mem)[addr][i] * pow(2,7-i);
+	}
+
+	return val;
+}
+
+void SID::updateRegisters()
+{
+	// VOICE 1
+
+	uint8_t v1_freqLo = readMemory(0xD400);
+	uint8_t v1_freqHi = readMemory(0xD401);
+	uint16_t v1_freq = Utils::makeWord(v1_freqLo, v1_freqHi);
+	voice.setFrequency(v1_freq);
+
+	uint8_t v1_pwLo = readMemory(0xD402);
+	uint8_t v1_pwHi = readMemory(0xD403);
+	uint16_t v1_pw = Utils::makeWord(v1_pwLo, v1_pwHi);
+	voice.pwn = v1_freq;
+
+	voice.phaseInc = static_cast<double>(voice.frequency) / static_cast<double>(SAMPLING_RATE);
+
+	char* v1_control = readMemoryBitwise(0xD404);	// returns an array of 8 chars [0=NOISE,1=PULSE,2=SAW,3=TRI,4=TEST,5=RING,6=SYNC,7=GATE]
+	if (v1_control[0] != 0)
+		voice.waveForm = Voice::WaveForm::NOISE;
+	if (v1_control[1] != 0)
+		voice.waveForm = Voice::WaveForm::RECT;
+	if (v1_control[2] != 0)
+		voice.waveForm = Voice::WaveForm::SAWTOOTH;
+	if (v1_control[3] != 0)
+		voice.waveForm = Voice::WaveForm::TRIANGLE;
+	//if (v1_control[4] != 0)
+		// WTF is test?
+	if (v1_control[5] != 0)
+		voice.ring = true;
+	else
+		voice.ring = false;
+
+	if (v1_control[6] != 0)
+		voice.sync = true;
+	else
+		voice.sync = false;
+
+	if (v1_control[7] != 0)
+		voice.envelope.set_gate(true);
+	else
+		voice.envelope.set_gate(false);
+
+
+	//case 0x05:
+	//voice1.Envelope.write_ATTACK_DECAY(value);
+	//break;
+	//case 0x06:
+	//voice1.Envelope.write_SUSTAIN_RELEASE(value);
+	//break;
+	//case 0x07:
+	//voice2.Wave.write_FREQ_LO(value);
+	//break;
+	//case 0x08:
+	//voice2.Wave.write_FREQ_HI(value);
+	//break;
+	//case 0x09:
+	//voice2.Wave.write_PW_LO(value);
+	//break;
+	//case 0x0a:
+	//voice2.Wave.write_PW_HI(value);
+	//break;
+	//case 0x0b:
+	//voice2.Wave.write_CONTROLREG(value);
+	//break;
+	//case 0x0c:
+	//voice2.Envelope.write_ATTACK_DECAY(value);
+	//break;
+	//case 0x0d:
+	//voice2.Envelope.write_SUSTAIN_RELEASE(value);
+	//break;
+	//case 0x0e:
+	//voice3.Wave.write_FREQ_LO(value);
+	//break;
+	//case 0x0f:
+	//voice3.Wave.write_FREQ_HI(value);
+	//break;
+	//case 0x10:
+	//voice3.Wave.write_PW_LO(value);
+	//break;
+	//case 0x11:
+	//voice3.Wave.write_PW_HI(value);
+	//break;
+	//case 0x12:
+	//voice3.Wave.write_CONTROLREG(value);
+	//break;
+	//case 0x13:
+	//voice3.Envelope.write_ATTACK_DECAY(value);
+	//break;
+	//case 0x14:
+	//voice3.Envelope.write_SUSTAIN_RELEASE(value);
+	//break;
+	//case 0x15:
+	//Filter.write_FC_LO(value);
+	//break;
+	//case 0x16:
+	//Filter.write_FC_HI(value);
+	//break;
+	//case 0x17:
+	//Filter.write_RES_FILT(value);
+	//break;
+	//case 0x18:
+	//Filter.write_MODE_VOL(value);
+	//break;
+	//default:
+	//break;
+	//}
+}
 
 // SDL calls this function whenever it wants its buffer to be filled with samples
 void SDLAudioCallback(void *data, Uint8 *buffer, int length){
@@ -103,6 +260,7 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 
 	SID* sid = static_cast<SID*>(data);
 
+	uint8_t val = sid->readMemory(0);
 
 	for (int i = 0; i < length; i++){
 
@@ -154,8 +312,11 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 
 			// graph plotting extension:
 			// Fill the graphBuffer with the first 9900 bytes of the wave for plotting
-			if (sid->graphPointer < sid->graphBufferSize)
-				sid->graphBuffer[sid->graphPointer++] = finalVoice3;
+			if (sid->showWindow)
+			{
+				if (sid->graphPointer < sid->graphBufferSize)
+					sid->graphBuffer[sid->graphPointer++] = finalVoice1;
+			}			
 
 #ifdef DEBUG
 			// write buffer value to logfile for debugging purposes
@@ -169,8 +330,12 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 }
 
 
-SID::SID()
+SID::SID(memory* mem, int interval, bool window)
 {
+	this->showWindow = window;
+	this->refreshInterval = interval;
+	this->_mem = mem;
+
 	// spawn thread
 	SDL_Thread *refresh_thread = SDL_CreateThread(sidThreadFunc, NULL, this);
 }
@@ -206,7 +371,7 @@ void SID::init()
 
 	// init voices
 
-	voice3.waveForm = Voice::RECT;
+	voice.waveForm = Voice::SINE;
 
 	// request audioDeviceSpec
 	dev = SDL_OpenAudioDevice(nullptr, 0, &desiredDeviceSpec, &spec, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
@@ -236,17 +401,25 @@ void SID::init()
 	}
 	else{
 
-		envFile = new std::ifstream("adsr.txt");
+		//envFile = new std::ifstream("adsr.txt");
 
-		graphBuffer = new uint8_t[graphBufferSize];
-		//graphBufferSize = graphDisplayLength;
-		graphPointer = 0;
+
+		updateRegisters();
+		if (showWindow)
+		{
+			graphBuffer = new uint8_t[graphBufferSize];
+			//graphBufferSize = graphDisplayLength;
+			graphPointer = 0;
+		}		
 
 		SDL_PauseAudioDevice(dev, 0);        // play
 		SDL_Delay(1000);	// 44100 / length of the audio  * 1000 (to get milliseconds)
 
-		drawGraph();
-
+		if (showWindow)
+		{
+			drawGraph();
+		}
+	
 		mainLoop();
 		return;
 	}
@@ -256,6 +429,8 @@ void SID::mainLoop()
 {
 	// poll SDL events until we terminate the thread
 	while (thread_exit == 0){
+		updateRegisters();
+
 		SDL_Event event;
 
 		bool forceRedraw = false;		// set to true when the audio wave changes and its graph should be redrawn
@@ -368,45 +543,45 @@ void SID::mainLoop()
 					forceRedraw = true;
 					voice.ring = !voice.ring;
 				}
-				else if (event.key.keysym.scancode == SDL_SCANCODE_F){
-					if (voice.envelope.active){
-						// read values from file
-						int waveform, a, f, pwn, attack, decay, sustain, release, gateOpenDuration;
+				//else if (event.key.keysym.scancode == SDL_SCANCODE_F){
+				//	if (voice.envelope.active){
+				//		// read values from file
+				//		int waveform, a, f, pwn, attack, decay, sustain, release, gateOpenDuration;
 
-						if (*envFile >> waveform >> a >> f >> pwn >> attack >> decay >> sustain >> release >> gateOpenDuration)
-						{
-							voice.waveForm = static_cast<Voice::WaveForm>(waveform);
-							voice.amp = a;
-							voice.frequency = f;
-							voice.pwn = pwn;
-							voice.phase = 0;
-							voice.phaseInc = static_cast<double>(voice.frequency) / static_cast<double>(SAMPLING_RATE);
+				//		if (*envFile >> waveform >> a >> f >> pwn >> attack >> decay >> sustain >> release >> gateOpenDuration)
+				//		{
+				//			voice.waveForm = static_cast<Voice::WaveForm>(waveform);
+				//			voice.amp = a;
+				//			voice.frequency = f;
+				//			voice.pwn = pwn;
+				//			voice.phase = 0;
+				//			voice.phaseInc = static_cast<double>(voice.frequency) / static_cast<double>(SAMPLING_RATE);
 
-							voice.envelope.attack_index = attack;
-							voice.envelope.decay_index = decay;
-							voice.envelope.sustain_index = sustain;
-							voice.envelope.release_index = release;
-														
-							voice.envelope.set_gate(true);
-							graphPointer = 0;
-							voice.audioPosition = 0;							
-							SDL_PauseAudioDevice(dev, 0);        // play
+				//			voice.envelope.attack_index = attack;
+				//			voice.envelope.decay_index = decay;
+				//			voice.envelope.sustain_index = sustain;
+				//			voice.envelope.release_index = release;
+				//										
+				//			voice.envelope.set_gate(true);
+				//			graphPointer = 0;
+				//			voice.audioPosition = 0;							
+				//			SDL_PauseAudioDevice(dev, 0);        // play
 
-							// wait to close gate
-							SDL_Delay(gateOpenDuration);
-							voice.envelope.set_gate(false);
+				//			// wait to close gate
+				//			SDL_Delay(gateOpenDuration);
+				//			voice.envelope.set_gate(false);
 
-							SDL_Delay(500);	// wait to allow the graph buffer to be filled
+				//			SDL_Delay(500);	// wait to allow the graph buffer to be filled
 
-							drawGraph();
+				//			drawGraph();
 
-						} else
-						{
-							// reopen file
-						}					
+				//		} else
+				//		{
+				//			// reopen file
+				//		}					
 
-					}
-				}
+				//	}
+				//}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_O){
 					forceRedraw = true;
 					if (voice.waveForm == Voice::WaveForm::RECT){
@@ -461,7 +636,7 @@ void SID::mainLoop()
 			drawGraph();
 		}
 
-		SDL_Delay(REFRESH_INTERVAL);
+		SDL_Delay(refreshInterval);
 	}
 	return;
 }
@@ -617,7 +792,7 @@ void SID::exit(){
 
 SID::Voice::Voice(){
 	// Initial wave parameters
-	waveForm = SID::Voice::WaveForm::TRIANGLE;
+	waveForm = SID::Voice::WaveForm::SINE;
 	amp = 120;
 	frequency = 60;
 	audioPosition = 0;

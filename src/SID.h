@@ -7,9 +7,10 @@
 #include <vector>
 #include <fstream>
 
+typedef char memory[0x10000][9];
+
 /* Window Constants */
 const std::string WINDOW_TITLE = "SID Graphical Window";
-const int REFRESH_INTERVAL = 50;                // mseconds
 const int WINDOW_WIDTH = 1980;
 const int WINDOW_HEIGHT = 255;
 
@@ -33,26 +34,34 @@ private:
 	SDL_AudioSpec spec;
 	SDL_AudioDeviceID dev;
 
+
+	int refreshInterval = 50;				         // mseconds
 	int thread_exit = 0;
-	bool pause_thread = false;
+	bool pause_thread = false;	
 
 #ifdef TTF_ENABLED
 	TTF_Font* font;
 #endif
 
 public:
-	SID();
+	// properties
+	bool showWindow = false;
+	bool keyGpressed;
+	memory* _mem;
+
+	// methods
+	SID(memory* mem, int interval, bool window);
 	void init();
 	void mainLoop();
 	void drawGraph();
 
-	bool keyGpressed;
-
 	void exit();
-	SDL_AudioSpec* getSpec();
-
+	uint8_t readMemory(uint16_t addr) const;
+	char* readMemoryBitwise(uint16_t addr) const;
+	void updateRegisters();
 
 	// SDL audio members
+	SDL_AudioSpec* getSpec();
 	struct Voice{
 		Voice();
 
@@ -82,7 +91,6 @@ public:
 
 		// SDL buffer handling members
 		int audioPosition = 0;      // counter
-		bool gate = false;
 
 		double getWaveValue();
 		double getEnvelopeValue();
