@@ -26,7 +26,7 @@ INCLUDES  := $(ALU_INCLUDES)
 
 
 
-MODULES = cpu printers alu memory graphic sid
+MODULES = cpu printers alu memory graphic
 BDIR    = build
 SRC_DIR   := $(addprefix src/,$(MODULES))
 DEPS := $(addprefix -I,$(SRC_DIR))
@@ -56,8 +56,8 @@ $(BDIR)/%.o: %.c
 
 graphic: $(_OBJ) 
 	@echo linking 
-	#@echo text $(CC) -W -Wall -g  $(ALU_INCLUDES) `sdl2-config --cflags --libs` -c $^ 
-	g++ -o $@ $^ $(CFLAGS) sid.o $(LIBS) `sdl2-config --cflags --libs`
+	@echo text $(CC) -W -Wall -g  $(ALU_INCLUDES) `sdl2-config --cflags --libs` -c $^ 
+	g++ -o $@ $^ src/sid/sidwrapper.o src/sid/SID.o src/sid/Utils.o $(CFLAGS) $(LIBS) `sdl2-config --cflags --libs` -lSDL2 -lSDL2_ttf -lm
 
 
 

@@ -2,7 +2,7 @@
 #include "sidwrapper.h"
 
 extern "C"{
-	SID* newSID(memory* mem, int interval, bool showWindow){
+	SID* newSID(memtype* mem, int interval, int showWindow){
 		return new SID(mem, 50, true);
 	}
 

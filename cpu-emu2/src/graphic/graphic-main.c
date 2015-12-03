@@ -18,7 +18,7 @@
 //#include "decode.h"
 #include "memory.h"
 //#include "cpu-util.h"
-#include "../sid/sid.h"
+#include "../sid/sidwrapper.h"
 
 #include <signal.h>
 static int keepParsing = 1;
@@ -83,6 +83,9 @@ int main(int argc, char *argv[])
   vic = &vicstruct;
   init_display(vic);
   
+
+  struct SID* sid = newSID(&memory, 50, 1);
+
   // handling parameter --memory <dumpfile> 
   if(argc==3){
     if(!strcmp(argv[1], "--memory")){
@@ -103,8 +106,6 @@ int main(int argc, char *argv[])
       //      read_binary_memorydump(argv[2], memory, 0x0000);
     }
   }
-
-  struct sid* sid = newGraph();
 
   vic->videobase = 0x200;
   printf("Video memory base at %04x\n", vic->videobase);

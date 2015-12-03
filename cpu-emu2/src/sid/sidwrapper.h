@@ -7,9 +7,9 @@ extern "C"{
 #endif
 
 typedef struct SID SID;
-typedef char memory[0x10000][9];
+typedef char memtype[0x10000][9];
 
-SID* newSID(memory*, int interval, bool showWindow);
+SID* newSID(memtype*, int interval, int showWindow);
 
 #ifdef __cplusplus
 }
