@@ -2,9 +2,9 @@
 
 SID::SID()
 {
-    voices[0] = &voice1;
+    /*voices[0] = &voice1;
     voices[1] = &voice2;
-    voices[2] = &voice3;
+    voices[2] = &voice3;*/
 }
 
 
@@ -32,7 +32,7 @@ byte SID::read_byte(uint16_t adrLong){
 
 void SID::write_byte(word adrLong, byte value){
     
-    byte adr = adrLong & 0xFF;
+   /* byte adr = adrLong & 0xFF;
     switch (adr) {
         case 0x00:
             voice1.Wave.write_FREQ_LO(value);
@@ -111,7 +111,7 @@ void SID::write_byte(word adrLong, byte value){
             break;
         default:
             break;
-    }
+    }*/
 }
 
 void SID::updateRegisters(){
@@ -131,7 +131,7 @@ void SID::emulateCycle(){
     
     // calc all waves
     for (int i = 0; i < 1; i++) {
-        voices[i]->Wave.clock();
+       /* voices[i]->Wave.clock();*/
     }
     
     // syncronize waves

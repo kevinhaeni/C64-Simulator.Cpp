@@ -70,8 +70,6 @@
   <ItemGroup>
     <ClInclude Include="src\C64.h" />
     <ClInclude Include="src\CPU.h" />
-    <ClInclude Include="src\Envelope.h" />
-    <ClInclude Include="src\Filter.h" />
     <ClInclude Include="src\Flag.h" />
     <ClInclude Include="src\Graph.h" />
     <ClInclude Include="src\Instruction.h" />
@@ -79,9 +77,6 @@
     <ClInclude Include="src\MemoryGrid.h" />
     <ClInclude Include="src\SID.h" />
     <ClInclude Include="src\Utils.h" />
-    <ClInclude Include="src\Voice.h" />
-    <ClInclude Include="src\Wave.h" />
-    <ClInclude Include="src\WaveGenerator.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\C64.cpp" />
@@ -92,11 +87,8 @@
     <ClCompile Include="src\Instruction.cpp" />
     <ClCompile Include="src\Memory.cpp" />
     <ClCompile Include="src\MemoryGrid.cpp" />
-    <ClCompile Include="src\SDLSound.cpp" />
     <ClCompile Include="src\SID.cpp" />
     <ClCompile Include="src\Utils.cpp" />
-    <ClCompile Include="src\Voice.cpp" />
-    <ClCompile Include="src\WaveGenerator.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

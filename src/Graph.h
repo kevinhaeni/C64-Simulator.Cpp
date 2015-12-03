@@ -3,12 +3,8 @@
 #include "SDL.h"
 #include "SDL_audio.h"
 #include <stdio.h>
-#include <cmath>
 #include <string>
-#include <stack>
 //#include <io.h>	
-//for mac/linux, io.h for windows
-#include <unistd.h>
 #include <vector>
 #include <fstream>
 

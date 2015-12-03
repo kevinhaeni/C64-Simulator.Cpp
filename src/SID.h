@@ -2,7 +2,7 @@
 #define SID_H
 #include <cstdint>
 #include <iostream>
-#include "Voice.h"
+
 
 typedef uint8_t byte;
 typedef uint16_t word;
@@ -13,14 +13,7 @@ SID Class
 class SID
 {
 private:
-    Voice voice1;
-    Voice voice2;
-    Voice voice3;
     
-    Voice* voices[3];
-    //ExternalFilter extfilter;
-    //Potentiometer potx;
-    //Potentiometer poty;
     
     
     
