@@ -1,9 +1,9 @@
-#include "Graph.h"
+#include "SID.h"
 #include "sidwrapper.h"
 
 extern "C"{
-	Graph* newGraph(){
-		return new Graph();
+	SID* newSID(memory* mem, int interval, bool showWindow){
+		return new SID(mem, 50, true);
 	}
 
 }

@@ -2,7 +2,9 @@
 #include <stdio.h>
 
 int main(int argc, char* argv[]){
-	struct Graph* sid = newGraph();
+        char mem[0x10000][9];
+
+	struct SID* sid = newSID(&mem, 50, true);
 
 	printf("Hello");
 	getchar();

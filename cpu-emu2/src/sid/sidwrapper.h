@@ -6,9 +6,10 @@
 extern "C"{
 #endif
 
-typedef struct Graph Graph;
+typedef struct SID SID;
+typedef char memory[0x10000][9];
 
-Graph* newGraph();
+SID* newSID(memory*, int interval, bool showWindow);
 
 #ifdef __cplusplus
 }

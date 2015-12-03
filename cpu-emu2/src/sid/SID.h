@@ -1,18 +1,16 @@
-#ifndef GRAPH_H
-#define GRAPH_H
+#ifndef SID_H
+#define SID_H
 #include "SDL.h"
 #include "SDL_audio.h"
 #include <stdio.h>
-#include <cmath>
 #include <string>
-#include <stack>
-#include <unistd.h>	// unistd.h for mac/linux, io.h for windows
 #include <vector>
 #include <fstream>
 
+typedef char memory[0x10000][9];
+
 /* Window Constants */
-const std::string WINDOW_TITLE = "Wave Graph";
-const int REFRESH_INTERVAL = 50;                // mseconds
+const std::string WINDOW_TITLE = "SID Graphical Window";
 const int WINDOW_WIDTH = 1980;
 const int WINDOW_HEIGHT = 255;
 
@@ -26,7 +24,7 @@ const int SAMPLING_RATE = 44100;				// number of samples per second
 #include "SDL_ttf.h"
 #endif
 
-class Graph
+class SID
 {
 private:
 	SDL_Window *window;
@@ -36,26 +34,34 @@ private:
 	SDL_AudioSpec spec;
 	SDL_AudioDeviceID dev;
 
+
+	int refreshInterval = 50;				         // mseconds
 	int thread_exit = 0;
-	bool pause_thread = false;
+	bool pause_thread = false;	
 
 #ifdef TTF_ENABLED
 	TTF_Font* font;
 #endif
 
 public:
-	Graph();
+	// properties
+	bool showWindow = false;
+	bool keyGpressed;
+	memory* _mem;
+
+	// methods
+	SID(memory* mem, int interval, bool window);
 	void init();
 	void mainLoop();
 	void drawGraph();
 
-	bool keyGpressed;
-
 	void exit();
-	SDL_AudioSpec* getSpec();
-
+	uint8_t readMemory(uint16_t addr) const;
+	char* readMemoryBitwise(uint16_t addr) const;
+	void updateRegisters();
 
 	// SDL audio members
+	SDL_AudioSpec* getSpec();
 	struct Voice{
 		Voice();
 
@@ -70,12 +76,24 @@ public:
 		double maxWaveValue;  //
 		long double phase;
 		long double phaseInc;
+		
+		int activeWaveValue;
+		int getActiveWaveValue();
+
+		bool ring;
+		bool sync;
+
+		bool isRing();
+		bool isSync();
+
+		int getFrequency();
+		void setFrequency(int freq);
 
 		// SDL buffer handling members
 		int audioPosition = 0;      // counter
-		bool gate = false;
 
-		uint8_t getSample();
+		double getWaveValue();
+		double getEnvelopeValue();
 
 		// ADSR Envelope extension
 		struct Envelope
@@ -133,7 +151,7 @@ public:
 			void set_instrument();
 
 		} envelope;
-	} voice;
+	} voice1, voice2, voice3;
 
 	int graphDisplayLength = 9900;
 

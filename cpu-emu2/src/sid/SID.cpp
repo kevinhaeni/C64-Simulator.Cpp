@@ -1,11 +1,12 @@
-#include "Graph.h"
+#include "SID.h"
 #include <iostream>
 #include <string>
 #include <algorithm>    // std::min
+#include "Utils.h"
 
 double cotan(double i) { return(1 / tan(i)); }
 
-const uint8_t Graph::Voice::Envelope::sustain_level[16] = {
+const uint8_t SID::Voice::Envelope::sustain_level[16] = {
 	0x00,
 	0x11,
 	0x22,
@@ -24,7 +25,7 @@ const uint8_t Graph::Voice::Envelope::sustain_level[16] = {
 	0xff,
 };
 
-const uint8_t Graph::Voice::Envelope::decreasePerEnvelopeValue[256] = {
+const uint8_t SID::Voice::Envelope::decreasePerEnvelopeValue[256] = {
 	/* 0x00: */   1, 30, 30, 30, 30, 30, 30, 16, // 0x06
 	/* 0x08: */  16, 16, 16, 16, 16, 16, 16, 8,  // 0x0e
 	/* 0x10: */   8, 8, 8, 8, 8, 8, 8, 8,
@@ -60,7 +61,7 @@ const uint8_t Graph::Voice::Envelope::decreasePerEnvelopeValue[256] = {
 };
 
 // number of cycles till the next increase of the enveloper_counter
-const uint16_t Graph::Voice::Envelope::cyclesWhenToChangeEnvelopeCounter_Attack[16] = {
+const uint16_t SID::Voice::Envelope::cyclesWhenToChangeEnvelopeCounter_Attack[16] = {
 	1, //Bug < 0 //abs(2*SAMPLING_RATE/256/1000),		//   2ms*1.0MHz/256 =     7.81
 	abs(8 * SAMPLING_RATE / 256 / 1000),				//   8ms*1.0MHz/256 =    31.25
 	abs(16 * SAMPLING_RATE / 256 / 1000),				//  16ms*1.0MHz/256 =    62.50
@@ -81,72 +82,273 @@ const uint16_t Graph::Voice::Envelope::cyclesWhenToChangeEnvelopeCounter_Attack[
 
 /*int main(int argc, char* argv[]){
 
-	Graph* g = new Graph();
+	char memory[0x10000][9];		// the memory
+	memory[0xD400][0] = 1;
+	memory[0xD400][1] = 1;
+	memory[0xD400][2] = 1;
+	memory[0xD400][3] = 1;
+	memory[0xD400][4] = 1;
+	memory[0xD400][5] = 1;
+	memory[0xD400][6] = 1;
+	memory[0xD400][7] = 1;
+
+
+	memory[0xD401][0] = 0;
+	memory[0xD401][1] = 0;
+	memory[0xD401][2] = 0;
+	memory[0xD401][3] = 0;
+	memory[0xD401][4] = 0;
+	memory[0xD401][5] = 0;
+	memory[0xD401][6] = 0;
+	memory[0xD401][7] = 0;
+
+	memory[0xD404][0] = 0;
+	//memory[0xD404][1] = ;
+	//memory[0xD404][2] = ;
+	memory[0xD404][3] = 1;
+	memory[0xD404][4] = 0;
+	memory[0xD404][5] = 1;
+	memory[0xD404][6] = 0;
+	memory[0xD404][7] = 0;
+
+	SID* g = new SID(&memory, 50, true);
 
 	int i;
 	std::cin >> i;
 	return 0;
-}
+}*/
 
-*/
-int graphThreadFunc(void *pointer){
-	Graph* grid = static_cast<Graph*>(pointer);
-	grid->init();
+int sidThreadFunc(void *pointer){
+	SID* sid = static_cast<SID*>(pointer);
+	sid->init();
 
 	return 0;
 }
 
 
+// Reads the value at the given memory address
+char* SID::readMemoryBitwise(uint16_t addr) const
+{
+	return (*_mem)[addr];
+}
+
+// Reads the value at the given memory address
+// also converts the [9] bitwise representation (e.g.: "01011101\0") into a unsigned decimal number
+uint8_t SID::readMemory(uint16_t addr) const
+{
+	uint8_t val = 0;
+
+	for (int i = 7; i >= 0; i--)
+	{		
+		val += (*_mem)[addr][i] * pow(2,7-i);
+	}
+
+	return val;
+}
+
+void SID::updateRegisters()
+{
+	// VOICE 1
+
+	uint8_t v1_freqLo = readMemory(0xD400);
+	uint8_t v1_freqHi = readMemory(0xD401);
+	uint16_t v1_freq = Utils::makeWord(v1_freqLo, v1_freqHi);
+	voice1.setFrequency(v1_freq);
+
+	uint8_t v1_pwLo = readMemory(0xD402);
+	uint8_t v1_pwHi = readMemory(0xD403);
+	uint16_t v1_pw = Utils::makeWord(v1_pwLo, v1_pwHi);
+	voice1.pwn = v1_freq;
+
+	voice1.phaseInc = static_cast<double>(voice1.frequency) / static_cast<double>(SAMPLING_RATE);
+
+	char* v1_control = readMemoryBitwise(0xD404);	// returns an array of 8 chars [0=NOISE,1=PULSE,2=SAW,3=TRI,4=TEST,5=RING,6=SYNC,7=GATE]
+	if (v1_control[0] != 0)
+		voice1.waveForm = Voice::WaveForm::NOISE;
+	if (v1_control[1] != 0)
+		voice1.waveForm = Voice::WaveForm::RECT;
+	if (v1_control[2] != 0)
+		voice1.waveForm = Voice::WaveForm::SAWTOOTH;
+	if (v1_control[3] != 0)
+		voice1.waveForm = Voice::WaveForm::TRIANGLE;
+	//if (v1_control[4] != 0)
+		// WTF is test?
+	if (v1_control[5] != 0)
+		voice1.ring = true;
+	else
+		voice1.ring = false;
+
+	if (v1_control[6] != 0)
+		voice1.sync = true;
+	else
+		voice1.sync = false;
+
+	if (v1_control[7] != 0)
+		voice1.envelope.set_gate(true);
+	else
+		voice1.envelope.set_gate(false);
+
+
+	//case 0x05:
+	//voice1.Envelope.write_ATTACK_DECAY(value);
+	//break;
+	//case 0x06:
+	//voice1.Envelope.write_SUSTAIN_RELEASE(value);
+	//break;
+	//case 0x07:
+	//voice2.Wave.write_FREQ_LO(value);
+	//break;
+	//case 0x08:
+	//voice2.Wave.write_FREQ_HI(value);
+	//break;
+	//case 0x09:
+	//voice2.Wave.write_PW_LO(value);
+	//break;
+	//case 0x0a:
+	//voice2.Wave.write_PW_HI(value);
+	//break;
+	//case 0x0b:
+	//voice2.Wave.write_CONTROLREG(value);
+	//break;
+	//case 0x0c:
+	//voice2.Envelope.write_ATTACK_DECAY(value);
+	//break;
+	//case 0x0d:
+	//voice2.Envelope.write_SUSTAIN_RELEASE(value);
+	//break;
+	//case 0x0e:
+	//voice3.Wave.write_FREQ_LO(value);
+	//break;
+	//case 0x0f:
+	//voice3.Wave.write_FREQ_HI(value);
+	//break;
+	//case 0x10:
+	//voice3.Wave.write_PW_LO(value);
+	//break;
+	//case 0x11:
+	//voice3.Wave.write_PW_HI(value);
+	//break;
+	//case 0x12:
+	//voice3.Wave.write_CONTROLREG(value);
+	//break;
+	//case 0x13:
+	//voice3.Envelope.write_ATTACK_DECAY(value);
+	//break;
+	//case 0x14:
+	//voice3.Envelope.write_SUSTAIN_RELEASE(value);
+	//break;
+	//case 0x15:
+	//Filter.write_FC_LO(value);
+	//break;
+	//case 0x16:
+	//Filter.write_FC_HI(value);
+	//break;
+	//case 0x17:
+	//Filter.write_RES_FILT(value);
+	//break;
+	//case 0x18:
+	//Filter.write_MODE_VOL(value);
+	//break;
+	//default:
+	//break;
+	//}
+}
 
 // SDL calls this function whenever it wants its buffer to be filled with samples
 void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 	uint8_t *stream = static_cast<uint8_t*>(buffer);
 
-	Graph* graph = static_cast<Graph*>(data);
+	SID* sid = static_cast<SID*>(data);
 
+	uint8_t val = sid->readMemory(0);
 
 	for (int i = 0; i < length; i++){
 
-		if (graph->voice.silent)
-			stream[i] = graph->getSpec()->silence;      // silence in uint8 is represented by the value 128
+		if (sid->voice1.silent)
+			stream[i] = sid->getSpec()->silence;      // silence in uint8 is represented by the value 128
 		else
 		{
-			stream[i] = graph->voice.getSample();		// calculate the next sample value
+			// ***** SYNC
+			// voice 1
+			if (sid->voice1.isSync()){
+				sid->voice1.setFrequency(sid->voice3.getFrequency());
+			}
+			// voice 2
+			if (sid->voice2.isSync()){
+				sid->voice2.setFrequency(sid->voice1.getFrequency());
+			}
+			// voice 3
+			if (sid->voice3.isSync()){
+				sid->voice3.setFrequency(sid->voice2.getFrequency());
+			}
+
+			// ***** WAVES
+			double waveValue1 = sid->voice1.getWaveValue();
+			double waveValue2 = sid->voice2.getWaveValue();
+			double waveValue3 = sid->voice3.getWaveValue();
+
+			// ***** RING MODE
+			// ring bit set and the Waveform is Triangle
+			if (sid->voice1.isRing()){
+				if(waveValue3 < 0.0){ waveValue1 *= -1.0;}
+			}
+
+			// ***** ENVELOPES
+			double envelope1 = sid->voice1.getEnvelopeValue();
+			double envelope2 = sid->voice2.getEnvelopeValue();
+			double envelope3 = sid->voice3.getEnvelopeValue();
+
+			// ***** FINAL VOICE
+			// final Voice = Envelope * Amplitude * WaveValue + 128
+			int finalVoice1 = envelope1 * sid->voice1.amp * waveValue1 + 128;
+			int finalVoice2 = envelope2 * sid->voice2.amp * waveValue2 + 128;
+			int finalVoice3 = envelope3 * sid->voice3.amp * waveValue3 + 128;
+
+
+			// ***** SDL OUT
+			// ToDO: combine all 3 Voices to one output stream
+			stream[i] = finalVoice1;
+
 
 			// graph plotting extension:
 			// Fill the graphBuffer with the first 9900 bytes of the wave for plotting
-			if (graph->graphPointer < graph->graphBufferSize)
-				graph->graphBuffer[graph->graphPointer++] = stream[i];
+			if (sid->showWindow)
+			{
+				if (sid->graphPointer < sid->graphBufferSize)
+					sid->graphBuffer[sid->graphPointer++] = finalVoice1;
+			}			
 
 #ifdef DEBUG
 			// write buffer value to logfile for debugging purposes
-			if (graph->logCounter++ <= SAMPLING_RATE)
-				graph->logFile << (int)stream[i] << std::endl;
+			if (sid->logCounter++ <= SAMPLING_RATE)
+				sid->logFile << (int)stream[i] << std::endl;
 #endif
 
-			graph->voice.audioPosition++;
+			sid->voice1.audioPosition++;
 		}
-
-		
 	}
 }
 
 
-Graph::Graph()
+SID::SID(memory* mem, int interval, bool window)
 {
+	this->showWindow = window;
+	this->refreshInterval = interval;
+	this->_mem = mem;
+
 	// spawn thread
-	SDL_Thread *refresh_thread = SDL_CreateThread(graphThreadFunc, NULL, this);
+	SDL_Thread *refresh_thread = SDL_CreateThread(sidThreadFunc, NULL, this);
 }
 
-SDL_AudioSpec* Graph::getSpec(){
+SDL_AudioSpec* SID::getSpec(){
 	return &this->spec;
 }
 
 
-void Graph::init()
+void SID::init()
 {
 #ifdef DEBUG
-	logFile.open("wavegenerator.log");
+	logFile.open("sid.log");
 #endif
 
 	// Init SDL & SDL_ttf
@@ -166,6 +368,10 @@ void Graph::init()
 	desiredDeviceSpec.samples = 2048;			// The size of the Audio Buffer (in number of samples, eg: 2048 * 1 Byte (AUDIO_U8)
 	desiredDeviceSpec.callback = SDLAudioCallback;
 	desiredDeviceSpec.userdata = this;
+
+	// init voices
+
+	voice1.waveForm = Voice::SINE;
 
 	// request audioDeviceSpec
 	dev = SDL_OpenAudioDevice(nullptr, 0, &desiredDeviceSpec, &spec, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
@@ -195,26 +401,36 @@ void Graph::init()
 	}
 	else{
 
-		envFile = new std::ifstream("adsr.txt");
+		//envFile = new std::ifstream("adsr.txt");
 
-		graphBuffer = new uint8_t[graphBufferSize];
-		//graphBufferSize = graphDisplayLength;
-		graphPointer = 0;
+
+		updateRegisters();
+		if (showWindow)
+		{
+			graphBuffer = new uint8_t[graphBufferSize];
+			//graphBufferSize = graphDisplayLength;
+			graphPointer = 0;
+		}		
 
 		SDL_PauseAudioDevice(dev, 0);        // play
 		SDL_Delay(1000);	// 44100 / length of the audio  * 1000 (to get milliseconds)
 
-		drawGraph();
-
+		if (showWindow)
+		{
+			drawGraph();
+		}
+	
 		mainLoop();
 		return;
 	}
 }
 
-void Graph::mainLoop()
+void SID::mainLoop()
 {
 	// poll SDL events until we terminate the thread
 	while (thread_exit == 0){
+		updateRegisters();
+
 		SDL_Event event;
 
 		bool forceRedraw = false;		// set to true when the audio wave changes and its graph should be redrawn
@@ -227,30 +443,30 @@ void Graph::mainLoop()
 				if (event.key.keysym.scancode == SDL_SCANCODE_SPACE){
 					forceRedraw = true;
 					//pause_thread = !pause_thread;
-					switch (voice.waveForm){
+					switch (voice1.waveForm){
 					case Voice::SINE:
 					{
-						voice.waveForm = Graph::Voice::WaveForm::TRIANGLE;
+						voice1.waveForm = SID::Voice::WaveForm::TRIANGLE;
 						break;
 					}
 					case Voice::TRIANGLE:
 					{
-						voice.waveForm = Graph::Voice::WaveForm::RECT;
+						voice1.waveForm = SID::Voice::WaveForm::RECT;
 						break;
 					}
 					case Voice::RECT:
 					{
-						voice.waveForm = Graph::Voice::WaveForm::SAWTOOTH;
+						voice1.waveForm = SID::Voice::WaveForm::SAWTOOTH;
 						break;
 					}
 					case Voice::SAWTOOTH:
 					{
-						voice.waveForm = Graph::Voice::WaveForm::NOISE;
+						voice1.waveForm = SID::Voice::WaveForm::NOISE;
 						break;
 					}
 					case Voice::NOISE:
 					{
-						voice.waveForm = Graph::Voice::WaveForm::SINE;
+						voice1.waveForm = SID::Voice::WaveForm::SINE;
 						break;
 					}
 					default:
@@ -265,32 +481,32 @@ void Graph::mainLoop()
 				}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_LEFT){
 					forceRedraw = true;
-					voice.frequency -= 10;
+					voice1.frequency -= 10;
 				}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_RIGHT){
 					forceRedraw = true;
-					voice.frequency += 10;
+					voice1.frequency += 10;
 				}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_UP){
 					forceRedraw = true;
-					voice.amp += 2;
+					voice1.amp += 2;
 				}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_DOWN){
 					forceRedraw = true;
-					voice.amp -= 2;
+					voice1.amp -= 2;
 				}
 
 				else if (event.key.keysym.scancode == SDL_SCANCODE_G){
 					// toggle gate ON
 					//graphPointer = 0;
 					if (keyGpressed == false){
-						voice.silent = false;
+						voice1.silent = false;
 					
 						graphPointer = 0;
-						voice.audioPosition = 0;
-						voice.phase = 0;
-						voice.phaseInc = static_cast<double>(voice.frequency) / static_cast<double>(SAMPLING_RATE);
-						voice.envelope.set_gate(true);
+						voice1.audioPosition = 0;
+						voice1.phase = 0;
+						voice1.phaseInc = static_cast<double>(voice1.frequency) / static_cast<double>(SAMPLING_RATE);
+						voice1.envelope.set_gate(true);
 
 						SDL_PauseAudioDevice(dev, 0);        // play
 					}
@@ -299,77 +515,84 @@ void Graph::mainLoop()
 
 				else if (event.key.keysym.scancode == SDL_SCANCODE_E){
 					forceRedraw = true;
-					voice.envelope.active = !voice.envelope.active;
-					voice.silent = true;
+					voice1.envelope.active = !voice1.envelope.active;
+					voice1.silent = true;
 				}
 
 				else if (event.key.keysym.scancode == SDL_SCANCODE_I){
 					forceRedraw = true;
-					if (++voice.envelope.active_instrument_index >= voice.envelope.instruments.size()){
-						voice.envelope.active_instrument_index = 0;
+					if (++voice1.envelope.active_instrument_index >= voice1.envelope.instruments.size()){
+						voice1.envelope.active_instrument_index = 0;
 					}
-					voice.envelope.set_instrument();
+					voice1.envelope.set_instrument();
 				}
 
 				else if (event.key.keysym.scancode == SDL_SCANCODE_P){
 					forceRedraw = true;
-					if (voice.waveForm == Voice::WaveForm::RECT){
-						if (voice.pwn + 0.05 < 1.05){
-							voice.pwn += 0.05;
+					if (voice1.waveForm == Voice::WaveForm::RECT){
+						if (voice1.pwn + 0.05 < 1.05){
+							voice1.pwn += 0.05;
 						}
 					}
 				}
-				else if (event.key.keysym.scancode == SDL_SCANCODE_R){					
-					if (voice.envelope.active){
-						// read values from file
-						int waveform, a, f, pwn, attack, decay, sustain, release, gateOpenDuration;
-
-						if (*envFile >> waveform >> a >> f >> pwn >> attack >> decay >> sustain >> release >> gateOpenDuration)
-						{
-							voice.waveForm = static_cast<Voice::WaveForm>(waveform);
-							voice.amp = a;
-							voice.frequency = f;
-							voice.pwn = pwn;
-							voice.phase = 0;
-							voice.phaseInc = static_cast<double>(voice.frequency) / static_cast<double>(SAMPLING_RATE);
-
-							voice.envelope.attack_index = attack;
-							voice.envelope.decay_index = decay;
-							voice.envelope.sustain_index = sustain;
-							voice.envelope.release_index = release;
-														
-							voice.envelope.set_gate(true);
-							graphPointer = 0;
-							voice.audioPosition = 0;							
-							SDL_PauseAudioDevice(dev, 0);        // play
-
-							// wait to close gate
-							SDL_Delay(gateOpenDuration);
-							voice.envelope.set_gate(false);
-
-							SDL_Delay(500);	// wait to allow the graph buffer to be filled
-
-							drawGraph();
-
-						} else
-						{
-							// reopen file
-						}					
-
-					}
+				else if(event.key.keysym.scancode == SDL_SCANCODE_S){
+					forceRedraw = true;
+					voice1.sync = !voice1.sync;
 				}
+				else if(event.key.keysym.scancode == SDL_SCANCODE_R){
+					forceRedraw = true;
+					voice1.ring = !voice1.ring;
+				}
+				//else if (event.key.keysym.scancode == SDL_SCANCODE_F){
+				//	if (voice.envelope.active){
+				//		// read values from file
+				//		int waveform, a, f, pwn, attack, decay, sustain, release, gateOpenDuration;
+
+				//		if (*envFile >> waveform >> a >> f >> pwn >> attack >> decay >> sustain >> release >> gateOpenDuration)
+				//		{
+				//			voice.waveForm = static_cast<Voice::WaveForm>(waveform);
+				//			voice.amp = a;
+				//			voice.frequency = f;
+				//			voice.pwn = pwn;
+				//			voice.phase = 0;
+				//			voice.phaseInc = static_cast<double>(voice.frequency) / static_cast<double>(SAMPLING_RATE);
+
+				//			voice.envelope.attack_index = attack;
+				//			voice.envelope.decay_index = decay;
+				//			voice.envelope.sustain_index = sustain;
+				//			voice.envelope.release_index = release;
+				//										
+				//			voice.envelope.set_gate(true);
+				//			graphPointer = 0;
+				//			voice.audioPosition = 0;							
+				//			SDL_PauseAudioDevice(dev, 0);        // play
+
+				//			// wait to close gate
+				//			SDL_Delay(gateOpenDuration);
+				//			voice.envelope.set_gate(false);
+
+				//			SDL_Delay(500);	// wait to allow the graph buffer to be filled
+
+				//			drawGraph();
+
+				//		} else
+				//		{
+				//			// reopen file
+				//		}					
+
+				//	}
+				//}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_O){
 					forceRedraw = true;
-					if (voice.waveForm == Voice::WaveForm::RECT){
-						if (voice.pwn - 0.05 > -0.05){
-							voice.pwn -= 0.05;
+					if (voice1.waveForm == Voice::WaveForm::RECT){
+						if (voice1.pwn - 0.05 > -0.05){
+							voice1.pwn -= 0.05;
 						}
 					}
 				}
 				else{
 
 				}
-
 				break;
 			}
 
@@ -380,12 +603,12 @@ void Graph::mainLoop()
 			}
 			case SDL_KEYUP:
 			{
-				//				hasChanged = true;
+				//hasChanged = true;
 
 				if (event.key.keysym.scancode == SDL_SCANCODE_G){
 					//					hasChanged = true;
 					// toggle gate OFF
-					voice.envelope.set_gate(false);
+					voice1.envelope.set_gate(false);
 					keyGpressed = false;
 
 					SDL_Delay(1000);
@@ -404,8 +627,8 @@ void Graph::mainLoop()
 			//SDL_PauseAudioDevice(dev, 1);      // play
 			graphPointer = 0;
 
-			voice.audioPosition = 0;
-			voice.phaseInc = static_cast<double>(voice.frequency) / static_cast<double>(SAMPLING_RATE);
+			voice1.audioPosition = 0;
+			voice1.phaseInc = static_cast<double>(voice1.frequency) / static_cast<double>(SAMPLING_RATE);
 
 			SDL_PauseAudioDevice(dev, 0);        // play
 			SDL_Delay(1000);
@@ -413,12 +636,12 @@ void Graph::mainLoop()
 			drawGraph();
 		}
 
-		SDL_Delay(REFRESH_INTERVAL);
+		SDL_Delay(refreshInterval);
 	}
 	return;
 }
 
-void Graph::drawGraph()
+void SID::drawGraph()
 {
 	SDL_Renderer *renderer = SDL_GetRenderer(window);
 	if (renderer == nullptr)
@@ -476,7 +699,6 @@ void Graph::drawGraph()
 		else{
 			SDL_RenderDrawLine(renderer, x1, y2, x2, y1);
 		}
-
 	}
 
 
@@ -488,55 +710,59 @@ void Graph::drawGraph()
 	int w = 0;
 
 	std::string waveform;
-	switch (voice.waveForm){
-	case Voice::WaveForm::SINE:{
-		waveform = "Sine";
-		w = 48;
-		break;
-	}
-	case Voice::WaveForm::RECT:{
-		waveform = "Rect";
-		w = 48;
-		break;
-	}
-	case Voice::WaveForm::TRIANGLE:{
-		waveform = "Triangle";
-		w = 48 * 2;
-		break;
-	}
-	case Voice::WaveForm::SAWTOOTH:{
-		waveform = "Sawtooth";
-		w = 48 * 2;
-		break;
-	}
-	case Voice::WaveForm::NOISE:{
-		waveform = "Noise";
-		w = 48 * 2;
-		break;
-	}
+	switch (voice1.waveForm){
+		case Voice::WaveForm::SINE:{
+			waveform = "Sine";
+			w = 48;
+			break;
+		}
+		case Voice::WaveForm::RECT:{
+			waveform = "Rect";
+			w = 48;
+			break;
+		}
+		case Voice::WaveForm::TRIANGLE:{
+			waveform = "Triangle";
+			w = 48 * 2;
+			break;
+		}
+		case Voice::WaveForm::SAWTOOTH:{
+			waveform = "Sawtooth";
+			w = 48 * 2;
+			break;
+		}
+		case Voice::WaveForm::NOISE:{
+			waveform = "Noise";
+			w = 48 * 2;
+			break;
+		}
 	}
 
 
-	std::string amp = "Amp = " + std::to_string(this->voice.amp);
+	std::string amp = "Amp = " + std::to_string(this->voice1.amp);
 	w += 48 * 3;
-	std::string freq = "Freq = " + std::to_string(this->voice.frequency) + " Hz";
+	std::string freq = "Freq = " + std::to_string(this->voice1.frequency) + " Hz";
 	w += 48 * 3;
-	std::string env = "Envelope = " + std::to_string(this->voice.envelope.active);
+	std::string env = "Envelope = " + std::to_string(this->voice1.envelope.active);
+	w += 48 * 3;
+	std::string sync = "Sync = " + std::to_string(this->voice1.isSync());
+	w += 48 * 3;
+	std::string ring = "Ring = " + std::to_string(this->voice1.isRing());
 	w += 48 * 3;
 
-	std::string result = waveform + " : " + amp + ", " + freq + ", " + env;
+	std::string result = waveform + " : " + amp + ", " + freq + ", " + env + ", " + sync + ", " + ring;
 
 	// Different Display for Rectangle Waveform
-	if (voice.waveForm == Voice::WaveForm::RECT){
-		std::string pwn = "PWN = " + std::to_string(this->voice.pwn);
+	if (voice1.waveForm == Voice::WaveForm::RECT){
+		std::string pwn = "PWN = " + std::to_string(this->voice1.pwn);
 		w += 48 * 3;
 		result = result + ", " + pwn;
 	}
 	// Different Display for Envelope
-	if (voice.envelope.active == true){
-		std::string gate = "Gate = " + std::to_string(this->voice.envelope.gate);
+	if (voice1.envelope.active == true){
+		std::string gate = "Gate = " + std::to_string(this->voice1.envelope.gate);
 
-		std::string inst = "Instrument = " + this->voice.envelope.instruments[this->voice.envelope.active_instrument_index].name;
+		std::string inst = "Instrument = " + this->voice1.envelope.instruments[this->voice1.envelope.active_instrument_index].name;
 		w += 48 * 3;
 		result = result + ", " + gate + ", " + inst;
 	}
@@ -556,7 +782,7 @@ void Graph::drawGraph()
 	return;
 }
 
-void Graph::exit(){
+void SID::exit(){
 	thread_exit = 1;
 	// Close and destroy the window
 	SDL_DestroyWindow(window);
@@ -564,21 +790,24 @@ void Graph::exit(){
 	SDL_Quit();
 }
 
-Graph::Voice::Voice(){
+SID::Voice::Voice(){
 	// Initial wave parameters
-	waveForm = Graph::Voice::WaveForm::SINE;
+	waveForm = SID::Voice::WaveForm::SINE;
 	amp = 120;
-	frequency = 440;
+	frequency = 60;
 	audioPosition = 0;
 	maxWaveValue = 2;
 	phase = 0;
 	phaseInc = static_cast<double>(frequency) / static_cast<double>(SAMPLING_RATE);
 
+	ring = false;
+	sync = false;
+
 	envelope.reset();
 	envelope.set_instrument();
 }
 
-Graph::Voice::Envelope::Envelope(){
+SID::Voice::Envelope::Envelope(){
 	// Xylophone, Triangle
 	Instrument * i1 = new Instrument("Piano (Pulse)", 0, 9, 0, 0);
 	// Trumpet, Sawtooth
@@ -591,11 +820,7 @@ Graph::Voice::Envelope::Envelope(){
 	instruments.push_back(*i3);
 }
 
-
-uint8_t Graph::Voice::getSample(){
-	//uint16_t stepsPerPeriod = SAMPLING_RATE / frequency;
-	uint16_t stepsPerPeriod = 1 / phaseInc;
-	//uint16_t stepCounter = audioPosition % SAMPLING_RATE;
+double SID::Voice::getEnvelopeValue(){
 	int stepCounter = audioPosition % SAMPLING_RATE;
 
 	double env;
@@ -615,70 +840,64 @@ uint8_t Graph::Voice::getSample(){
 			envelope.doStep();
 		}
 		env = envelope.envelope_counter_forWave;
-
 	}
 	else
 	{
 		env = 1;
 	}
+	phase += phaseInc;
+	return env;
+}
 
+double SID::Voice::getWaveValue(){
+	uint16_t stepsPerPeriod = 1 / phaseInc;
+	double sample;
 
 	switch (waveForm){
 	case SINE:
 	{
 		/*float sineStep = 2 * M_PI * audioPosition * frequency / SAMPLING_RATE;
 		return (amp * env * sin(sineStep)) + 128;*/
-		uint8_t sample = (amp * env * sin(2 * M_PI * phase)) + 128;
-		phase += phaseInc;
-		return sample;
+		sample = sin(2 * M_PI * phase);
+		break;
 	}
 	case RECT:
 	{
 		//if (fmod(static_cast<double>(audioPosition), stepsPerPeriod) < pwn * stepsPerPeriod)
-		uint8_t sample;
-		if (fmod(phase, stepsPerPeriod*phaseInc) < pwn * stepsPerPeriod*phaseInc)
-		{
-			phase += phaseInc;
-			sample = (amp * env * 1) + 128;
+		if (fmod(phase, stepsPerPeriod*phaseInc) < pwn * stepsPerPeriod*phaseInc){
+			sample =  1;
 		}
-		else
-		{
-			phase += phaseInc;
-			sample = (amp * env * -1) + 128;
+		else{
+			sample = -1;
 		}
-		return sample;
+		break;
 	}
 	case SAWTOOTH:
 	{		
 		//return  amp * env * (fmod((maxWaveValue / stepsPerPeriod * static_cast<double>(audioPosition)), maxWaveValue) - maxWaveValue / 2) + 128;
-		uint8_t sample;
-		sample = env* -(2 * amp) / M_PI * atan(cotan(phase*M_PI)) + 128;
-		phase += phaseInc;
-		return sample;
+		sample = -2 / M_PI * atan(cotan(phase*M_PI));
+		break;
 	}
 	case TRIANGLE:
 	{
 		// sine-to-triangle equation from wikipedia (https://en.wikipedia.org/wiki/Triangle_wave)
-		uint8_t sample;
-		double sinevalue = (sin(2 * M_PI * phase));
-
-		sample = env * (2 * amp) / M_PI * asin(sinevalue) + 128;
-
-		phase += phaseInc;
-		return sample;
-
+		double sinevalue = sin(2 * M_PI * phase);
+		sample =  2 / M_PI * asin(sinevalue);
+		break;
 	}
-
 	case NOISE:
 		// maxWaveValue 2 -> Random number between -1.0 and 1.0
-		return amp * env * (fmod(static_cast<double>(rand()), (maxWaveValue + 1.0)) - maxWaveValue / 2) + 128;
+		sample = fmod(static_cast<double>(rand()), (maxWaveValue + 1.0)) - maxWaveValue / 2;
+		break;
 	default:
 		return 0;
 	}
+	activeWaveValue = sample;
+	return sample;
 }
 
 
-void Graph::Voice::Envelope::doStep(){
+void SID::Voice::Envelope::doStep(){
 
 	// counter stays at zero
 	if (holdZero == true){
@@ -710,12 +929,12 @@ void Graph::Voice::Envelope::doStep(){
 
 }
 
-double Graph::Voice::Envelope::get_envelope_counter() const
+double SID::Voice::Envelope::get_envelope_counter() const
 {
 	return static_cast<double>(envelope_counter) / 255.0;
 }
 
-void Graph::Voice::Envelope::reset(){
+void SID::Voice::Envelope::reset(){
 	envelope_counter = 0;
 
 	attack_index = 0;
@@ -733,7 +952,7 @@ void Graph::Voice::Envelope::reset(){
 	holdZero = true;
 }
 
-void Graph::Voice::Envelope::set_gate(bool setIt){
+void SID::Voice::Envelope::set_gate(bool setIt){
 
 	// Gate now active
 	if (!gate && setIt){
@@ -749,7 +968,7 @@ void Graph::Voice::Envelope::set_gate(bool setIt){
 	gate = setIt;
 }
 
-Graph::Voice::Envelope::Instrument::Instrument(std::string name, uint8_t a, uint8_t d, uint8_t s, uint8_t r){
+SID::Voice::Envelope::Instrument::Instrument(std::string name, uint8_t a, uint8_t d, uint8_t s, uint8_t r){
 	this->name = name;
 	this->attack_index = a;
 	this->decay_index = d;
@@ -757,15 +976,35 @@ Graph::Voice::Envelope::Instrument::Instrument(std::string name, uint8_t a, uint
 	this->release_index = r;
 }
 
-void Graph::Voice::Envelope::set_instrument(){
+void SID::Voice::Envelope::set_instrument(){
 	attack_index = instruments[active_instrument_index].attack_index;
 	decay_index = instruments[active_instrument_index].decay_index;
 	sustain_index = instruments[active_instrument_index].sustain_index;
 	release_index = instruments[active_instrument_index].release_index;
 }
 
+bool SID::Voice::isRing(){
+	return ring && waveForm == WaveForm::TRIANGLE;
+}
 
-void Graph::resetGraphBuffer(){
+bool SID::Voice::isSync(){
+	return sync;
+}
+
+int SID::Voice::getFrequency(){
+	return frequency;
+}
+
+
+int SID::Voice::getActiveWaveValue(){
+	return activeWaveValue;
+}
+
+void SID::Voice::setFrequency(int newFrequency){
+	frequency = newFrequency;
+}
+
+void SID::resetGraphBuffer(){
 	for (int i = 0; i < graphBufferSize; i++){
 		graphBuffer[i] = getSpec()->silence;
 	}
