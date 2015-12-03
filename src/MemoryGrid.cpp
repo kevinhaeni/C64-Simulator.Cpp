@@ -1,6 +1,4 @@
 #include "MemoryGrid.h"
-#include <thread>
-#include <iostream>
 #include "Utils.h"
 #include "CPU.h"
 #include <sstream>

@@ -3,7 +3,7 @@
 #include <iostream>
 #include <algorithm>    // std::find_if
 
-CPU::CPU(C64* c64, SID* sid)
+CPU::CPU(C64* c64, oldSID* sid)
 	: c64(c64), sid(sid)
 {
 	this->loadInstructionSet();

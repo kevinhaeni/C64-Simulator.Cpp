@@ -2,7 +2,8 @@
 #define C64_H
 #include <cstdint>
 #include "Memory.h"
-#include "SID.h"
+#include "oldSID.h"
+//#include "SID.h"
 
 // Type definitions, constants etc.
 const int MEMSIZE = 65535;
@@ -18,7 +19,7 @@ class C64
 	private:
 		Memory *mem;
 		CPU *cpu;
-		SID *sid;
+		oldSID *sid;
 
 	public:		
 		C64();

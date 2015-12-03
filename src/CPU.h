@@ -5,7 +5,7 @@
 #include "Flag.h"
 #include "Instruction.h"
 #include "Utils.h"
-#include "SID.h"
+#include "oldSID.h"
 #include "C64.h"
 
 // Type definitions, constants etc.
@@ -19,7 +19,7 @@ class CPU
 private:
 
 	C64* c64;													// pointer to the C64 object for (shared) memory access
-	SID* sid;
+	oldSID* sid;
 	int cycleCounter;
 	std::unordered_map<int, Instruction*> instructionTable;
 	void addInstruction(Instruction* instr);
@@ -81,7 +81,7 @@ private:
    
 
 public:
-	CPU(C64* c64, SID* sid);
+	CPU(C64* c64, oldSID* sid);
 
 	// Flags
 	struct Flags

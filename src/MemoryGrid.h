@@ -1,9 +1,7 @@
 #ifndef MEMORYGRID_H
 #define MEMORYGRID_H
 #include "SDL.h"
-#include <stdio.h>
 #include "C64.h"
-#include <cmath>
 #include <string>
 #include "SDL_ttf.h"
 #include <stack>

@@ -4,7 +4,7 @@
 	C64::C64(){
 
 		this->mem = new Memory(65535);
-		this->sid = new SID();
+		this->sid = new oldSID();
 		this->cpu = new CPU(this, sid);
 	}
 

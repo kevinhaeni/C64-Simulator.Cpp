@@ -30,16 +30,16 @@
     <ClInclude Include="src\Memory.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="src\SID.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="src\Utils.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
     <ClInclude Include="src\MemoryGrid.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="src\Graph.h">
+    <ClInclude Include="src\oldSID.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\SID.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>
@@ -68,10 +68,10 @@
     <ClCompile Include="src\MemoryGrid.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="src\SID.cpp">
+    <ClCompile Include="src\oldSID.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="src\Graph.cpp">
+    <ClCompile Include="src\SID.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>
