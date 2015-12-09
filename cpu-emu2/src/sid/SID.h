@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <iostream>
 
 typedef char memory[0x10000][9];
 
@@ -57,8 +58,26 @@ public:
 
 	void exit();
 	uint8_t readMemory(uint16_t addr) const;
+	void writeMemory(uint8_t value, uint16_t addr);
+
 	char* readMemoryBitwise(uint16_t addr) const;
 	void updateRegisters();
+
+	struct Filter{
+		Filter();
+		uint16_t cutoff;
+		uint8_t resonance;
+
+		void calcLowPass();
+		void calcBandPass();
+		void calcHighPass();
+
+		int filterValues[2000];
+
+		enum FilterMode{
+			LOWPASS, BANDPASS, HIGHPASS, VOICETHREEOFF
+		} mode;
+	} filter;
 
 	// SDL audio members
 	SDL_AudioSpec* getSpec();
@@ -82,9 +101,11 @@ public:
 
 		bool ring;
 		bool sync;
+		bool filter;
 
 		bool isRing();
 		bool isSync();
+		bool isFilter();
 
 		int getFrequency();
 		void setFrequency(int freq);

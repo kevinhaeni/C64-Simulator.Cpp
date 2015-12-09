@@ -132,28 +132,37 @@ char* SID::readMemoryBitwise(uint16_t addr) const
 	return (*_mem)[addr];
 }
 
+// Writes the value to the given memory address
+void SID::writeMemory(uint8_t value, uint16_t addr){
+
+	for (int i = 7; i >= 0; i--){
+		(*_mem)[addr][i] = value & 0x01;
+		value >>= 1;
+	}
+}
+
 // Reads the value at the given memory address
 // also converts the [9] bitwise representation (e.g.: "01011101\0") into a unsigned decimal number
 uint8_t SID::readMemory(uint16_t addr) const
 {
-	uint8_t val = 0;
-
+	uint8_t val;
 	for (int i = 7; i >= 0; i--)
 	{		
 		val += (*_mem)[addr][i] * pow(2,7-i);
 	}
-
 	return val;
 }
 
 void SID::updateRegisters()
 {
 	// VOICE 1
-
 	uint8_t v1_freqLo = readMemory(0xD400);
 	uint8_t v1_freqHi = readMemory(0xD401);
+	std::cout << (int)v1_freqLo << " - " << (int)v1_freqHi << std::endl;
 	uint16_t v1_freq = Utils::makeWord(v1_freqLo, v1_freqHi);
-	voice1.setFrequency(v1_freq);
+	voice1.setFrequency(v1_freq / 16.8);
+
+	//std::cout << voice1.frequency << std::endl;
 
 	uint8_t v1_pwLo = readMemory(0xD402);
 	uint8_t v1_pwHi = readMemory(0xD403);
@@ -172,7 +181,7 @@ void SID::updateRegisters()
 	if (v1_control[3] != 0)
 		voice1.waveForm = Voice::WaveForm::TRIANGLE;
 	//if (v1_control[4] != 0)
-		// WTF is test?
+		// Not emulated
 	if (v1_control[5] != 0)
 		voice1.ring = true;
 	else
@@ -187,6 +196,37 @@ void SID::updateRegisters()
 		voice1.envelope.set_gate(true);
 	else
 		voice1.envelope.set_gate(false);
+
+	//*** FILTER ***
+	//** Cutoff
+	// Bit 3-7 of Byte filterCutoff Low are not used
+	// Cutoff is a 11 Bit Number
+	uint8_t filterCutoffLo = atoi(readMemoryBitwise(0xD415));
+	uint8_t filterCutoffHi = atoi(readMemoryBitwise(0xD416));
+	filter.cutoff = (filterCutoffHi << 3) & 0x7F8 | filterCutoffLo & 0x007;
+
+	//** Resonance
+	char* filterResonance = readMemoryBitwise(0xD417);
+
+	// get bit 4-7, set the filter resonance, possible values 0-15
+	filter.resonance = (atoi(filterResonance) >> 4) & 0x0F;
+
+	// set filter of voices
+	voice1.filter = filterResonance[0];
+	voice2.filter = filterResonance[1];
+	voice3.filter = filterResonance[2];
+
+	//** Mode
+	char* filterMode = readMemoryBitwise(0xD418);
+	if (filterMode[4] != 0)
+		filter.mode = Filter::LOWPASS;
+	if (filterMode[5] != 0)
+		filter.mode = Filter::BANDPASS;
+	if (filterMode[6] != 0)
+		filter.mode = Filter::HIGHPASS;
+	if (filterMode[7] != 0)
+		filter.mode = Filter::VOICETHREEOFF;
+
 
 
 	//case 0x05:
@@ -292,6 +332,12 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 			if (sid->voice1.isRing()){
 				if(waveValue3 < 0.0){ waveValue1 *= -1.0;}
 			}
+			if (sid->voice2.isRing()){
+				if(waveValue1 < 0.0){ waveValue2 *= -1.0;}
+			}
+			if (sid->voice3.isRing()){
+				if(waveValue2 < 0.0){ waveValue3 *= -1.0;}
+			}
 
 			// ***** ENVELOPES
 			double envelope1 = sid->voice1.getEnvelopeValue();
@@ -369,10 +415,6 @@ void SID::init()
 	desiredDeviceSpec.callback = SDLAudioCallback;
 	desiredDeviceSpec.userdata = this;
 
-	// init voices
-
-	voice1.waveForm = Voice::SINE;
-
 	// request audioDeviceSpec
 	dev = SDL_OpenAudioDevice(nullptr, 0, &desiredDeviceSpec, &spec, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
 	if (dev == 0) {
@@ -403,6 +445,16 @@ void SID::init()
 
 		//envFile = new std::ifstream("adsr.txt");
 
+		// Voice 1, Frequency
+		//writeMemory(0xD6, 0xD400);
+		//writeMemory(0x1C, 0xD401);
+
+		//writeMemory(0xAA, 0xD415);
+		//writeMemory(0x00, 0xD416);
+
+		//writeMemory(0x84, 0xD404);
+
+		filter.calcLowPass();
 
 		updateRegisters();
 		if (showWindow)
@@ -440,38 +492,36 @@ void SID::mainLoop()
 			{
 			case SDL_KEYDOWN:
 			{
+
 				if (event.key.keysym.scancode == SDL_SCANCODE_SPACE){
+
+					std::cout << (*_mem)[0xD404][0] << std::endl;
 					forceRedraw = true;
 					//pause_thread = !pause_thread;
-					switch (voice1.waveForm){
-					case Voice::SINE:
-					{
-						voice1.waveForm = SID::Voice::WaveForm::TRIANGLE;
-						break;
+					if((*_mem)[0xD404][0] == 1){
+						(*_mem)[0xD404][0] = 0;
+						(*_mem)[0xD404][1] = 1;
+						//voice1.waveForm = SID::Voice::WaveForm::TRIANGLE;
 					}
-					case Voice::TRIANGLE:
-					{
-						voice1.waveForm = SID::Voice::WaveForm::RECT;
-						break;
+					else if((*_mem)[0xD404][1] == 1){
+						(*_mem)[0xD404][1] = 0;
+						(*_mem)[0xD404][2] = 1;
+						//voice1.waveForm = SID::Voice::WaveForm::SAWTOOTH;
 					}
-					case Voice::RECT:
-					{
-						voice1.waveForm = SID::Voice::WaveForm::SAWTOOTH;
-						break;
+					else if((*_mem)[0xD404][2] == 1){
+						(*_mem)[0xD404][2] = 0;
+						(*_mem)[0xD404][3] = 1;
+						//voice1.waveForm = SID::Voice::WaveForm::RECT;
 					}
-					case Voice::SAWTOOTH:
-					{
-						voice1.waveForm = SID::Voice::WaveForm::NOISE;
-						break;
+					else if((*_mem)[0xD404][3] == 1){
+						(*_mem)[0xD404][3] = 0;
+						(*_mem)[0xD404][0] = 1;
+						//voice1.waveForm = SID::Voice::WaveForm::NOISE;
+					} else{
+						// no wave yet active, active noise
+						(*_mem)[0xD404][1] = 1;
 					}
-					case Voice::NOISE:
-					{
-						voice1.waveForm = SID::Voice::WaveForm::SINE;
-						break;
-					}
-					default:
-						break;
-					}
+					std::cout << (*_mem)[0xD404][0] << std::endl;
 				}
 				else if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){
 					exit();
@@ -537,11 +587,13 @@ void SID::mainLoop()
 				}
 				else if(event.key.keysym.scancode == SDL_SCANCODE_S){
 					forceRedraw = true;
-					voice1.sync = !voice1.sync;
+					(*_mem)[0xD404][6] = !(bool)(*_mem)[0xD404][6];
+					//voice1.sync = !voice1.sync;
 				}
 				else if(event.key.keysym.scancode == SDL_SCANCODE_R){
 					forceRedraw = true;
-					voice1.ring = !voice1.ring;
+					(*_mem)[0xD404][5] = !(bool)(*_mem)[0xD404][5];
+					//voice1.ring = !voice1.ring;
 				}
 				//else if (event.key.keysym.scancode == SDL_SCANCODE_F){
 				//	if (voice.envelope.active){
@@ -790,6 +842,9 @@ void SID::exit(){
 	SDL_Quit();
 }
 
+SID::Filter::Filter(){
+}
+
 SID::Voice::Voice(){
 	// Initial wave parameters
 	waveForm = SID::Voice::WaveForm::SINE;
@@ -991,6 +1046,10 @@ bool SID::Voice::isSync(){
 	return sync;
 }
 
+bool SID::Voice::isFilter(){
+	return filter;
+}
+
 int SID::Voice::getFrequency(){
 	return frequency;
 }
@@ -1009,3 +1068,54 @@ void SID::resetGraphBuffer(){
 		graphBuffer[i] = getSpec()->silence;
 	}
 }
+
+void SID::Filter::calcLowPass()
+{
+	std::cout << "Calc Low Pass" << std::endl;
+
+	// fc = 1 / 2 * PI * RC
+	double RC = 1.0/(cutoff *2*3.14);
+	double dt = 1.0/ 44100;
+	double alpha = dt/(RC+dt);
+
+
+	std::ofstream myfile;
+	myfile.open ("lowPass.txt");
+
+
+	for(int i = 1; i < 44100; ++i){
+		uint8_t value = (alpha*1);
+	    myfile << value << ",";
+	}
+	myfile.close();
+}
+
+/*
+void  SID::Filter::calcHighPass()
+{
+	int n;
+	double mm;
+
+	for(n = 0; n < m_num_taps; n++){
+		mm = n - (m_num_taps - 1.0) / 2.0;
+		if( mm == 0.0 ) m_taps[n] = 1.0 - m_lambda / M_PI;
+		else m_taps[n] = -sin( mm * m_lambda ) / (mm * M_PI);
+	}
+
+	return;
+}
+
+void  SID::Filter::calcBandPass()
+{
+	int n;
+	double mm;
+
+	for(n = 0; n < m_num_taps; n++){
+		mm = n - (m_num_taps - 1.0) / 2.0;
+		if( mm == 0.0 ) m_taps[n] = (m_phi - m_lambda) / M_PI;
+		else m_taps[n] = (   sin( mm * m_phi ) -
+		                     sin( mm * m_lambda )   ) / (mm * M_PI);
+	}
+	return;
+}*/
+
