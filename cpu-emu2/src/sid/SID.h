@@ -58,26 +58,18 @@ public:
 
 	void exit();
 	uint8_t readMemory(uint16_t addr) const;
-	void writeMemory(uint8_t value, uint16_t addr);
+	uint8_t readMemoryUpper4Bit(uint16_t addr) const;
+	uint8_t readMemoryLower4Bit(uint16_t addr) const;
+
+	void writeMemory(uint8_t value, uint16_t addr) const;
+	void writeMemoryUpper4Bit(uint8_t value, uint16_t addr) const;
+	void writeMemoryLower4Bit(uint8_t value, uint16_t addr) const;
 
 	char* readMemoryBitwise(uint16_t addr) const;
 	void updateRegisters();
 
-	struct Filter{
-		Filter();
-		uint16_t cutoff;
-		uint8_t resonance;
-
-		void calcLowPass();
-		void calcBandPass();
-		void calcHighPass();
-
-		int filterValues[2000];
-
-		enum FilterMode{
-			LOWPASS, BANDPASS, HIGHPASS, VOICETHREEOFF
-		} mode;
-	} filter;
+	uint8_t volume;
+	uint8_t getVolume();
 
 	// SDL audio members
 	SDL_AudioSpec* getSpec();
@@ -90,13 +82,15 @@ public:
 			SINE = 1, RECT = 2, SAWTOOTH = 3, TRIANGLE = 4, NOISE = 5
 		} waveForm;
 		int frequency;              // the frequency of the voice
-		int amp;                    // the amplitude of the voice
-		double pwn = 0.5;            // Square wave width, 0 - 1.0
+
+		double pwn;            // Square wave width, 0 - 1.0
 		double maxWaveValue;  //
 		long double phase;
 		long double phaseInc;
 		
+		int previousWaveValue; // needed for Filter
 		int activeWaveValue;
+		int getPreviousWaveValue();
 		int getActiveWaveValue();
 
 		bool ring;
@@ -173,6 +167,22 @@ public:
 
 		} envelope;
 	} voice1, voice2, voice3;
+
+	struct Filter{
+		Filter();
+		uint16_t cutoff;
+		uint8_t resonance;
+
+		uint8_t calcLowPass(Voice* voice);
+		void calcBandPass();
+		void calcHighPass();
+
+		int filterValues[2000];
+
+		enum FilterMode{
+			LOWPASS, BANDPASS, HIGHPASS, VOICETHREEOFF
+		} mode;
+	} filter;
 
 	int graphDisplayLength = 9900;
 
