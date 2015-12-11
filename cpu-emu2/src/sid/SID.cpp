@@ -236,6 +236,12 @@ void SID::updateRegisters()
 	else
 		voice1.envelope.set_gate(false);
 
+	// Envelope Voice 1
+	voice1.envelope.attack_index = readMemoryUpper4Bit(0xD405);
+	voice1.envelope.decay_index = readMemoryLower4Bit(0xD405);
+	voice1.envelope.sustain_index = readMemoryUpper4Bit(0xD406);
+	voice1.envelope.release_index = readMemoryLower4Bit(0xD406);
+
 	//*** VOICE 2 ***
 	uint8_t v2_freqLo = readMemory(0xD407);
 	uint8_t v2_freqHi = readMemory(0xD408);
@@ -655,8 +661,8 @@ void SID::mainLoop()
 						voice1.audioPosition = 0;
 						voice1.phase = 0;
 						voice1.phaseInc = static_cast<double>(voice1.frequency) / static_cast<double>(SAMPLING_RATE);
-						voice1.envelope.set_gate(true);
 
+						(*_mem)[0xD404][7] = '1';
 						SDL_PauseAudioDevice(dev, 0);        // play
 					}
 					keyGpressed = true;
@@ -673,7 +679,11 @@ void SID::mainLoop()
 					if (++voice1.envelope.active_instrument_index >= voice1.envelope.instruments.size()){
 						voice1.envelope.active_instrument_index = 0;
 					}
-					voice1.envelope.set_instrument();
+					uint8_t i = voice1.envelope.active_instrument_index;
+					writeMemoryUpper4Bit(voice1.envelope.instruments[i].attack_index, 0xD405);
+					writeMemoryLower4Bit(voice1.envelope.instruments[i].decay_index, 0xD405);
+					writeMemoryUpper4Bit(voice1.envelope.instruments[i].sustain_index, 0xD406);
+					writeMemoryLower4Bit(voice1.envelope.instruments[i].release_index, 0xD406);
 				}
 
 				else if (event.key.keysym.scancode == SDL_SCANCODE_P){
@@ -742,7 +752,7 @@ void SID::mainLoop()
 				if (event.key.keysym.scancode == SDL_SCANCODE_G){
 					//					hasChanged = true;
 					// toggle gate OFF
-					voice1.envelope.set_gate(false);
+					(*_mem)[0xD404][7] = '0';
 					keyGpressed = false;
 
 					SDL_Delay(1000);
@@ -943,7 +953,6 @@ SID::Voice::Voice(){
 	sync = false;
 
 	envelope.reset();
-	envelope.set_instrument();
 }
 
 SID::Voice::Envelope::Envelope(){
@@ -1117,12 +1126,6 @@ SID::Voice::Envelope::Instrument::Instrument(std::string name, uint8_t a, uint8_
 	this->release_index = r;
 }
 
-void SID::Voice::Envelope::set_instrument(){
-	attack_index = instruments[active_instrument_index].attack_index;
-	decay_index = instruments[active_instrument_index].decay_index;
-	sustain_index = instruments[active_instrument_index].sustain_index;
-	release_index = instruments[active_instrument_index].release_index;
-}
 
 bool SID::Voice::isRing(){
 	return ring && waveForm == WaveForm::TRIANGLE;
