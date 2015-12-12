@@ -61,6 +61,10 @@ public:
 	uint8_t readMemoryUpper4Bit(uint16_t addr) const;
 	uint8_t readMemoryLower4Bit(uint16_t addr) const;
 
+	uint16_t readMemory2Register(uint16_t addr) const;
+	uint16_t readMemoryVoiceFrequency(uint16_t addr) const;
+	double readMemoryVoicePWN(uint16_t addr) const;
+
 	void writeMemory(uint8_t value, uint16_t addr) const;
 	void writeMemoryUpper4Bit(uint8_t value, uint16_t addr) const;
 	void writeMemoryLower4Bit(uint8_t value, uint16_t addr) const;
@@ -70,6 +74,21 @@ public:
 
 	uint8_t volume;
 	uint8_t getVolume();
+
+	struct Instrument{
+		std::string name;
+		uint8_t attack_index;
+		uint8_t decay_index;
+		uint8_t sustain_index;
+		uint8_t release_index;
+		Instrument(std::string, uint8_t, uint8_t, uint8_t, uint8_t);
+	};
+
+	std::vector <Instrument> instruments;
+	int active_instrument_index = 0;
+	void next_instrument();
+	void set_instrument();
+
 
 	// SDL audio members
 	SDL_AudioSpec* getSpec();
@@ -103,6 +122,7 @@ public:
 
 		int getFrequency();
 		void setFrequency(int freq);
+		void setPWN(double pwn);
 
 		// SDL buffer handling members
 		int audioPosition = 0;      // counter
@@ -123,7 +143,6 @@ public:
 			bool gate;
 			bool holdZero;
 
-			Envelope();
 			void set_gate(bool setIt);
 			void reset();
 			// do a cycle step
@@ -151,20 +170,6 @@ public:
 			// number of cycles till the next increase of the enveloper_counter
 			static const uint16_t cyclesWhenToChangeEnvelopeCounter_Attack[16];
 
-			struct Instrument{
-				std::string name;
-				uint8_t attack_index;
-				uint8_t decay_index;
-				uint8_t sustain_index;
-				uint8_t release_index;
-				Instrument(std::string, uint8_t, uint8_t, uint8_t, uint8_t);
-			};
-
-			std::vector <Instrument> instruments;
-			int active_instrument_index;
-			void next_instrument();
-			void set_instrument();
-
 		} envelope;
 	} voice1, voice2, voice3;
 
@@ -183,6 +188,8 @@ public:
 			LOWPASS, BANDPASS, HIGHPASS, VOICETHREEOFF
 		} mode;
 	} filter;
+
+	void setVoiceFromControlReg(Voice* voice, char reg[]);
 
 	int graphDisplayLength = 9900;
 
