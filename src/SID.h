@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <iostream>
 
 typedef char memory[0x10000][9];
 
@@ -37,7 +38,7 @@ private:
 
 	int refreshInterval = 50;				         // mseconds
 	int thread_exit = 0;
-	bool pause_thread = false;	
+	bool pause_thread = false;
 
 #ifdef TTF_ENABLED
 	TTF_Font* font;
@@ -57,8 +58,37 @@ public:
 
 	void exit();
 	uint8_t readMemory(uint16_t addr) const;
+	uint8_t readMemoryUpper4Bit(uint16_t addr) const;
+	uint8_t readMemoryLower4Bit(uint16_t addr) const;
+
+	uint16_t readMemory2Register(uint16_t addr) const;
+	uint16_t readMemoryVoiceFrequency(uint16_t addr) const;
+	double readMemoryVoicePWN(uint16_t addr) const;
+
+	void writeMemory(uint8_t value, uint16_t addr) const;
+	void writeMemoryUpper4Bit(uint8_t value, uint16_t addr) const;
+	void writeMemoryLower4Bit(uint8_t value, uint16_t addr) const;
+
 	char* readMemoryBitwise(uint16_t addr) const;
 	void updateRegisters();
+
+	uint8_t volume;
+	uint8_t getVolume();
+
+	struct Instrument{
+		std::string name;
+		uint8_t attack_index;
+		uint8_t decay_index;
+		uint8_t sustain_index;
+		uint8_t release_index;
+		Instrument(std::string, uint8_t, uint8_t, uint8_t, uint8_t);
+	};
+
+	std::vector <Instrument> instruments;
+	int active_instrument_index = 0;
+	void next_instrument();
+	void set_instrument();
+
 
 	// SDL audio members
 	SDL_AudioSpec* getSpec();
@@ -71,23 +101,28 @@ public:
 			SINE = 1, RECT = 2, SAWTOOTH = 3, TRIANGLE = 4, NOISE = 5
 		} waveForm;
 		int frequency;              // the frequency of the voice
-		int amp;                    // the amplitude of the voice
-		double pwn = 0.5;            // Square wave width, 0 - 1.0
+
+		double pwn;            // Square wave width, 0 - 1.0
 		double maxWaveValue;  //
 		long double phase;
 		long double phaseInc;
-		
+
+		int previousWaveValue; // needed for Filter
 		int activeWaveValue;
+		int getPreviousWaveValue();
 		int getActiveWaveValue();
 
 		bool ring;
 		bool sync;
+		bool filter;
 
 		bool isRing();
 		bool isSync();
+		bool isFilter();
 
 		int getFrequency();
 		void setFrequency(int freq);
+		void setPWN(double pwn);
 
 		// SDL buffer handling members
 		int audioPosition = 0;      // counter
@@ -108,7 +143,6 @@ public:
 			bool gate;
 			bool holdZero;
 
-			Envelope();
 			void set_gate(bool setIt);
 			void reset();
 			// do a cycle step
@@ -136,22 +170,26 @@ public:
 			// number of cycles till the next increase of the enveloper_counter
 			static const uint16_t cyclesWhenToChangeEnvelopeCounter_Attack[16];
 
-			struct Instrument{
-				std::string name;
-				uint8_t attack_index;
-				uint8_t decay_index;
-				uint8_t sustain_index;
-				uint8_t release_index;
-				Instrument(std::string, uint8_t, uint8_t, uint8_t, uint8_t);
-			};
-
-			std::vector <Instrument> instruments;
-			int active_instrument_index;
-			void next_instrument();
-			void set_instrument();
-
 		} envelope;
 	} voice1, voice2, voice3;
+
+	struct Filter{
+		Filter();
+		uint16_t cutoff;
+		uint8_t resonance;
+
+		uint8_t calcLowPass(Voice* voice);
+		void calcBandPass();
+		void calcHighPass();
+
+		int filterValues[2000];
+
+		enum FilterMode{
+			LOWPASS, BANDPASS, HIGHPASS, VOICETHREEOFF
+		} mode;
+	} filter;
+
+	void setVoiceFromControlReg(Voice* voice, char reg[]);
 
 	int graphDisplayLength = 9900;
 

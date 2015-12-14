@@ -62,6 +62,9 @@ public:
 	int getCellYAtCoordinates(int x, int y);
 	void exit();
 
+	uint8_t readMemory(uint16_t addr) const;
+	void writeMemory(uint8_t value, uint16_t addr) const;
+
 };
 
 

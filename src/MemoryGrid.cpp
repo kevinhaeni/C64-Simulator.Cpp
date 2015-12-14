@@ -5,6 +5,34 @@
 #include <string>
 
 
+// Reads the value at the given memory address
+// also converts the [9] bitwise representation (e.g.: "01011101\0") into a unsigned decimal number
+uint8_t MemoryGrid::readMemory(uint16_t addr) const
+{
+	uint8_t val = 0;
+	for (int i = 7; i >= 0; i--){
+		if ((*_mem)[addr][i] == '1'){
+			val += pow(2, 7 - i);
+		}
+	}
+	return val;
+}
+
+// Writes the value to the given memory address
+void MemoryGrid::writeMemory(uint8_t value, uint16_t addr) const{
+
+	//std::cout <<  "Write Memory" << std::endl << "Before: " << readMemory(addr) << std::endl;
+	for (int i = 7; i >= 0; i--){
+		if (value & 0x01){
+			(*_mem)[addr][i] = '1';
+		}
+		else{
+			(*_mem)[addr][i] = '0';
+		}
+		value >>= 1;
+	}
+	//std::cout <<  "After: " << readMemory(addr) << std::endl;
+}
 
 int threadFunc(void *pointer){
 	MemoryGrid* grid = (MemoryGrid*)pointer;
@@ -14,8 +42,10 @@ int threadFunc(void *pointer){
 }
 
 MemoryGrid::MemoryGrid(memory* mem)
-	: _mem(mem), tilesPerLine(256)
+	: tilesPerLine(256)
 {
+	_mem = mem;
+	
 	// spawn thread
 	SDL_Thread *refresh_thread = SDL_CreateThread(threadFunc, NULL, this);
 }
@@ -28,33 +58,44 @@ MemoryGrid::~MemoryGrid(){
 int main(int argc, char* argv[]){
 
 	char memory[0x10000][9];		// the memory
-	memory[0xD400][0] = 1;
-	memory[0xD400][1] = 1;
-	memory[0xD400][2] = 1;
-	memory[0xD400][3] = 1;
-	memory[0xD400][4] = 1;
-	memory[0xD400][5] = 1;
-	memory[0xD400][6] = 1;
-	memory[0xD400][7] = 1;
+
+	memory[0x0001][0] = '1';
+	memory[0x0001][1] = '1';
+	memory[0x0001][2] = '1';
+	memory[0x0001][3] = '1';
+	memory[0x0001][4] = '1';
+	memory[0x0001][5] = '1';
+	memory[0x0001][6] = '1';
+	memory[0x0001][7] = '1';
 
 
-	memory[0xD401][0] = 0;
-	memory[0xD401][1] = 0;
-	memory[0xD401][2] = 0;
-	memory[0xD401][3] = 0;
-	memory[0xD401][4] = 0;
-	memory[0xD401][5] = 0;
-	memory[0xD401][6] = 0;
-	memory[0xD401][7] = 0;
+	memory[0xD400][0] = '1';
+	memory[0xD400][1] = '1';
+	memory[0xD400][2] = '1';
+	memory[0xD400][3] = '1';
+	memory[0xD400][4] = '1';
+	memory[0xD400][5] = '1';
+	memory[0xD400][6] = '1';
+	memory[0xD400][7] = '1';
 
-	memory[0xD404][0] = 0;
-	//memory[0xD404][1] = ;
-	//memory[0xD404][2] = ;
-	memory[0xD404][3] = 1;
-	memory[0xD404][4] = 0;
-	memory[0xD404][5] = 1;
-	memory[0xD404][6] = 0;
-	memory[0xD404][7] = 0;
+
+	memory[0xD401][0] = '0';
+	memory[0xD401][1] = '0';
+	memory[0xD401][2] = '0';
+	memory[0xD401][3] = '0';
+	memory[0xD401][4] = '0';
+	memory[0xD401][5] = '0';
+	memory[0xD401][6] = '0';
+	memory[0xD401][7] = '0';
+
+	memory[0xD404][0] = '0';
+	memory[0xD404][1] = '0';
+	memory[0xD404][2] = '0';
+	memory[0xD404][3] = '1';
+	memory[0xD404][4] = '0';
+	memory[0xD404][5] = '1';
+	memory[0xD404][6] = '0';
+	memory[0xD404][7] = '0';
 
 	MemoryGrid* g = new MemoryGrid(&memory);
 
@@ -180,7 +221,7 @@ void MemoryGrid::mainLoop()
 				else if (event.key.keysym.scancode == SDL_SCANCODE_RETURN){
 					if (pause_thread){
 						// submit
-						theC64->writeMemory(getCellAtCoordinates(hoverTile.x, hoverTile.y), inputBuffer);
+						writeMemory(getCellAtCoordinates(hoverTile.x, hoverTile.y), inputBuffer);
 						drawGrid();
 					}
 				}
@@ -277,10 +318,12 @@ void MemoryGrid::drawGrid()
 
 			// calculate memory address of the cell
 			uint16_t cellAddress = ((y + this->zoomOffset.y) << 8) | (x + this->zoomOffset.x);
-			uint8_t cellValue = theC64->readMemory(cellAddress);
+			uint8_t cellValue = readMemory(cellAddress);
 
 			// Set colors (Blue = has data, white = no data, red = current PC)		
-			if (cellAddress == theC64->getCPU()->Registers.PC){
+			//if (cellAddress == getCPU()->Registers.PC){
+			// HK: TODO: Current program counter!
+			if (cellAddress == 0x0000){
 				SDL_SetRenderDrawColor(renderer, 255, 155, 155, 255);
 			}
 			else if (cellValue != 0){
