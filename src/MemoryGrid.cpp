@@ -4,6 +4,8 @@
 #include <sstream>
 #include <string>
 
+
+
 int threadFunc(void *pointer){
 	MemoryGrid* grid = (MemoryGrid*)pointer;
 	grid->init();
@@ -11,8 +13,8 @@ int threadFunc(void *pointer){
 	return 0;
 }
 
-MemoryGrid::MemoryGrid(C64* c64)
-	: theC64(c64), tilesPerLine(256)
+MemoryGrid::MemoryGrid(memory* mem)
+	: _mem(mem), tilesPerLine(256)
 {
 	// spawn thread
 	SDL_Thread *refresh_thread = SDL_CreateThread(threadFunc, NULL, this);
@@ -22,6 +24,45 @@ MemoryGrid::MemoryGrid(C64* c64)
 MemoryGrid::~MemoryGrid(){
 
 }
+
+int main(int argc, char* argv[]){
+
+	char memory[0x10000][9];		// the memory
+	memory[0xD400][0] = 1;
+	memory[0xD400][1] = 1;
+	memory[0xD400][2] = 1;
+	memory[0xD400][3] = 1;
+	memory[0xD400][4] = 1;
+	memory[0xD400][5] = 1;
+	memory[0xD400][6] = 1;
+	memory[0xD400][7] = 1;
+
+
+	memory[0xD401][0] = 0;
+	memory[0xD401][1] = 0;
+	memory[0xD401][2] = 0;
+	memory[0xD401][3] = 0;
+	memory[0xD401][4] = 0;
+	memory[0xD401][5] = 0;
+	memory[0xD401][6] = 0;
+	memory[0xD401][7] = 0;
+
+	memory[0xD404][0] = 0;
+	//memory[0xD404][1] = ;
+	//memory[0xD404][2] = ;
+	memory[0xD404][3] = 1;
+	memory[0xD404][4] = 0;
+	memory[0xD404][5] = 1;
+	memory[0xD404][6] = 0;
+	memory[0xD404][7] = 0;
+
+	MemoryGrid* g = new MemoryGrid(&memory);
+
+	int i;
+	std::cin >> i;
+	return 0;
+}
+
 
 void MemoryGrid::init()
 {

@@ -6,6 +6,9 @@
 #include "SDL_ttf.h"
 #include <stack>
 
+typedef char memory[0x10000][9];
+
+
 /* Constants */
 const int REFRESH_INTERVAL = 2;				// mseconds
 const int REPAINTINTERVAL = 200;			// mseconds
@@ -17,13 +20,14 @@ const std::string WINDOW_TITLE = "C64 Memory Window";
 class MemoryGrid
 {
 private:
-	C64* theC64;
+
 	SDL_Window *window;          // Declare a pointer
 	TTF_Font* font;
 
 	int thread_exit = 0;
 	bool pause_thread = false;
 
+	memory* _mem;
 
 	int loopCounter = 0;
 
@@ -47,7 +51,7 @@ private:
 	std::stack<ZoomOffset> offsetStack;			// "camera" history
 
 public:
-	MemoryGrid(C64* theC64);
+	MemoryGrid(memory* mem);
 	~MemoryGrid();
 	void init();
 	void mainLoop();
