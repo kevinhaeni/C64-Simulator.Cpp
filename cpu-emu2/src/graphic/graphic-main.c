@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
   init_display(vic);
   
 
-  struct SID* sid = newSID(&memory, 50, 1);
+  struct SID* sid = newSID(&memory, 400, 1);
   struct MemoryGrid* memgrid = newMemoryGrid(&memory);
 
   // handling parameter --memory <dumpfile> 

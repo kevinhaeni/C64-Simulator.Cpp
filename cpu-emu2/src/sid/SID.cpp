@@ -214,8 +214,8 @@ void SID::updateRegisters()
 	volume = 9* readMemoryLower4Bit(0xD418);
 
 
-	//***** VOICES *****
-	//*** VOICE 1 ***
+	//
+	//VOICE 1
 	voice1.setFrequency(readMemoryVoiceFrequency(0xD400));
 	voice1.setPWN(readMemoryVoicePWN(0xD402));
 
@@ -229,7 +229,7 @@ void SID::updateRegisters()
 	voice1.envelope.release_index = readMemoryLower4Bit(0xD406);
 
 
-	//*** VOICE 2 ***
+	//VOICE 2
 	voice2.setFrequency(readMemoryVoiceFrequency(0xD407));
 	voice2.setPWN(readMemoryVoicePWN(0xD409));
 
@@ -243,7 +243,7 @@ void SID::updateRegisters()
 	voice2.envelope.release_index = readMemoryLower4Bit(0xD40D);
 
 
-	//*** VOICE 3 ***
+	// VOICE 3
 	voice3.setFrequency(readMemoryVoiceFrequency(0xD40E));
 	voice3.setPWN(readMemoryVoicePWN(0xD410));
 
@@ -257,26 +257,26 @@ void SID::updateRegisters()
 	voice3.envelope.release_index = readMemoryLower4Bit(0xD414);
 
 
-	//***** FILTER *****
-	//*** Cutoff ***
+	//FILTER 
+	//Cutoff 
 	// Bit 3-7 of Byte filterCutoff Low are not used
 	// Cutoff is a 11 Bit Number
 	uint8_t filterCutoffLo = readMemory(0xD415);
 	uint8_t filterCutoffHi = readMemory(0xD416);
 	filter.cutoff = (filterCutoffHi << 3) & 0x7F8 | filterCutoffLo & 0x007;
 
-	//*** Resonance ***
+	// Resonance
 	// get bit 4-7, set the filter resonance, possible values 0-15
 	filter.resonance = readMemoryUpper4Bit(0xD417);
 
-	//*** Filter Activation ***
+	// Filter Activation
 	uint8_t filterActivation = readMemory(0xD417);
 	// set filter of voices
 	voice1.filter = filterActivation & 0x03;
 	voice2.filter = filterActivation & 0x02;
 	voice3.filter = filterActivation & 0x01;
 
-	//*** Mode ***
+	// Mode
 	char* filterModeVol = readMemoryBitwise(0xD418);
 	if (filterModeVol[4] == '1')
 		filter.mode = Filter::LOWPASS;
@@ -418,6 +418,7 @@ SID::SID(memory* mem, int interval, bool window)
 
 	// spawn thread
 	SDL_Thread *refresh_thread = SDL_CreateThread(sidThreadFunc, NULL, this);
+        //this->init();
 }
 
 SDL_AudioSpec* SID::getSpec(){
@@ -460,6 +461,7 @@ void SID::init()
 	}
 
 	// Create an application window with the following settings:
+	if(showWindow){
 	window = SDL_CreateWindow(
 		WINDOW_TITLE.c_str(),              // window title
 		SDL_WINDOWPOS_UNDEFINED,           // initial x position
@@ -468,7 +470,7 @@ void SID::init()
 		WINDOW_HEIGHT,                     // height, in pixels
 		SDL_WINDOW_SHOWN                  // flags - see below
 	);
-
+	}
 	// ***** Instruments *****
 	// Xylophone, Triangle
 	Instrument * i1 = new Instrument("Piano (Pulse)", 0, 9, 0, 0);
@@ -483,7 +485,8 @@ void SID::init()
 
 
 	// Check if the window was successfully created
-	if (window == nullptr) {
+	
+	if (window == nullptr && showWindow) {
 		// In case the window could not be created...
 		printf("Could not create window: %s\n", SDL_GetError());
 		return;
@@ -491,8 +494,8 @@ void SID::init()
 	else{
 
 
-		//***** Initialization, Testdata *****
-		//*** Voice 1 ***
+		// Initialization, Testdata
+		//Voice 1
 			// Frequency
 			writeMemory(0xE0, 0xD400);
 			writeMemory(0x1C, 0xD401);

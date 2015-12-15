@@ -9,8 +9,8 @@ typedef char memory[0x10000][9];
 
 
 /* Constants */
-const int REFRESH_INTERVAL = 100000;				// mseconds
-const int REPAINTINTERVAL = 200000;			// mseconds
+const int REFRESH_INTERVAL = 2;				// mseconds
+const int REPAINTINTERVAL = 200;			// mseconds
 
 const int WINDOW_WIDTH = 1000;
 const int WINDOW_HEIGHT = 700;

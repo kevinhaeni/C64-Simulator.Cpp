@@ -47,6 +47,7 @@ MemoryGrid::MemoryGrid(memory* mem)
 	
 	// spawn thread
 	SDL_Thread *refresh_thread = SDL_CreateThread(threadFunc, NULL, this);
+//	this->init();
 }
 
 
@@ -109,7 +110,7 @@ void MemoryGrid::init()
 	// Init SDL & SDL_ttf
 	SDL_Init(SDL_INIT_VIDEO);
 	TTF_Init();
-	
+/*	
 	// Settings
 	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
@@ -121,8 +122,8 @@ void MemoryGrid::init()
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2);
 
-//	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-
+	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+*/
 
 	font = TTF_OpenFont("sans.ttf", 158);	//this opens a font style and sets a size
 
@@ -144,6 +145,8 @@ void MemoryGrid::init()
 	}
 	else{
 		printf("memorygrid init finished..entering main loop");
+		SDL_Delay(10);
+		drawGrid();
 		mainLoop();
 		return;
 	}	
@@ -221,7 +224,8 @@ void MemoryGrid::mainLoop()
 				else if (event.key.keysym.scancode == SDL_SCANCODE_RETURN){
 					if (pause_thread){
 						// submit
-						writeMemory(getCellAtCoordinates(hoverTile.x, hoverTile.y), inputBuffer);
+						printf("write to mem");
+						writeMemory(inputBuffer, getCellAtCoordinates(hoverTile.x, hoverTile.y));
 						drawGrid();
 					}
 				}
@@ -283,6 +287,7 @@ void MemoryGrid::mainLoop()
 		}
 
 		loopCounter += 2;
+		SDL_Delay(REFRESH_INTERVAL);
 		if (loopCounter % REPAINTINTERVAL == 0 && !pause_thread)
 			drawGrid();
 	}
@@ -302,7 +307,6 @@ void MemoryGrid::drawGrid()
 
 	// Clear winow
 	SDL_RenderClear(renderer);
-
 	// spanning up grid
 	for (int y = 0; y < tilesPerLine; y++){
 
@@ -492,7 +496,7 @@ void MemoryGrid::drawGrid()
 
 	SDL_RenderPresent(renderer);
 	
-	SDL_Delay(REFRESH_INTERVAL);
+//	SDL_Delay(REFRESH_INTERVAL);
 
 	return;
 }
