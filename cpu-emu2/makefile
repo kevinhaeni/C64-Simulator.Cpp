@@ -57,7 +57,7 @@ $(BDIR)/%.o: %.c
 graphic: $(_OBJ) 
 	@echo linking 
 	@echo text $(CC) -W -Wall -g  $(ALU_INCLUDES) `sdl2-config --cflags --libs` -c $^ 
-	g++ -o $@ $^ src/sid/sidwrapper.o src/sid/SID.o src/sid/Utils.o $(CFLAGS) $(LIBS) `sdl2-config --cflags --libs` -lSDL2 -lSDL2_ttf -lm
+	g++ -o $@ $^ src/sid/sidwrapper.o src/sid/SID.o src/sid/Utils.o src/memorygrid/MemoryGrid.o src/memorygrid/memorygridwrapper.o $(CFLAGS) $(LIBS) `sdl2-config --cflags --libs` -lSDL2 -lSDL2_ttf -lm
 
 
 

@@ -19,6 +19,7 @@
 #include "memory.h"
 //#include "cpu-util.h"
 #include "../sid/sidwrapper.h"
+#include "../memorygrid/memorygridwrapper.h"
 
 #include <signal.h>
 static int keepParsing = 1;
@@ -85,6 +86,7 @@ int main(int argc, char *argv[])
   
 
   struct SID* sid = newSID(&memory, 50, 1);
+  struct MemoryGrid* memgrid = newMemoryGrid(&memory);
 
   // handling parameter --memory <dumpfile> 
   if(argc==3){
