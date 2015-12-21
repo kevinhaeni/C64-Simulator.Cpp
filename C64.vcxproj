@@ -75,7 +75,6 @@
     <ClInclude Include="src\Instruction.h" />
     <ClInclude Include="src\Memory.h" />
     <ClInclude Include="src\MemoryGrid.h" />
-    <ClInclude Include="src\oldSID.h" />
     <ClInclude Include="src\Utils.h" />
   </ItemGroup>
   <ItemGroup>
@@ -87,7 +86,6 @@
     <ClCompile Include="src\Instruction.cpp" />
     <ClCompile Include="src\Memory.cpp" />
     <ClCompile Include="src\MemoryGrid.cpp" />
-    <ClCompile Include="src\oldSID.cpp" />
     <ClCompile Include="src\Utils.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

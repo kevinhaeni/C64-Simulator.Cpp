@@ -36,9 +36,6 @@
     <ClInclude Include="src\MemoryGrid.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="src\oldSID.h">
-      <Filter>Headerdateien</Filter>
-    </ClInclude>
     <ClInclude Include="src\SID.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
@@ -66,9 +63,6 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="src\MemoryGrid.cpp">
-      <Filter>Quelldateien</Filter>
-    </ClCompile>
-    <ClCompile Include="src\oldSID.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="src\SID.cpp">

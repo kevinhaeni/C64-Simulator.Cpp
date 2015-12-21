@@ -1,9 +1,4 @@
 #include "MemoryGrid.h"
-#include "Utils.h"
-#include "CPU.h"
-#include <sstream>
-#include <string>
-
 
 // Reads the value at the given memory address
 // also converts the [9] bitwise representation (e.g.: "01011101\0") into a unsigned decimal number
@@ -41,13 +36,110 @@ int threadFunc(void *pointer){
 	return 0;
 }
 
+void MemoryGrid::dispatchEvent(SDL_Event* event)
+{
+	switch (event->type)
+	{
+	case SDL_KEYDOWN:
+	{
+		if (event->key.keysym.scancode == SDL_SCANCODE_SPACE){
+			pause_thread = !pause_thread;
+		}
+		else if (event->key.keysym.scancode == SDL_SCANCODE_ESCAPE){
+			exit();
+		}
+		else if (event->key.keysym.scancode == SDL_SCANCODE_RETURN){
+			if (pause_thread){
+				// submit
+				// convert hex string to hex int (eg. convert "ff" to 255)
+				std::string inputBufferStr(inputBuffer);
+				unsigned int hexIntVal = std::stoul(inputBufferStr, nullptr, 16);
+
+				// store the new value to the memory
+				writeMemory(hexIntVal, getCellAtCoordinates(hoverTile.x, hoverTile.y));
+			}
+		}
+		else{
+			if (pause_thread){
+				if (inputBufferPos < 2)
+				{
+					// If it's the first key
+					inputBuffer[inputBufferPos++] = event->key.keysym.sym;
+				}else{
+					// if it's the third, fourth, etc. key, shift the whole string by one position to the right (replace the char at index 0)
+					inputBuffer[0] = inputBuffer[1];
+					inputBuffer[1] = event->key.keysym.sym;
+					inputBufferPos++;
+				}
+				
+
+			}
+		}
+
+		break;
+	}
+	case SDL_MOUSEMOTION:
+	{
+		// change the window title and the color the memory cell red where the mouse pointer is pointing to
+
+		if (pause_thread)
+			break;
+		// create hover rect
+		std::string title = WINDOW_TITLE + " " + Utils::hexify(getCellAtCoordinates(event->motion.x, event->motion.y));
+		SDL_SetWindowTitle(window, title.c_str());
+
+		hoverTile.x = event->motion.x;
+		while (hoverTile.x % rectWidth != 0)
+			hoverTile.x--;
+		hoverTile.y = event->motion.y;
+		while (hoverTile.y % rectHeight != 0)
+			hoverTile.y--;
+
+		break;
+	}
+	case SDL_MOUSEBUTTONDOWN:
+	{
+		// Zoom in if the left mouse button is clicked, zoom out if the right mouse button is clicked
+		if (event->button.x == 0 || event->button.y == 0)
+			return;
+
+		if (event->button.button == 1){
+			// left click (zoom in))
+			int xcoord = event->button.x;
+			int ycoord = event->button.y;
+			handleZoom(xcoord, ycoord, -1);
+		}
+		else if (event->button.button == 3){
+			// right click (zoom out)
+			int xcoord = event->button.x;
+			int ycoord = event->button.y;
+			handleZoom(xcoord, ycoord, +1);
+		}
+		else{
+			// unhandled button
+		}
+		break;
+	}
+	case SDL_QUIT:
+	{
+		exit();
+		return;
+		break;
+	}
+	default: /* unhandled event */
+		break;
+	}
+
+}
+
 MemoryGrid::MemoryGrid(memory* mem)
 	: tilesPerLine(256)
 {
 	_mem = mem;
 	
 	// spawn thread
-	SDL_Thread *refresh_thread = SDL_CreateThread(threadFunc, NULL, this);
+	//SDL_Thread *refresh_thread = SDL_CreateThread(threadFunc, NULL, this);
+	this->init();
 }
 
 
@@ -55,62 +147,12 @@ MemoryGrid::~MemoryGrid(){
 
 }
 
-int main(int argc, char* argv[]){
-
-	char memory[0x10000][9];		// the memory
-
-	memory[0x0001][0] = '1';
-	memory[0x0001][1] = '1';
-	memory[0x0001][2] = '1';
-	memory[0x0001][3] = '1';
-	memory[0x0001][4] = '1';
-	memory[0x0001][5] = '1';
-	memory[0x0001][6] = '1';
-	memory[0x0001][7] = '1';
-
-
-	memory[0xD400][0] = '1';
-	memory[0xD400][1] = '1';
-	memory[0xD400][2] = '1';
-	memory[0xD400][3] = '1';
-	memory[0xD400][4] = '1';
-	memory[0xD400][5] = '1';
-	memory[0xD400][6] = '1';
-	memory[0xD400][7] = '1';
-
-
-	memory[0xD401][0] = '0';
-	memory[0xD401][1] = '0';
-	memory[0xD401][2] = '0';
-	memory[0xD401][3] = '0';
-	memory[0xD401][4] = '0';
-	memory[0xD401][5] = '0';
-	memory[0xD401][6] = '0';
-	memory[0xD401][7] = '0';
-
-	memory[0xD404][0] = '0';
-	memory[0xD404][1] = '0';
-	memory[0xD404][2] = '0';
-	memory[0xD404][3] = '1';
-	memory[0xD404][4] = '0';
-	memory[0xD404][5] = '1';
-	memory[0xD404][6] = '0';
-	memory[0xD404][7] = '0';
-
-	MemoryGrid* g = new MemoryGrid(&memory);
-
-	int i;
-	std::cin >> i;
-	return 0;
-}
-
 
 void MemoryGrid::init()
 {
-	// Init SDL & SDL_ttf
-	SDL_Init(SDL_INIT_VIDEO);
-	TTF_Init();
 	
+/*	OpenGL doesn't seem to be supported on our linux machines without installing new drivers -> f*** it
+
 	// Settings
 	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
@@ -123,9 +165,9 @@ void MemoryGrid::init()
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2);
 
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+*/
 
-
-	font = TTF_OpenFont("sans.ttf", 158);	//this opens a font style and sets a size
+	font = TTF_OpenFont("sans.ttf", 158);	// sets the font / size
 
 	// Create an application window with the following settings:
 	window = SDL_CreateWindow(
@@ -134,7 +176,7 @@ void MemoryGrid::init()
 		SDL_WINDOWPOS_UNDEFINED,           // initial y position
 		WINDOW_WIDTH,                      // width, in pixels
 		WINDOW_HEIGHT,                     // height, in pixels
-		SDL_WINDOW_SHOWN                  // flags - see below
+		SDL_WINDOW_SHOWN                   // flags - see below
 		);
 
 	// Check if the window was successfully created
@@ -144,7 +186,10 @@ void MemoryGrid::init()
 		return;
 	}
 	else{
-		mainLoop();
+		printf("memorygrid init finished..entering main loop");
+		SDL_Delay(10);
+		//drawGrid();
+		//mainLoop();
 		return;
 	}	
 }
@@ -203,106 +248,18 @@ void MemoryGrid::handleZoom(int x, int y, int zoom){
 
 }
 
-void MemoryGrid::mainLoop()
+
+void MemoryGrid::drawGrid(SDL_Renderer *renderer)
 {
-	while (thread_exit == 0){
-		SDL_Event event;
-		while (SDL_PollEvent(&event)) {
-			switch (event.type)
-			{
-			case SDL_KEYDOWN:			
-			{
-				if (event.key.keysym.scancode == SDL_SCANCODE_SPACE){
-					pause_thread = !pause_thread;
-				}
-				else if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){
-					exit();
-				}
-				else if (event.key.keysym.scancode == SDL_SCANCODE_RETURN){
-					if (pause_thread){
-						// submit
-						writeMemory(getCellAtCoordinates(hoverTile.x, hoverTile.y), inputBuffer);
-						drawGrid();
-					}
-				}
-				else{
-					if (pause_thread){
-						inputBuffer = event.key.keysym.sym;
-
-					}
-				}				
-
-				break;
-			}
-			case SDL_MOUSEMOTION:
-			{
-				if (pause_thread)
-					break;
-				// create hover rect
-				std::string title = WINDOW_TITLE + " " + Utils::hexify(getCellAtCoordinates(event.motion.x, event.motion.y));
-				SDL_SetWindowTitle(window, title.c_str());
-
-				hoverTile.x = event.motion.x;
-				while (hoverTile.x % rectWidth != 0)
-					hoverTile.x--;
-				hoverTile.y = event.motion.y;
-				while (hoverTile.y % rectHeight != 0)
-					hoverTile.y--;
-
-				break;
-			}
-			case SDL_MOUSEBUTTONDOWN:
-			{
-
-				if (event.button.button == 1){
-					// left click (zoom in))
-					int xcoord = event.button.x;
-					int ycoord = event.button.y;
-					handleZoom(xcoord, ycoord, -1);
-				}
-				else if (event.button.button == 3){
-					// right click (zoom out)
-					int xcoord = event.button.x;
-					int ycoord = event.button.y;
-					handleZoom(xcoord, ycoord, +1);
-				}
-				else{
-					// unhandled button
-				}
-				break;
-			}
-			case SDL_QUIT:
-			{
-				exit();
-				return;
-				break;
-			}
-			default: /* unhandled event */
-				break;
-			}
-		}
-
-		loopCounter += 2;
-		if (loopCounter % REPAINTINTERVAL == 0 && !pause_thread)
-			drawGrid();
-	}
-
-
-	return;
-}
-
-void MemoryGrid::drawGrid()
-{
-	SDL_Renderer *renderer = SDL_GetRenderer(window);
+	
 	if (renderer == nullptr)
-		renderer = SDL_CreateRenderer(window, 0, SDL_RENDERER_ACCELERATED);
+		return;
 
 	// Set background color
 	SDL_SetRenderDrawColor(renderer, 88, 88, 88, 255);
 
 	// Clear winow
 	SDL_RenderClear(renderer);
-
 	// spanning up grid
 	for (int y = 0; y < tilesPerLine; y++){
 
@@ -492,7 +449,7 @@ void MemoryGrid::drawGrid()
 
 	SDL_RenderPresent(renderer);
 	
-	SDL_Delay(REFRESH_INTERVAL);
+//	SDL_Delay(REFRESH_INTERVAL);
 
 	return;
 }
