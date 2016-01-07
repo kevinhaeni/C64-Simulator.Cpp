@@ -10,6 +10,8 @@ typedef struct MemoryGrid MemoryGrid;
 typedef char memtype[0x10000][9];
 
 MemoryGrid* newMemoryGrid(memtype*);
+void MemoryGridDrawGrid(MemoryGrid* memgrid);
+
 
 #ifdef __cplusplus
 }

@@ -91,9 +91,11 @@ int main(int argc, char *argv[])
   unsigned long SIDRefreshDelay = 0, MemoryGridRefreshDelay = 0;
   auto DELAY = 2;
 
+
+  int showWindow = 1;
   // Instantiate SID and memory grid
-  struct MemoryGrid* memgrid = newMemoryGrid(&memory); 
-  struct SID* sid = newSID(&memory, 1);
+  struct MemoryGrid* memGrid = newMemoryGrid(&memory); 
+  struct SID* sid = newSID(&memory, showWindow);
 
 
   // handling parameter --memory <dumpfile> 
@@ -160,6 +162,23 @@ int main(int argc, char *argv[])
 		}
 	}
 	SDL_Delay(DELAY);
+
+	MemoryGridRefreshDelay += DELAY;
+	if (MemoryGridRefreshDelay >= 50){
+
+		MemoryGridDrawGrid(memGrid);		// Redraw MemoryGrid
+		MemoryGridRefreshDelay = 0;
+	}
+
+	if (showWindow > 0)
+	{
+		SIDRefreshDelay += DELAY;
+		if (SIDRefreshDelay >= 50)
+		{
+			SIDDrawGraph(sid);	// Redraw the SID graph
+			SIDRefreshDelay = 0;
+		}
+	}
 
 
   }

@@ -6,4 +6,8 @@ extern "C"{
 		return new MemoryGrid(mem);
 	}
 
+	void MemoryGridDrawGrid(MemoryGrid* memgrid){
+		memgrid->drawGrid();
+	}
+
 }

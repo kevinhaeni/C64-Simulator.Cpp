@@ -13,6 +13,7 @@ SID* newSID(memtype*, int showWindow);
 void* getWindow(SID* sid);
 void SIDUpdateRegisters(SID* sid);
 void dispatchEvent(SID* sid, void* ev);
+void SIDDrawGraph(SID* sid);
 
 #ifdef __cplusplus
 }

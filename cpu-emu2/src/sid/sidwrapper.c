@@ -19,4 +19,8 @@ extern "C"{
 	}
 
 
+	void SIDDrawGraph(SID* sid){
+		sid->drawGraph();
+	}
+
 }
