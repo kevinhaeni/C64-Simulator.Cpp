@@ -36,8 +36,10 @@ int threadFunc(void *pointer){
 	return 0;
 }
 
-void MemoryGrid::dispatchEvent(SDL_Event* event)
+void MemoryGrid::dispatchEvent(void* ev)
 {
+
+	SDL_Event* event = (SDL_Event*)ev;
 	switch (event->type)
 	{
 	case SDL_KEYDOWN:

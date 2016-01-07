@@ -28,7 +28,7 @@ public:
 
 	int thread_exit = 0;
 	
-	void dispatchEvent(SDL_Event* event);
+	void dispatchEvent(void* ev);
 	memory* _mem;
 
 	int loopCounter = 0;

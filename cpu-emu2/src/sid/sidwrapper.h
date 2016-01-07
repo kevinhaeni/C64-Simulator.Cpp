@@ -9,8 +9,10 @@ extern "C"{
 typedef struct SID SID;
 typedef char memtype[0x10000][9];
 
-SID* newSID(memtype*, int interval, int showWindow);
+SID* newSID(memtype*, int showWindow);
 void* getWindow(SID* sid);
+void SIDUpdateRegisters(SID* sid);
+void dispatchEvent(SID* sid, void* ev);
 
 #ifdef __cplusplus
 }

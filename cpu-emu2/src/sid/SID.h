@@ -179,7 +179,7 @@ public:
 
 	void drawGraph();
 
-	void dispatchEvent(SDL_Event* event);
+	void dispatchEvent(void* event);
 	void exit();
 	uint8_t readMemory(uint16_t addr) const;
 	uint8_t readMemoryUpper4Bit(uint16_t addr) const;

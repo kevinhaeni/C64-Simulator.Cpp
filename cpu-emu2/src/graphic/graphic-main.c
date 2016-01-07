@@ -142,6 +142,26 @@ int main(int argc, char *argv[])
     }
     draw_bitmap_memory(&cpu, vic, memory);
    
+
+	// copy the memory cells in SIDs address space into the registers 
+	SIDUpdateRegisters(sid);
+
+
+	// Poll and dispatch SDL_Events
+	SDL_Event event;
+	while (SDL_PollEvent(&event)) {
+		if (event.window.windowID == SDL_GetWindowID((SDL_Window*)getWindow(sid)))
+		{
+			dispatchEvent(sid, &event);
+		}
+		else
+		{
+			dispatchEvent(memGrid, &event);
+		}
+	}
+	SDL_Delay(DELAY);
+
+
   }
 
   printf("quit repl and cpu ..\n");

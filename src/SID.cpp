@@ -77,8 +77,9 @@ const uint16_t SID::Voice::Envelope::cyclesWhenToChangeEnvelopeCounter_Attack[16
 	abs(8000 * SAMPLING_RATE / 256 / 1000)				//   8 s*1.0MHz/256 = 31250.00
 };
 
-void SID::dispatchEvent(SDL_Event* event)
+void SID::dispatchEvent(void* ev)
 {
+	SDL_Event* event = (SDL_Event*)ev;
 		switch (event->type){
 		case SDL_KEYDOWN:
 		{
