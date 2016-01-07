@@ -41,6 +41,48 @@ struct _vic* vic;
 struct _6510_cpu cpu;
 char memory[0x10000][9];
 
+// Currently not used
+int refreshThread(){
+	while (true){
+		unsigned long SIDRefreshDelay = 0, MemoryGridRefreshDelay = 0;
+
+		auto DELAY = 2;
+
+		// copy the memory cells in SIDs address space into the registers 
+		SIDUpdateRegisters(sid);
+
+
+		// Poll and dispatch SDL_Events
+		SDL_Event event;
+		while (SDL_PollEvent(&event)) {
+			if (event.window.windowID == SDL_GetWindowID((SDL_Window*)getWindow(sid)))
+			{
+				dispatchEvent(sid, &event);
+			}
+			else
+			{
+				dispatchEvent(memGrid, &event);
+			}
+		}
+		SDL_Delay(DELAY);
+
+		MemoryGridRefreshDelay += DELAY;
+		if (MemoryGridRefreshDelay >= 50){
+
+			MemoryGridDrawGrid(memGrid);		// Redraw MemoryGrid
+			MemoryGridRefreshDelay = 0;
+		}
+
+
+		SIDRefreshDelay += DELAY;
+		if (SIDRefreshDelay >= 50)
+		{
+			SIDDrawGraph(sid);	// Redraw the SID graph
+			SIDRefreshDelay = 0;
+		}
+	}
+	return 0;
+}
 
 
 void intHandler(int dummy) {
@@ -88,14 +130,13 @@ int main(int argc, char *argv[])
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
   TTF_Init();
 
-  unsigned long SIDRefreshDelay = 0, MemoryGridRefreshDelay = 0;
-  auto DELAY = 2;
-
 
   int showWindow = 1;
   // Instantiate SID and memory grid
   struct MemoryGrid* memGrid = newMemoryGrid(&memory); 
   struct SID* sid = newSID(&memory, showWindow);
+
+  SDL_Thread *refresh_thread = SDL_CreateThread(refreshThread, NULL, NULL);
 
 
   // handling parameter --memory <dumpfile> 
@@ -145,40 +186,7 @@ int main(int argc, char *argv[])
     draw_bitmap_memory(&cpu, vic, memory);
    
 
-	// copy the memory cells in SIDs address space into the registers 
-	SIDUpdateRegisters(sid);
 
-
-	// Poll and dispatch SDL_Events
-	SDL_Event event;
-	while (SDL_PollEvent(&event)) {
-		if (event.window.windowID == SDL_GetWindowID((SDL_Window*)getWindow(sid)))
-		{
-			dispatchEvent(sid, &event);
-		}
-		else
-		{
-			dispatchEvent(memGrid, &event);
-		}
-	}
-	SDL_Delay(DELAY);
-
-	MemoryGridRefreshDelay += DELAY;
-	if (MemoryGridRefreshDelay >= 50){
-
-		MemoryGridDrawGrid(memGrid);		// Redraw MemoryGrid
-		MemoryGridRefreshDelay = 0;
-	}
-
-	if (showWindow > 0)
-	{
-		SIDRefreshDelay += DELAY;
-		if (SIDRefreshDelay >= 50)
-		{
-			SIDDrawGraph(sid);	// Redraw the SID graph
-			SIDRefreshDelay = 0;
-		}
-	}
 
 
   }
