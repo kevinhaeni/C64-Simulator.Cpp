@@ -554,8 +554,8 @@ SID::SID(memory* mem, bool window)
 	//}
 
 	// spawn thread
-	//SDL_Thread *refresh_thread = SDL_CreateThread(sidThreadFunc, NULL, this);
-    this->init();
+	SDL_Thread *refresh_thread = SDL_CreateThread(sidThreadFunc, NULL, this);
+    //this->init();
 }
 
 SDL_AudioSpec* SID::getSpec(){
@@ -595,17 +595,6 @@ void SID::init()
 		SDL_PauseAudio(1);
 	}
 
-	// Create an application window with the following settings:
-	if(showWindow){
-	window = SDL_CreateWindow(
-		"SID Window",              // window title
-		SDL_WINDOWPOS_UNDEFINED,           // initial x position
-		SDL_WINDOWPOS_UNDEFINED,           // initial y position
-		1980,                      // width, in pixels
-		255,                     // height, in pixels
-		SDL_WINDOW_SHOWN                  // flags - see below
-	);
-	}
 	// ***** Predefined instruments, not relevant for SID, just for testing purposes *****
 	// Xylophone, Triangle
 	Instrument * i1 = new Instrument("Piano (Pulse)", 0, 9, 0, 0);
@@ -618,62 +607,51 @@ void SID::init()
 	instruments.push_back(*i2);
 	instruments.push_back(*i3);
 
+	// Initialization, Testdata
+	//Voice 1
+		// Frequency
+		writeMemory(0xE0, 0xD400);
+		writeMemory(0x1C, 0xD401);
+		(*_mem)[0xD404][3] = '1';
 
-	// Check if the window was successfully created
-	
-	if (window == nullptr && showWindow) {
-		// In case the window could not be created...
-		printf("Could not create window: %s\n", SDL_GetError());
-		return;
-	}
-	else{
-
-
-		// Initialization, Testdata
-		//Voice 1
-			// Frequency
-			writeMemory(0xE0, 0xD400);
-			writeMemory(0x1C, 0xD401);
-			(*_mem)[0xD404][3] = '1';
-
-			// Pwn
-			writeMemory(0xE0, 0xD402);
-			writeMemory(0x1C, 0xD403);
+		// Pwn
+		writeMemory(0xE0, 0xD402);
+		writeMemory(0x1C, 0xD403);
 
 
-		// Voice 2, Frequency
-			writeMemory(0x70, 0xD407);
-			writeMemory(0x0E, 0xD408);
-			(*_mem)[0xD40B][1] = '1';
+	// Voice 2, Frequency
+		writeMemory(0x70, 0xD407);
+		writeMemory(0x0E, 0xD408);
+		(*_mem)[0xD40B][1] = '1';
 
-			// Pwn
-			writeMemory(0xE0, 0xD409);
-			writeMemory(0x1C, 0xD40A);
+		// Pwn
+		writeMemory(0xE0, 0xD409);
+		writeMemory(0x1C, 0xD40A);
 
-		// Voice 3, Frequency
-			writeMemory(0x88, 0xD40E);
-			writeMemory(0x37, 0xD40F);
-			(*_mem)[0xD412][1] = '1';
+	// Voice 3, Frequency
+		writeMemory(0x88, 0xD40E);
+		writeMemory(0x37, 0xD40F);
+		(*_mem)[0xD412][1] = '1';
 
-			// Pwn
-			writeMemory(0xE0, 0xD410);
-			writeMemory(0x1C, 0xD411);
+		// Pwn
+		writeMemory(0xE0, 0xD410);
+		writeMemory(0x1C, 0xD411);
 
-		writeMemoryLower4Bit(0x87, 0xD418);
+	writeMemoryLower4Bit(0x87, 0xD418);
 
 
-		updateRegisters();
-		if (showWindow)
-		{
-			// Init Graph parameters
-			graphBuffer = new uint8_t[graphBufferSize];
-			graphPointer = 0;
-		}		
+	updateRegisters();
+	if (showWindow)
+	{
+		// Init Graph parameters
+		graphBuffer = new uint8_t[graphBufferSize];
+		graphPointer = 0;
+	}		
 
-		SDL_PauseAudioDevice(dev, 0);        // play
+	SDL_PauseAudioDevice(dev, 0);        // play
 
-		return;
-	}
+	return;
+
 }
 
 

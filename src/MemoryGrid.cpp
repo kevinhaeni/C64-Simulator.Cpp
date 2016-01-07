@@ -138,8 +138,8 @@ MemoryGrid::MemoryGrid(memory* mem)
 	_mem = mem;
 	
 	// spawn thread
-	//SDL_Thread *refresh_thread = SDL_CreateThread(threadFunc, NULL, this);
-	this->init();
+	SDL_Thread *refresh_thread = SDL_CreateThread(threadFunc, NULL, this);
+	//this->init();
 }
 
 
@@ -170,14 +170,7 @@ void MemoryGrid::init()
 	font = TTF_OpenFont("sans.ttf", 158);	// sets the font / size
 
 	// Create an application window with the following settings:
-	window = SDL_CreateWindow(
-		WINDOW_TITLE.c_str(),  			   // window title
-		SDL_WINDOWPOS_UNDEFINED,           // initial x position
-		SDL_WINDOWPOS_UNDEFINED,           // initial y position
-		WINDOW_WIDTH,                      // width, in pixels
-		WINDOW_HEIGHT,                     // height, in pixels
-		SDL_WINDOW_SHOWN                   // flags - see below
-		);
+	
 
 	// Check if the window was successfully created
 	if (window == NULL) {
