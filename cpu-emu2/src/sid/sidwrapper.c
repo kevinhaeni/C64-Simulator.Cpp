@@ -6,4 +6,7 @@ extern "C"{
 		return new SID(mem, 50, true);
 	}
 
+	void* SID::getWindow(SID* sid){
+		return sid->getWindow();
+	}
 }

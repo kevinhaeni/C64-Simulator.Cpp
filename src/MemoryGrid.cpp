@@ -137,6 +137,18 @@ MemoryGrid::MemoryGrid(memory* mem)
 {
 	_mem = mem;
 	
+	window = SDL_CreateWindow(
+		WINDOW_TITLE.c_str(),  			   // window title
+		SDL_WINDOWPOS_UNDEFINED,           // initial x position
+		SDL_WINDOWPOS_UNDEFINED,           // initial y position
+		WINDOW_WIDTH,                      // width, in pixels
+		WINDOW_HEIGHT,                     // height, in pixels
+		SDL_WINDOW_SHOWN                   // flags - see below
+		);
+
+	renderer = SDL_CreateRenderer(window, 0, SDL_RENDERER_ACCELERATED);
+	
+
 	// spawn thread
 	SDL_Thread *refresh_thread = SDL_CreateThread(threadFunc, NULL, this);
 	//this->init();
@@ -242,7 +254,7 @@ void MemoryGrid::handleZoom(int x, int y, int zoom){
 }
 
 
-void MemoryGrid::drawGrid(SDL_Renderer *renderer)
+void MemoryGrid::drawGrid()
 {
 	
 	if (renderer == nullptr)

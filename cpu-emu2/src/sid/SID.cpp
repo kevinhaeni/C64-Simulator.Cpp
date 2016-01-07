@@ -1,8 +1,5 @@
 #include "SID.h"
-#include <iostream>
-#include <string>
-#include <algorithm>    // std::min
-#include "Utils.h"
+
 
 double cotan(double i) { return(1 / tan(i)); }
 
@@ -80,44 +77,170 @@ const uint16_t SID::Voice::Envelope::cyclesWhenToChangeEnvelopeCounter_Attack[16
 	abs(8000 * SAMPLING_RATE / 256 / 1000)				//   8 s*1.0MHz/256 = 31250.00
 };
 
-/*int main(int argc, char* argv[]){
+void SID::dispatchEvent(SDL_Event* event)
+{
+		switch (event->type){
+		case SDL_KEYDOWN:
+		{
+			if (event->key.keysym.scancode == SDL_SCANCODE_SPACE){
+				// Triangle
+				if ((*_mem)[0xD404][0] == '1'){
+					(*_mem)[0xD404][0] = '0';
+					(*_mem)[0xD404][1] = '1'; // Sawtooth
+				}
+				// Sawtooth
+				else if ((*_mem)[0xD404][1] == '1'){
+					(*_mem)[0xD404][1] = '0';
+					(*_mem)[0xD404][2] = '1'; // Rect
+				}
+				// Rect
+				else if ((*_mem)[0xD404][2] == '1'){
+					(*_mem)[0xD404][2] = '0';
+					(*_mem)[0xD404][3] = '1'; // Noise
+				}
+				// Noise
+				else if ((*_mem)[0xD404][3] == '1'){
+					(*_mem)[0xD404][3] = '0';
+					(*_mem)[0xD404][0] = '1'; // Triangle
+				}
+			}
+			else if (event->key.keysym.scancode == SDL_SCANCODE_ESCAPE){
+				exit();
+			}
+			else if (event->key.keysym.scancode == SDL_SCANCODE_LEFT){
+				uint8_t v1_freqLo = readMemory(0xD400);
+				uint8_t v1_freqHi = readMemory(0xD401);
+				uint16_t v1_freq = Utils::makeWord(v1_freqLo, v1_freqHi) - 0xA0;
 
-	char memory[0x10000][9];		// the memory
-	memory[0xD400][0] = 1;
-	memory[0xD400][1] = 1;
-	memory[0xD400][2] = 1;
-	memory[0xD400][3] = 1;
-	memory[0xD400][4] = 1;
-	memory[0xD400][5] = 1;
-	memory[0xD400][6] = 1;
-	memory[0xD400][7] = 1;
+				uint8_t newLowByte = v1_freq & 0x00FF;
+				uint8_t newHighByte = (v1_freq & 0xFF00) >> 8;
 
+				writeMemory(newLowByte, 0xD400);
+				writeMemory(newHighByte, 0xD401);
+			}
+			else if (event->key.keysym.scancode == SDL_SCANCODE_RIGHT){
+				uint8_t v1_freqLo = readMemory(0xD400);
+				uint8_t v1_freqHi = readMemory(0xD401);
+				uint16_t v1_freq = Utils::makeWord(v1_freqLo, v1_freqHi) + 0xA0;
 
-	memory[0xD401][0] = 0;
-	memory[0xD401][1] = 0;
-	memory[0xD401][2] = 0;
-	memory[0xD401][3] = 0;
-	memory[0xD401][4] = 0;
-	memory[0xD401][5] = 0;
-	memory[0xD401][6] = 0;
-	memory[0xD401][7] = 0;
+				uint8_t newLowByte = v1_freq & 0x00FF;
+				uint8_t newHighByte = (v1_freq & 0xFF00) >> 8;
 
-	memory[0xD404][0] = 0;
-	//memory[0xD404][1] = ;
-	//memory[0xD404][2] = ;
-	memory[0xD404][3] = 1;
-	memory[0xD404][4] = 0;
-	memory[0xD404][5] = 1;
-	memory[0xD404][6] = 0;
-	memory[0xD404][7] = 0;
+				writeMemory(newLowByte, 0xD400);
+				writeMemory(newHighByte, 0xD401);
+			}
+			else if (event->key.keysym.scancode == SDL_SCANCODE_UP){
+				uint8_t activeVolume = readMemoryLower4Bit(0xD418) & 0xFF;
+				uint8_t newVolume = activeVolume + 0x01;
+				writeMemoryLower4Bit(newVolume, 0xD418);
+			}
+			else if (event->key.keysym.scancode == SDL_SCANCODE_DOWN){
+				uint8_t activeVolume = readMemoryLower4Bit(0xD418);
+				writeMemoryLower4Bit(activeVolume - 0x01, 0xD418);
+			}
 
-	SID* g = new SID(&memory, 50, true);
+			else if (event->key.keysym.scancode == SDL_SCANCODE_G){
+				// toggle gate ON
+				//graphPointer = 0;
+				if (keyGpressed == false){
+					voice1.silent = false;
 
-	int i;
-	std::cin >> i;
-	return 0;
-}*/
+					graphPointer = 0;
+					voice1.audioPosition = 0;
+					voice1.phase = 0;
+					voice1.phaseInc = static_cast<double>(voice1.frequency) / static_cast<double>(SAMPLING_RATE);
 
+					(*_mem)[0xD404][7] = '1';
+					SDL_PauseAudioDevice(dev, 0);        // play
+				}
+				keyGpressed = true;
+			}
+
+			else if (event->key.keysym.scancode == SDL_SCANCODE_E){
+				voice1.envelope.active = !voice1.envelope.active;
+				voice1.silent = true;
+			}
+
+			else if (event->key.keysym.scancode == SDL_SCANCODE_I){
+				if (++active_instrument_index >= instruments.size()){
+					active_instrument_index = 0;
+				}
+				uint8_t i = active_instrument_index;
+				writeMemoryUpper4Bit(instruments[i].attack_index, 0xD405);
+				writeMemoryLower4Bit(instruments[i].decay_index, 0xD405);
+				writeMemoryUpper4Bit(instruments[i].sustain_index, 0xD406);
+				writeMemoryLower4Bit(instruments[i].release_index, 0xD406);
+			}
+
+			else if (event->key.keysym.scancode == SDL_SCANCODE_P){
+				if ((*_mem)[0xD404][1] == '1'){
+					uint8_t v1_pwLo = readMemory(0xD402);
+					uint8_t v1_pwHi = readMemory(0xD403);
+					uint16_t v1_pw = (Utils::makeWord(v1_pwLo, v1_pwHi) + 400) & 0xFFF;
+
+					uint8_t newLowByte = v1_pw & 0x00FF;
+					uint8_t newHighByte = (v1_pw & 0xFF00) >> 8;
+
+					writeMemory(newLowByte, 0xD402);
+					writeMemory(newHighByte, 0xD403);
+				}
+			}
+			else if (event->key.keysym.scancode == SDL_SCANCODE_O){
+				if ((*_mem)[0xD404][1] == '1'){
+					uint8_t v1_pwLo = readMemory(0xD402);
+					uint8_t v1_pwHi = readMemory(0xD403);
+					uint16_t v1_pw = (Utils::makeWord(v1_pwLo, v1_pwHi) - 400) & 0xFFF;
+
+					uint8_t newLowByte = v1_pw & 0x00FF;
+					uint8_t newHighByte = (v1_pw & 0xFF00) >> 8;
+
+					writeMemory(newLowByte, 0xD402);
+					writeMemory(newHighByte, 0xD403);
+				}
+			}
+			else if (event->key.keysym.scancode == SDL_SCANCODE_S){
+				if ((*_mem)[0xD404][6] == '1'){
+					(*_mem)[0xD404][6] = '0';
+				}
+				else{
+					(*_mem)[0xD404][6] = '1';
+				}
+			}
+			else if (event->key.keysym.scancode == SDL_SCANCODE_R){
+				if ((*_mem)[0xD404][5] == '1'){
+					(*_mem)[0xD404][5] = '0';
+				}
+				else{
+					(*_mem)[0xD404][5] = '1';
+				}
+			}
+			break;
+		}
+
+		case SDL_QUIT:
+		{
+			exit();
+			return;
+		}
+		case SDL_KEYUP:
+		{
+			if (event->key.keysym.scancode == SDL_SCANCODE_G){
+				// toggle gate OFF
+				(*_mem)[0xD404][7] = '0';
+				keyGpressed = false;
+
+				SDL_Delay(1000);
+
+//				drawGraph();
+			}
+		}
+		default: /* unhandled event */
+			break;
+		}	
+
+}
+
+// Currently not used
 int sidThreadFunc(void *pointer){
 	SID* sid = static_cast<SID*>(pointer);
 	sid->init();
@@ -318,8 +441,8 @@ void SID::setVoiceFromControlReg(Voice* voice, char reg[]){
 // SDL calls this function whenever it wants its buffer to be filled with samples
 void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 
-	uint8_t *stream = static_cast<uint8_t*>(buffer);
-	SID* sid = static_cast<SID*>(data);
+	uint8_t *stream = static_cast<uint8_t*>(buffer);			// Pointer to the SDL Stream
+	SID* sid = static_cast<SID*>(data);							// Pointer to our SID Object 
 
 	for (int i = 0; i < length; i++){
 
@@ -391,8 +514,23 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 			// Fill the graphBuffer with the first 9900 bytes of the wave for plotting
 			if (sid->showWindow)
 			{
-				if (sid->graphPointer < sid->graphBufferSize)
+				if (sid->graphPointer < sid->graphBufferSize){
 					sid->graphBuffer[sid->graphPointer++] = finalVoice1;
+				} else
+				{
+					//SDL_PauseAudioDevice(dev, 1);      // play					
+
+					//sid->voice1.audioPosition = 0;
+					//sid->voice1.phaseInc = static_cast<double>(voice1.frequency) / static_cast<double>(SAMPLING_RATE);
+//					sid->refreshCounter++;
+//					if (sid->refreshCounter >= sid->refreshInterval)
+//					{
+////						sid->drawGraph();
+//						sid->graphPointer = 0;
+//					}					
+				}
+
+			
 			}			
 
 #ifdef DEBUG
@@ -405,20 +543,32 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 }
 
 
-SID::SID(memory* mem, int interval, bool window)
+SID::SID(memory* mem, bool showWindow)
 {
-	this->showWindow = window;
-	this->refreshInterval = interval;
+	this->showWindow = showWindow;
 	this->_mem = mem;
 
-	// memory dump
-	for(int i = 54272; i <= 55000; i++){
-	//	std::cout << "Memory " << i << ": " << (int)((*_mem)[i][7])<<(int)((*_mem)[i][6])<<(int)((*_mem)[i][5])<<(int)((*_mem)[i][4])<<(int)((*_mem)[i][3])<<(int)((*_mem)[i][2])<<(int)((*_mem)[i][1])<<(int)((*_mem)[i][0])<< std::endl;
+	if (showWindow){
+		// Create an application window with the following settings:
+		window = SDL_CreateWindow(
+			"SID Window",              // window title
+			SDL_WINDOWPOS_UNDEFINED,           // initial x position
+			SDL_WINDOWPOS_UNDEFINED,           // initial y position
+			1980,                      // width, in pixels
+			255,                     // height, in pixels
+			SDL_WINDOW_SHOWN                  // flags - see below
+			);
 	}
+	renderer = SDL_CreateRenderer(window, 0, SDL_RENDERER_ACCELERATED);
+
+	// memory dump
+	//for(int i = 54272; i <= 55000; i++){
+	////	std::cout << "Memory " << i << ": " << (int)((*_mem)[i][7])<<(int)((*_mem)[i][6])<<(int)((*_mem)[i][5])<<(int)((*_mem)[i][4])<<(int)((*_mem)[i][3])<<(int)((*_mem)[i][2])<<(int)((*_mem)[i][1])<<(int)((*_mem)[i][0])<< std::endl;
+	//}
 
 	// spawn thread
 	SDL_Thread *refresh_thread = SDL_CreateThread(sidThreadFunc, NULL, this);
-        //this->init();
+    //this->init();
 }
 
 SDL_AudioSpec* SID::getSpec(){
@@ -432,11 +582,9 @@ void SID::init()
 	logFile.open("sid.log");
 #endif
 
-	// Init SDL & SDL_ttf
-	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
 
 #ifdef TTF_ENABLED
-	TTF_Init();
+
 	font = TTF_OpenFont("sans.ttf", 48);		//this opens a font style and sets a size
 #endif
 
@@ -460,18 +608,7 @@ void SID::init()
 		SDL_PauseAudio(1);
 	}
 
-	// Create an application window with the following settings:
-	if(showWindow){
-	window = SDL_CreateWindow(
-		WINDOW_TITLE.c_str(),              // window title
-		SDL_WINDOWPOS_UNDEFINED,           // initial x position
-		SDL_WINDOWPOS_UNDEFINED,           // initial y position
-		WINDOW_WIDTH,                      // width, in pixels
-		WINDOW_HEIGHT,                     // height, in pixels
-		SDL_WINDOW_SHOWN                  // flags - see below
-	);
-	}
-	// ***** Instruments *****
+	// ***** Predefined instruments, not relevant for SID, just for testing purposes *****
 	// Xylophone, Triangle
 	Instrument * i1 = new Instrument("Piano (Pulse)", 0, 9, 0, 0);
 	// Trumpet, Sawtooth
@@ -483,278 +620,68 @@ void SID::init()
 	instruments.push_back(*i2);
 	instruments.push_back(*i3);
 
+	// Initialization, Testdata
+	//Voice 1
+		// Frequency
+		writeMemory(0xE0, 0xD400);
+		writeMemory(0x1C, 0xD401);
+		(*_mem)[0xD404][3] = '1';
 
-	// Check if the window was successfully created
-	
-	if (window == nullptr && showWindow) {
-		// In case the window could not be created...
-		printf("Could not create window: %s\n", SDL_GetError());
-		return;
-	}
-	else{
-
-
-		// Initialization, Testdata
-		//Voice 1
-			// Frequency
-			writeMemory(0xE0, 0xD400);
-			writeMemory(0x1C, 0xD401);
-			(*_mem)[0xD404][3] = '1';
-
-			// Pwn
-			writeMemory(0xE0, 0xD402);
-			writeMemory(0x1C, 0xD403);
+		// Pwn
+		writeMemory(0xE0, 0xD402);
+		writeMemory(0x1C, 0xD403);
 
 
-		// Voice 2, Frequency
-			writeMemory(0x70, 0xD407);
-			writeMemory(0x0E, 0xD408);
-			(*_mem)[0xD40B][1] = '1';
+	// Voice 2, Frequency
+		writeMemory(0x70, 0xD407);
+		writeMemory(0x0E, 0xD408);
+		(*_mem)[0xD40B][1] = '1';
 
-			// Pwn
-			writeMemory(0xE0, 0xD409);
-			writeMemory(0x1C, 0xD40A);
+		// Pwn
+		writeMemory(0xE0, 0xD409);
+		writeMemory(0x1C, 0xD40A);
 
-		// Voice 3, Frequency
-			writeMemory(0x88, 0xD40E);
-			writeMemory(0x37, 0xD40F);
-			(*_mem)[0xD412][1] = '1';
+	// Voice 3, Frequency
+		writeMemory(0x88, 0xD40E);
+		writeMemory(0x37, 0xD40F);
+		(*_mem)[0xD412][1] = '1';
 
-			// Pwn
-			writeMemory(0xE0, 0xD410);
-			writeMemory(0x1C, 0xD411);
+		// Pwn
+		writeMemory(0xE0, 0xD410);
+		writeMemory(0x1C, 0xD411);
 
-		writeMemoryLower4Bit(0x87, 0xD418);
-
-
-		// Voice 1, Waveform
+	writeMemoryLower4Bit(0x87, 0xD418);
 
 
-		//filter.calcLowPass(&voice1);
+	updateRegisters();
+	if (showWindow)
+	{
+		// Init Graph parameters
+		graphBuffer = new uint8_t[graphBufferSize];
+		graphPointer = 0;
+	}		
 
-		updateRegisters();
-		if (showWindow)
-		{
-			graphBuffer = new uint8_t[graphBufferSize];
-			//graphBufferSize = graphDisplayLength;
-			graphPointer = 0;
-		}		
+	SDL_PauseAudioDevice(dev, 0);        // play
 
-		SDL_PauseAudioDevice(dev, 0);        // play
-		SDL_Delay(1000);	// 44100 / length of the audio  * 1000 (to get milliseconds)
+	return;
 
-		if (showWindow){
-			drawGraph();
-		}
-	
-		mainLoop();
-		return;
-	}
 }
 
-void SID::mainLoop()
-{
-	// poll SDL events until we terminate the thread
-	while (thread_exit == 0){
-		updateRegisters();
 
-		SDL_Event event;
+void* SID::getWindow(){
 
-		bool forceRedraw = false;		// set to true when the audio wave changes and its graph should be redrawn
-
-		while (SDL_PollEvent(&event)) {
-			switch (event.type){
-				case SDL_KEYDOWN:
-				{
-					if (event.key.keysym.scancode == SDL_SCANCODE_SPACE){
-						forceRedraw = true;
-						// Triangle
-						if((*_mem)[0xD404][0] == '1'){
-							(*_mem)[0xD404][0] = '0';
-							(*_mem)[0xD404][1] = '1'; // Sawtooth
-						}
-						// Sawtooth
-						else if((*_mem)[0xD404][1] == '1'){
-							(*_mem)[0xD404][1] = '0';
-							(*_mem)[0xD404][2] = '1'; // Rect
-						}
-						// Rect
-						else if((*_mem)[0xD404][2] == '1'){
-							(*_mem)[0xD404][2] = '0';
-							(*_mem)[0xD404][3] = '1'; // Noise
-						}
-						// Noise
-						else if((*_mem)[0xD404][3] == '1'){
-							(*_mem)[0xD404][3] = '0';
-							(*_mem)[0xD404][0] = '1'; // Triangle
-						}
-					}
-					else if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE){
-						exit();
-					}
-					else if (event.key.keysym.scancode == SDL_SCANCODE_LEFT){
-						forceRedraw = true;
-						uint8_t v1_freqLo = readMemory(0xD400);
-						uint8_t v1_freqHi = readMemory(0xD401);
-						uint16_t v1_freq = Utils::makeWord(v1_freqLo, v1_freqHi) - 0xA0;
-
-						uint8_t newLowByte = v1_freq & 0x00FF;
-						uint8_t newHighByte = (v1_freq & 0xFF00) >> 8;
-
-						writeMemory(newLowByte, 0xD400);
-						writeMemory(newHighByte, 0xD401);
-					}
-					else if (event.key.keysym.scancode == SDL_SCANCODE_RIGHT){
-						forceRedraw = true;
-						uint8_t v1_freqLo = readMemory(0xD400);
-						uint8_t v1_freqHi = readMemory(0xD401);
-						uint16_t v1_freq = Utils::makeWord(v1_freqLo, v1_freqHi) + 0xA0;
-
-						uint8_t newLowByte = v1_freq & 0x00FF;
-						uint8_t newHighByte = (v1_freq & 0xFF00) >> 8;
-
-						writeMemory(newLowByte, 0xD400);
-						writeMemory(newHighByte, 0xD401);
-					}
-					else if (event.key.keysym.scancode == SDL_SCANCODE_UP){
-						forceRedraw = true;
-						uint8_t activeVolume = readMemoryLower4Bit(0xD418) & 0xFF;
-						uint8_t newVolume = activeVolume + 0x01;
-						writeMemoryLower4Bit(newVolume, 0xD418);
-					}
-					else if (event.key.keysym.scancode == SDL_SCANCODE_DOWN){
-						forceRedraw = true;
-						uint8_t activeVolume = readMemoryLower4Bit(0xD418);
-						writeMemoryLower4Bit(activeVolume - 0x01, 0xD418);
-					}
-
-					else if (event.key.keysym.scancode == SDL_SCANCODE_G){
-						// toggle gate ON
-						//graphPointer = 0;
-						if (keyGpressed == false){
-							voice1.silent = false;
-
-							graphPointer = 0;
-							voice1.audioPosition = 0;
-							voice1.phase = 0;
-							voice1.phaseInc = static_cast<double>(voice1.frequency) / static_cast<double>(SAMPLING_RATE);
-
-							(*_mem)[0xD404][7] = '1';
-							SDL_PauseAudioDevice(dev, 0);        // play
-						}
-						keyGpressed = true;
-					}
-
-					else if (event.key.keysym.scancode == SDL_SCANCODE_E){
-						forceRedraw = true;
-						voice1.envelope.active = !voice1.envelope.active;
-						voice1.silent = true;
-					}
-
-					else if (event.key.keysym.scancode == SDL_SCANCODE_I){
-						forceRedraw = true;
-						if (++active_instrument_index >= instruments.size()){
-							active_instrument_index = 0;
-						}
-						uint8_t i = active_instrument_index;
-						writeMemoryUpper4Bit(instruments[i].attack_index, 0xD405);
-						writeMemoryLower4Bit(instruments[i].decay_index, 0xD405);
-						writeMemoryUpper4Bit(instruments[i].sustain_index, 0xD406);
-						writeMemoryLower4Bit(instruments[i].release_index, 0xD406);
-					}
-
-					else if (event.key.keysym.scancode == SDL_SCANCODE_P){
-						forceRedraw = true;
-						if((*_mem)[0xD404][1] == '1'){
-							uint8_t v1_pwLo = readMemory(0xD402);
-							uint8_t v1_pwHi = readMemory(0xD403);
-							uint16_t v1_pw = (Utils::makeWord(v1_pwLo, v1_pwHi) + 400) & 0xFFF;
-
-							uint8_t newLowByte = v1_pw & 0x00FF;
-							uint8_t newHighByte = (v1_pw & 0xFF00) >> 8;
-
-							writeMemory(newLowByte, 0xD402);
-							writeMemory(newHighByte, 0xD403);
-						}
-					}
-					else if (event.key.keysym.scancode == SDL_SCANCODE_O){
-						forceRedraw = true;
-						if((*_mem)[0xD404][1] == '1'){
-							uint8_t v1_pwLo = readMemory(0xD402);
-							uint8_t v1_pwHi = readMemory(0xD403);
-							uint16_t v1_pw = (Utils::makeWord(v1_pwLo, v1_pwHi) - 400) & 0xFFF;
-
-							uint8_t newLowByte = v1_pw & 0x00FF;
-							uint8_t newHighByte = (v1_pw & 0xFF00) >> 8;
-
-							writeMemory(newLowByte, 0xD402);
-							writeMemory(newHighByte, 0xD403);
-						}
-					}
-					else if(event.key.keysym.scancode == SDL_SCANCODE_S){
-						forceRedraw = true;
-						if((*_mem)[0xD404][6] == '1'){
-							(*_mem)[0xD404][6] = '0';
-						} else{
-							(*_mem)[0xD404][6] = '1';
-						}
-					}
-					else if(event.key.keysym.scancode == SDL_SCANCODE_R){
-						forceRedraw = true;
-						if((*_mem)[0xD404][5] == '1'){
-							(*_mem)[0xD404][5] = '0';
-						} else{
-							(*_mem)[0xD404][5] = '1';
-						}
-					}
-					break;
-				}
-
-				case SDL_QUIT:
-				{
-					exit();
-					return;
-				}
-				case SDL_KEYUP:
-				{
-					if (event.key.keysym.scancode == SDL_SCANCODE_G){
-						// toggle gate OFF
-						(*_mem)[0xD404][7] = '0';
-						keyGpressed = false;
-
-						SDL_Delay(1000);
-
-						drawGraph();
-					}
-				}
-				default: /* unhandled event */
-					break;
-			}
-		}
-
-		if (forceRedraw)
-		{
-			//SDL_PauseAudioDevice(dev, 1);      // play
-			graphPointer = 0;
-
-			voice1.audioPosition = 0;
-			voice1.phaseInc = static_cast<double>(voice1.frequency) / static_cast<double>(SAMPLING_RATE);
-
-			SDL_PauseAudioDevice(dev, 0); // play
-			SDL_Delay(1000);
-
-			drawGraph();
-		}
-		SDL_Delay(refreshInterval);
-	}
-	return;
+	return (void*)window;
 }
 
 void SID::drawGraph()
 {
-	SDL_Renderer *renderer = SDL_GetRenderer(window);
+	
 	if (renderer == nullptr)
-		renderer = SDL_CreateRenderer(window, 0, SDL_RENDERER_ACCELERATED);
+		return;
+
+	// We don't have enough samples yet...wait for more audiocallbacks
+	if (graphPointer < graphBufferSize)
+		return;
 
 	// Set colors and clear windows
 	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -764,10 +691,10 @@ void SID::drawGraph()
 	int x = 0;	// x-pixel loop
 	int i = 0;	// graphArray index
 
-	int condenseFactor = graphDisplayLength / WINDOW_WIDTH;		// example: if we want to show 10000 samples on a 2000 pixel screen, we need to condense 5 pixels together
+	int condenseFactor = graphDisplayLength / 1980;		// example: if we want to show 10000 samples on a 2000 pixel screen, we need to condense 5 pixels together
 	if (condenseFactor <= 2)
 		condenseFactor = 2;
-	while (x < WINDOW_WIDTH){
+	while (x < 1980){
 		uint8_t* condensingValues = new uint8_t[condenseFactor];
 		for (int j = 0; j < condenseFactor; j++)
 		{
@@ -796,8 +723,8 @@ void SID::drawGraph()
 		else
 			rising = false;
 
-		int y1 = WINDOW_HEIGHT - min;
-		int y2 = WINDOW_HEIGHT - max;
+		int y1 = 255 - min;
+		int y2 = 255 - max;
 
 		if (rising){
 			SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
@@ -883,6 +810,7 @@ void SID::drawGraph()
 
 	SDL_RenderPresent(renderer);
 
+	graphPointer = 0;
 	return;
 }
 

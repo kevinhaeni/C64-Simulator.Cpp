@@ -84,9 +84,17 @@ int main(int argc, char *argv[])
   vic = &vicstruct;
   init_display(vic);
   
+  // Init SDL
+  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
+  TTF_Init();
 
-  struct SID* sid = newSID(&memory, 400, 1);
-  struct MemoryGrid* memgrid = newMemoryGrid(&memory);
+  unsigned long SIDRefreshDelay = 0, MemoryGridRefreshDelay = 0;
+  auto DELAY = 2;
+
+  // Instantiate SID and memory grid
+  struct MemoryGrid* memgrid = newMemoryGrid(&memory); 
+  struct SID* sid = newSID(&memory, 1);
+
 
   // handling parameter --memory <dumpfile> 
   if(argc==3){

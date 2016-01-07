@@ -6,14 +6,13 @@
 #include <string>
 #include <vector>
 #include <fstream>
-#include <iostream>
+#include <string>
+#include "Utils.h"
 
 typedef char memory[0x10000][9];
 
 /* Window Constants */
-const std::string WINDOW_TITLE = "SID Graphical Window";
-const int WINDOW_WIDTH = 1980;
-const int WINDOW_HEIGHT = 255;
+
 
 /* Audio Constants */
 const int SAMPLING_RATE = 44100;				// number of samples per second
@@ -27,7 +26,7 @@ const int SAMPLING_RATE = 44100;				// number of samples per second
 
 class SID
 {
-private:
+public:
 	SDL_Window *window;
 
 	// SDL audio stuff
@@ -35,43 +34,32 @@ private:
 	SDL_AudioSpec spec;
 	SDL_AudioDeviceID dev;
 
-
-	int refreshInterval = 50;				         // mseconds
+	unsigned long  timeSinceLastInterval = 0;
+	int refreshInterval = 5;				         // mseconds
+	int refreshCounter = 0;
 	int thread_exit = 0;
 	bool pause_thread = false;	
+	SDL_Renderer *renderer;
 
 #ifdef TTF_ENABLED
 	TTF_Font* font;
 #endif
 
-public:
 	// properties
 	bool showWindow = false;
 	bool keyGpressed;
 	memory* _mem;
+	int graphDisplayLength = 9900;
 
-	// methods
-	SID(memory* mem, int interval, bool window);
-	void init();
-	void mainLoop();
-	void drawGraph();
+	// Graph members
+	int graphPointer = 0;
+	uint8_t* graphBuffer;		// size must be a multiple of the window width (default 1980)
+	int graphBufferSize = SAMPLING_RATE;
 
-	void exit();
-	uint8_t readMemory(uint16_t addr) const;
-	uint8_t readMemoryUpper4Bit(uint16_t addr) const;
-	uint8_t readMemoryLower4Bit(uint16_t addr) const;
+	std::ofstream logFile;
+	std::ifstream* envFile;
 
-	uint16_t readMemory2Register(uint16_t addr) const;
-	uint16_t readMemoryVoiceFrequency(uint16_t addr) const;
-	double readMemoryVoicePWN(uint16_t addr) const;
-
-	void writeMemory(uint8_t value, uint16_t addr) const;
-	void writeMemoryUpper4Bit(uint8_t value, uint16_t addr) const;
-	void writeMemoryLower4Bit(uint8_t value, uint16_t addr) const;
-
-	char* readMemoryBitwise(uint16_t addr) const;
-	void updateRegisters();
-
+	int logCounter = 0;
 	uint8_t volume;
 	uint8_t getVolume();
 
@@ -84,14 +72,6 @@ public:
 		Instrument(std::string, uint8_t, uint8_t, uint8_t, uint8_t);
 	};
 
-	std::vector <Instrument> instruments;
-	int active_instrument_index = 0;
-	void next_instrument();
-	void set_instrument();
-
-
-	// SDL audio members
-	SDL_AudioSpec* getSpec();
 	struct Voice{
 		Voice();
 
@@ -106,7 +86,7 @@ public:
 		double maxWaveValue;  //
 		long double phase;
 		long double phaseInc;
-		
+
 		int previousWaveValue; // needed for Filter
 		int activeWaveValue;
 		int getPreviousWaveValue();
@@ -179,8 +159,7 @@ public:
 		uint8_t resonance;
 
 		uint8_t calcLowPass(Voice* voice);
-		void calcBandPass();
-		void calcHighPass();
+
 
 		int filterValues[2000];
 
@@ -189,23 +168,44 @@ public:
 		} mode;
 	} filter;
 
+	std::vector <Instrument> instruments;
+	int active_instrument_index = 0;
+
+	// methods
+	SID(memory* mem, bool window);
+	void init();
+
+	void* getWindow();
+
+	void drawGraph();
+
+	void dispatchEvent(SDL_Event* event);
+	void exit();
+	uint8_t readMemory(uint16_t addr) const;
+	uint8_t readMemoryUpper4Bit(uint16_t addr) const;
+	uint8_t readMemoryLower4Bit(uint16_t addr) const;
+
+	uint16_t readMemory2Register(uint16_t addr) const;
+	uint16_t readMemoryVoiceFrequency(uint16_t addr) const;
+	double readMemoryVoicePWN(uint16_t addr) const;
+
+	void writeMemory(uint8_t value, uint16_t addr) const;
+	void writeMemoryUpper4Bit(uint8_t value, uint16_t addr) const;
+	void writeMemoryLower4Bit(uint8_t value, uint16_t addr) const;
+
+	char* readMemoryBitwise(uint16_t addr) const;
+	void updateRegisters();
+
+
+	// SDL audio members
+	SDL_AudioSpec* getSpec();
+
+
 	void setVoiceFromControlReg(Voice* voice, char reg[]);
 
-	int graphDisplayLength = 9900;
-
-	// Graph members
-	int graphPointer = 0;
-	uint8_t* graphBuffer;		// size must be a multiple of the window width (default 1980)
-	int graphBufferSize = SAMPLING_RATE;
+	
 	void resetGraphBuffer();
 
-	//int prevX = 0;
-	//int prevY = 0;
-
-	std::ofstream logFile;
-	std::ifstream* envFile;
-
-	int logCounter = 0;
 };
 
 

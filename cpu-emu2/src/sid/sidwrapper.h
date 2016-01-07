@@ -10,6 +10,7 @@ typedef struct SID SID;
 typedef char memtype[0x10000][9];
 
 SID* newSID(memtype*, int interval, int showWindow);
+void* getWindow(SID* sid);
 
 #ifdef __cplusplus
 }

@@ -543,10 +543,23 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 }
 
 
-SID::SID(memory* mem, bool window)
+SID::SID(memory* mem, bool showWindow)
 {
-	this->showWindow = window;
+	this->showWindow = showWindow;
 	this->_mem = mem;
+
+	if (showWindow){
+		// Create an application window with the following settings:
+		window = SDL_CreateWindow(
+			"SID Window",              // window title
+			SDL_WINDOWPOS_UNDEFINED,           // initial x position
+			SDL_WINDOWPOS_UNDEFINED,           // initial y position
+			1980,                      // width, in pixels
+			255,                     // height, in pixels
+			SDL_WINDOW_SHOWN                  // flags - see below
+			);
+	}
+	renderer = SDL_CreateRenderer(window, 0, SDL_RENDERER_ACCELERATED);
 
 	// memory dump
 	//for(int i = 54272; i <= 55000; i++){
@@ -655,8 +668,12 @@ void SID::init()
 }
 
 
+void* SID::getWindow(){
 
-void SID::drawGraph(SDL_Renderer *renderer)
+	return (void*)window;
+}
+
+void SID::drawGraph()
 {
 	
 	if (renderer == nullptr)

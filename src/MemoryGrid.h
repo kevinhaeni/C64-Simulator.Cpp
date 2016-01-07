@@ -23,6 +23,7 @@ class MemoryGrid
 public:
 
 	SDL_Window *window;          // Declare a pointer
+	SDL_Renderer *renderer;
 	TTF_Font* font;
 
 	int thread_exit = 0;
@@ -57,7 +58,7 @@ public:
 	~MemoryGrid();
 	void init();
 	
-	void drawGrid(SDL_Renderer *renderer);
+	void drawGrid();
 	void handleZoom(int x, int y, int change);
 	uint16_t getCellAtCoordinates(int x, int y);
 	int getCellXAtCoordinates(int x, int y);

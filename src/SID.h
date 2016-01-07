@@ -175,7 +175,9 @@ public:
 	SID(memory* mem, bool window);
 	void init();
 
-	void drawGraph(SDL_Renderer *renderer);
+	void* getWindow();
+
+	void drawGraph();
 
 	void dispatchEvent(SDL_Event* event);
 	void exit();
