@@ -33,13 +33,37 @@ int threadFunc(void *pointer){
 	MemoryGrid* grid = (MemoryGrid*)pointer;
 	grid->init();
 
+	auto MemoryGridRefreshDelay = 200;
+	// main loop
+	while (true){
+
+		// Poll and dispatch SDL_Events
+		SDL_Event event;
+		while (SDL_PollEvent(&event)) {
+			if (event.window.windowID == SDL_GetWindowID(grid->window))
+			{
+				grid->dispatchEvent(&event);
+			}
+			
+		}
+
+		SDL_Delay(20);
+
+		MemoryGridRefreshDelay += 20;
+		if (MemoryGridRefreshDelay >= 200){
+
+			grid->drawGrid();		// Redraw MemoryGrid
+			MemoryGridRefreshDelay = 0;
+		}
+
+	
+	}
+
 	return 0;
 }
 
-void MemoryGrid::dispatchEvent(void* ev)
+void MemoryGrid::dispatchEvent(SDL_Event* event)
 {
-
-	SDL_Event* event = (SDL_Event*)ev;
 	switch (event->type)
 	{
 	case SDL_KEYDOWN:
@@ -67,13 +91,14 @@ void MemoryGrid::dispatchEvent(void* ev)
 				{
 					// If it's the first key
 					inputBuffer[inputBufferPos++] = event->key.keysym.sym;
-				}else{
+				}
+				else{
 					// if it's the third, fourth, etc. key, shift the whole string by one position to the right (replace the char at index 0)
 					inputBuffer[0] = inputBuffer[1];
 					inputBuffer[1] = event->key.keysym.sym;
 					inputBufferPos++;
 				}
-				
+
 
 			}
 		}
@@ -138,18 +163,6 @@ MemoryGrid::MemoryGrid(memory* mem)
 	: tilesPerLine(256)
 {
 	_mem = mem;
-	
-	window = SDL_CreateWindow(
-		WINDOW_TITLE.c_str(),  			   // window title
-		SDL_WINDOWPOS_UNDEFINED,           // initial x position
-		SDL_WINDOWPOS_UNDEFINED,           // initial y position
-		WINDOW_WIDTH,                      // width, in pixels
-		WINDOW_HEIGHT,                     // height, in pixels
-		SDL_WINDOW_SHOWN                   // flags - see below
-		);
-
-	renderer = SDL_CreateRenderer(window, 0, SDL_RENDERER_ACCELERATED);
-	
 
 	// spawn thread
 	SDL_Thread *refresh_thread = SDL_CreateThread(threadFunc, NULL, this);
@@ -164,8 +177,8 @@ MemoryGrid::~MemoryGrid(){
 
 void MemoryGrid::init()
 {
-	
-/*	OpenGL doesn't seem to be supported on our linux machines without installing new drivers -> f*** it
+
+	/*	OpenGL doesn't seem to be supported on our linux machines without installing new drivers -> f*** it
 
 	// Settings
 	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
@@ -179,12 +192,20 @@ void MemoryGrid::init()
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2);
 
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-*/
+	*/
 
 	font = TTF_OpenFont("sans.ttf", 158);	// sets the font / size
 
 	// Create an application window with the following settings:
-	
+	window = SDL_CreateWindow(
+		WINDOW_TITLE.c_str(),  			   // window title
+		SDL_WINDOWPOS_UNDEFINED,           // initial x position
+		SDL_WINDOWPOS_UNDEFINED,           // initial y position
+		WINDOW_WIDTH,                      // width, in pixels
+		WINDOW_HEIGHT,                     // height, in pixels
+		SDL_WINDOW_SHOWN                   // flags - see below
+		);
+	 renderer = SDL_CreateRenderer(window, 0, SDL_RENDERER_ACCELERATED);
 
 	// Check if the window was successfully created
 	if (window == NULL) {
@@ -198,7 +219,7 @@ void MemoryGrid::init()
 		//drawGrid();
 		//mainLoop();
 		return;
-	}	
+	}
 }
 
 void MemoryGrid::handleZoom(int x, int y, int zoom){
@@ -215,7 +236,7 @@ void MemoryGrid::handleZoom(int x, int y, int zoom){
 		// Zoom out of boundaries
 		return;
 	}
-		
+
 	// remember the old (=current) "camera" settings
 	int prevTilesPerLine = tilesPerLine;
 
@@ -251,14 +272,14 @@ void MemoryGrid::handleZoom(int x, int y, int zoom){
 		zoomOffset.x = prevOffsetValues.x;
 		zoomOffset.y = prevOffsetValues.y;
 	}
-			
+
 
 }
 
 
 void MemoryGrid::drawGrid()
 {
-	
+
 	if (renderer == nullptr)
 		return;
 
@@ -273,10 +294,10 @@ void MemoryGrid::drawGrid()
 		for (int x = 0; x < tilesPerLine; x++){
 			// Create a rect for each memory cell			
 			SDL_Rect r;
-			rectWidth	= r.w	= (WINDOW_WIDTH / tilesPerLine);
-			rectHeight	= r.h	= (WINDOW_HEIGHT / tilesPerLine);
-			r.y			= y * (r.h + 1);		// height + 1 pixel spacing
-			r.x			= x * (r.w + 1);		// width + 1 pixel spacing
+			rectWidth = r.w = (WINDOW_WIDTH / tilesPerLine);
+			rectHeight = r.h = (WINDOW_HEIGHT / tilesPerLine);
+			r.y = y * (r.h + 1);		// height + 1 pixel spacing
+			r.x = x * (r.w + 1);		// width + 1 pixel spacing
 			rectWidth++;
 			rectHeight++;
 
@@ -302,138 +323,138 @@ void MemoryGrid::drawGrid()
 
 			// Render fonts (only if zoomed in because of performance and unreadable texts)			
 			switch (tilesPerLine){
-				case 256:
-				case 128:
-				case 64:	// Do not show any text
-					break;
-				case 32:	// Show address only
-				{					
+			case 256:
+			case 128:
+			case 64:	// Do not show any text
+				break;
+			case 32:	// Show address only
+			{
 
-					SDL_Color textColor;
-					if (cellValue != 0)			
-						textColor = { 222, 222, 222 };
-					else
-						textColor = { 44, 44, 44 };
-					SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::stringify(cellValue).c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
-					SDL_Texture* text = SDL_CreateTextureFromSurface(renderer, surfaceMessage); // convert it into a texture
-					SDL_RenderCopy(renderer, text, NULL, &r);
-					SDL_FreeSurface(surfaceMessage);
-					SDL_DestroyTexture(text);
+				SDL_Color textColor;
+				if (cellValue != 0)
+					textColor = { 222, 222, 222 };
+				else
+					textColor = { 44, 44, 44 };
+				SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::stringify(cellValue).c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+				SDL_Texture* text = SDL_CreateTextureFromSurface(renderer, surfaceMessage); // convert it into a texture
+				SDL_RenderCopy(renderer, text, NULL, &r);
+				SDL_FreeSurface(surfaceMessage);
+				SDL_DestroyTexture(text);
 
-					break;
-				}
-				case 16 :
-				case 8:
-				{
-					SDL_Rect r1;
-					r1.w = rectWidth - 1;
-					r1.h = (rectHeight - 1) / 4;
-					r1.y = r.y;		// height + 1 pixel spacing
-					r1.x = r.x;		// width + 1 pixel spacing			
-					SDL_RenderCopy(renderer, NULL, &r1, &r);
+				break;
+			}
+			case 16:
+			case 8:
+			{
+				SDL_Rect r1;
+				r1.w = rectWidth - 1;
+				r1.h = (rectHeight - 1) / 4;
+				r1.y = r.y;		// height + 1 pixel spacing
+				r1.x = r.x;		// width + 1 pixel spacing			
+				SDL_RenderCopy(renderer, NULL, &r1, &r);
 
-					SDL_Rect r2;
-					r2.w = r1.w;
-					r2.h = r1.h * 3;
-					r2.y = r1.y + r1.h;		// height + 1 pixel spacing
-					r2.x = r1.x;			// width + 1 pixel spacing			
-					SDL_RenderCopy(renderer, NULL, &r2, &r);
+				SDL_Rect r2;
+				r2.w = r1.w;
+				r2.h = r1.h * 3;
+				r2.y = r1.y + r1.h;		// height + 1 pixel spacing
+				r2.x = r1.x;			// width + 1 pixel spacing			
+				SDL_RenderCopy(renderer, NULL, &r2, &r);
 
-					SDL_Color textColor;
-					if (cellValue != 0)
-						textColor = { 222, 222, 222 };
-					else
-						textColor = { 44, 44, 44 };
+				SDL_Color textColor;
+				if (cellValue != 0)
+					textColor = { 222, 222, 222 };
+				else
+					textColor = { 44, 44, 44 };
 
-					SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::hexify(cellAddress).c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
-					SDL_Texture* addressText = SDL_CreateTextureFromSurface(renderer, surfaceMessage); // convert it into a texture
-					SDL_RenderCopy(renderer, addressText, NULL, &r1);
-					SDL_FreeSurface(surfaceMessage);
-					SDL_DestroyTexture(addressText);
-
-
-					//SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::hexify(cellAddress).c_str(), White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
-					SDL_Surface* surfaceMessage2 = TTF_RenderText_Solid(font, Utils::stringify(cellValue).c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
-					SDL_Texture* valueText = SDL_CreateTextureFromSurface(renderer, surfaceMessage2); // convert it into a texture
-					SDL_RenderCopy(renderer, valueText, NULL, &r2);
-					SDL_FreeSurface(surfaceMessage2);
-					SDL_DestroyTexture(valueText);
-					break;
-
-				}
-				case 4:
-				case 2:
-				case 1:		// Show address and data
-				{
-					SDL_Rect r1;
-					r1.w = rectWidth - 1;
-					r1.h = (rectHeight - 1) / 4;
-					r1.y = r.y;		// height + 1 pixel spacing
-					r1.x = r.x;		// width + 1 pixel spacing			
-					SDL_RenderCopy(renderer, NULL, &r1, &r);
-
-					SDL_Rect r2;
-					r2.w = r1.w;
-					r2.h = r1.h*2;
-					r2.y = r1.y + r1.h;	
-					r2.x = r1.x;				
-					SDL_RenderCopy(renderer, NULL, &r2, &r);
+				SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::hexify(cellAddress).c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+				SDL_Texture* addressText = SDL_CreateTextureFromSurface(renderer, surfaceMessage); // convert it into a texture
+				SDL_RenderCopy(renderer, addressText, NULL, &r1);
+				SDL_FreeSurface(surfaceMessage);
+				SDL_DestroyTexture(addressText);
 
 
-					SDL_Rect r3;
-					r3.w = (rectWidth - 1) / 3;
-					r3.h = r1.h;
-					r3.y = r1.y + r1.h + r2.h;	
-					r3.x = r.x;
-					SDL_RenderCopy(renderer, NULL, &r3, &r);
+				//SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::hexify(cellAddress).c_str(), White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+				SDL_Surface* surfaceMessage2 = TTF_RenderText_Solid(font, Utils::stringify(cellValue).c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+				SDL_Texture* valueText = SDL_CreateTextureFromSurface(renderer, surfaceMessage2); // convert it into a texture
+				SDL_RenderCopy(renderer, valueText, NULL, &r2);
+				SDL_FreeSurface(surfaceMessage2);
+				SDL_DestroyTexture(valueText);
+				break;
 
-					SDL_Rect r4;
-					r4.w = (rectWidth - 1) / 3;
-					r4.h = r1.h;
-					r4.y = r1.y + r1.h + r2.h;
-					r4.x = r.x + (((rectWidth - 1) / 3) * 2);
-					SDL_RenderCopy(renderer, NULL, &r4, &r);
+			}
+			case 4:
+			case 2:
+			case 1:		// Show address and data
+			{
+				SDL_Rect r1;
+				r1.w = rectWidth - 1;
+				r1.h = (rectHeight - 1) / 4;
+				r1.y = r.y;		// height + 1 pixel spacing
+				r1.x = r.x;		// width + 1 pixel spacing			
+				SDL_RenderCopy(renderer, NULL, &r1, &r);
 
-					SDL_Color textColor;
-					if (cellValue != 0)
-						textColor = { 222, 222, 222 };
-					else
-						textColor = { 44, 44, 44 };
-
-					SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::hexify(cellAddress).c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
-					SDL_Texture* addressText = SDL_CreateTextureFromSurface(renderer, surfaceMessage); // convert it into a texture
-					SDL_RenderCopy(renderer, addressText, NULL, &r1);
-					SDL_FreeSurface(surfaceMessage);
-					SDL_DestroyTexture(addressText);
-
-
-					//SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::hexify(cellAddress).c_str(), White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
-					SDL_Surface* surfaceMessage2 = TTF_RenderText_Solid(font, Utils::stringify(cellValue).c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
-					SDL_Texture* valueText = SDL_CreateTextureFromSurface(renderer, surfaceMessage2); // convert it into a texture
-					SDL_RenderCopy(renderer, valueText, NULL, &r2);
-					SDL_FreeSurface(surfaceMessage2);
-					SDL_DestroyTexture(valueText);
+				SDL_Rect r2;
+				r2.w = r1.w;
+				r2.h = r1.h * 2;
+				r2.y = r1.y + r1.h;
+				r2.x = r1.x;
+				SDL_RenderCopy(renderer, NULL, &r2, &r);
 
 
-					std::string charRepresentation; 
-					std::ostringstream oss;			
-					oss << cellValue;
-					charRepresentation = oss.str();
+				SDL_Rect r3;
+				r3.w = (rectWidth - 1) / 3;
+				r3.h = r1.h;
+				r3.y = r1.y + r1.h + r2.h;
+				r3.x = r.x;
+				SDL_RenderCopy(renderer, NULL, &r3, &r);
 
-					SDL_Surface* surfaceMessage3 = TTF_RenderText_Solid(font, charRepresentation.c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
-					SDL_Texture* charValueText = SDL_CreateTextureFromSurface(renderer, surfaceMessage3); // convert it into a texture
-					SDL_RenderCopy(renderer, charValueText, NULL, &r4);
-					SDL_FreeSurface(surfaceMessage3);
-					SDL_DestroyTexture(charValueText);
+				SDL_Rect r4;
+				r4.w = (rectWidth - 1) / 3;
+				r4.h = r1.h;
+				r4.y = r1.y + r1.h + r2.h;
+				r4.x = r.x + (((rectWidth - 1) / 3) * 2);
+				SDL_RenderCopy(renderer, NULL, &r4, &r);
 
-					SDL_Surface* surfaceMessage4 = TTF_RenderText_Solid(font, std::to_string(cellValue).c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
-					SDL_Texture* decValueText = SDL_CreateTextureFromSurface(renderer, surfaceMessage4); // convert it into a texture
-					SDL_RenderCopy(renderer, decValueText, NULL, &r3);
-					SDL_FreeSurface(surfaceMessage4);
-					SDL_DestroyTexture(decValueText);
+				SDL_Color textColor;
+				if (cellValue != 0)
+					textColor = { 222, 222, 222 };
+				else
+					textColor = { 44, 44, 44 };
 
-					break;
-				}
+				SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::hexify(cellAddress).c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+				SDL_Texture* addressText = SDL_CreateTextureFromSurface(renderer, surfaceMessage); // convert it into a texture
+				SDL_RenderCopy(renderer, addressText, NULL, &r1);
+				SDL_FreeSurface(surfaceMessage);
+				SDL_DestroyTexture(addressText);
+
+
+				//SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, Utils::hexify(cellAddress).c_str(), White); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+				SDL_Surface* surfaceMessage2 = TTF_RenderText_Solid(font, Utils::stringify(cellValue).c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+				SDL_Texture* valueText = SDL_CreateTextureFromSurface(renderer, surfaceMessage2); // convert it into a texture
+				SDL_RenderCopy(renderer, valueText, NULL, &r2);
+				SDL_FreeSurface(surfaceMessage2);
+				SDL_DestroyTexture(valueText);
+
+
+				std::string charRepresentation;
+				std::ostringstream oss;
+				oss << cellValue;
+				charRepresentation = oss.str();
+
+				SDL_Surface* surfaceMessage3 = TTF_RenderText_Solid(font, charRepresentation.c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+				SDL_Texture* charValueText = SDL_CreateTextureFromSurface(renderer, surfaceMessage3); // convert it into a texture
+				SDL_RenderCopy(renderer, charValueText, NULL, &r4);
+				SDL_FreeSurface(surfaceMessage3);
+				SDL_DestroyTexture(charValueText);
+
+				SDL_Surface* surfaceMessage4 = TTF_RenderText_Solid(font, std::to_string(cellValue).c_str(), textColor); // as TTF_RenderText_Solid could only be used on SDL_Surface then you have to create the surface first
+				SDL_Texture* decValueText = SDL_CreateTextureFromSurface(renderer, surfaceMessage4); // convert it into a texture
+				SDL_RenderCopy(renderer, decValueText, NULL, &r3);
+				SDL_FreeSurface(surfaceMessage4);
+				SDL_DestroyTexture(decValueText);
+
+				break;
+			}
 
 			}
 		}
@@ -441,7 +462,7 @@ void MemoryGrid::drawGrid()
 
 	// Draw Hover Tile
 
-	
+
 	// Set background color
 	SDL_SetRenderDrawColor(renderer, 255, 22, 22, 255);
 
@@ -455,8 +476,8 @@ void MemoryGrid::drawGrid()
 
 
 	SDL_RenderPresent(renderer);
-	
-//	SDL_Delay(REFRESH_INTERVAL);
+
+	//	SDL_Delay(REFRESH_INTERVAL);
 
 	return;
 }

@@ -43,50 +43,6 @@ char memory[0x10000][9];
 struct MemoryGrid* memGrid;
 struct SID sid;
 
-// Currently not used
-int refreshThread(){
-	while (true){
-		unsigned long SIDRefreshDelay = 0, MemoryGridRefreshDelay = 0;
-
-		auto DELAY = 2;
-
-		// copy the memory cells in SIDs address space into the registers 
-		SIDUpdateRegisters(sid);
-
-
-		// Poll and dispatch SDL_Events
-		SDL_Event event;
-		while (SDL_PollEvent(&event)) {
-			if (event.window.windowID == SDL_GetWindowID((SDL_Window*)getWindow(sid)))
-			{
-				dispatchEvent(sid, &event);
-			}
-			else
-			{
-				dispatchEvent(memGrid, &event);
-			}
-		}
-		SDL_Delay(DELAY);
-
-		MemoryGridRefreshDelay += DELAY;
-		if (MemoryGridRefreshDelay >= 50){
-
-			MemoryGridDrawGrid(memGrid);		// Redraw MemoryGrid
-			MemoryGridRefreshDelay = 0;
-		}
-
-
-		SIDRefreshDelay += DELAY;
-		if (SIDRefreshDelay >= 50)
-		{
-			SIDDrawGraph(sid);	// Redraw the SID graph
-			SIDRefreshDelay = 0;
-		}
-	}
-	return 0;
-}
-
-
 void intHandler(int dummy) {
   SDL_Quit();
   exit(-1);
@@ -137,9 +93,6 @@ int main(int argc, char *argv[])
   // Instantiate SID and memory grid
   memGrid = newMemoryGrid(&memory); 
   sid = newSID(&memory, showWindow);
-
-  SDL_Thread *refresh_thread = SDL_CreateThread(refreshThread, NULL, NULL);
-
 
   // handling parameter --memory <dumpfile> 
   if(argc==3){

@@ -18,7 +18,7 @@ memory* _mem;
 
 // Reads the value at the given memory address
 // also converts the [9] bitwise representation (e.g.: "01011101\0") into a unsigned decimal number
-uint8_t readMemory(uint16_t addr) 
+uint8_t readMemory(uint16_t addr)
 {
 	uint8_t val = 0;
 	for (int i = 7; i >= 0; i--){
@@ -82,54 +82,11 @@ int main(int argc, char* argv[]){
 	// Init SDL
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
 	TTF_Init();
-		
-	unsigned long SIDRefreshDelay = 0, MemoryGridRefreshDelay = 0;
-	auto DELAY = 2;
 
 	// Instantiate SID and memory grid
-	memGrid = new MemoryGrid(&memory);	
-	
+	memGrid = new MemoryGrid(&memory);
 	sid = new SID(&memory, true);
 
-	// main loop
-	while (true){
-
-		// copy the memory cells in SIDs address space into the registers 
-		sid->updateRegisters();
-
-
-		// Poll and dispatch SDL_Events
-		SDL_Event event;
-		while (SDL_PollEvent(&event)) {
-			if (event.window.windowID == SDL_GetWindowID((SDL_Window*)sid->getWindow()))
-			{
-				sid->dispatchEvent(&event);
-			}
-			else
-			{
-				memGrid->dispatchEvent(&event);
-			}
-		}
-
-		SDL_Delay(DELAY);
-
-		MemoryGridRefreshDelay += DELAY;
-		if (MemoryGridRefreshDelay >= 50){
-
-			memGrid->drawGrid();		// Redraw MemoryGrid
-			MemoryGridRefreshDelay = 0;
-		}
-
-		if (sid->showWindow)
-		{
-			SIDRefreshDelay += DELAY;
-			if (SIDRefreshDelay >= 50)
-			{
-				sid->drawGraph();	// Redraw the SID graph
-				SIDRefreshDelay = 0;
-			}
-		}	
-	}
 
 
 	int i;

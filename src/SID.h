@@ -38,7 +38,7 @@ public:
 	int refreshInterval = 5;				         // mseconds
 	int refreshCounter = 0;
 	int thread_exit = 0;
-	bool pause_thread = false;	
+	bool pause_thread = false;
 	SDL_Renderer *renderer;
 
 #ifdef TTF_ENABLED
@@ -175,11 +175,9 @@ public:
 	SID(memory* mem, bool window);
 	void init();
 
-	void* getWindow();
-
 	void drawGraph();
 
-	void dispatchEvent(void* event);
+	void dispatchEvent(SDL_Event* event);
 	void exit();
 	uint8_t readMemory(uint16_t addr) const;
 	uint8_t readMemoryUpper4Bit(uint16_t addr) const;
@@ -203,7 +201,7 @@ public:
 
 	void setVoiceFromControlReg(Voice* voice, char reg[]);
 
-	
+
 	void resetGraphBuffer();
 
 };
