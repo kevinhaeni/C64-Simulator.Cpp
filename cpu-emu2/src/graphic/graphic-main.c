@@ -40,6 +40,8 @@ struct _vic* vic;
 
 struct _6510_cpu cpu;
 char memory[0x10000][9];
+struct MemoryGrid* memGrid;
+struct SID sid;
 
 // Currently not used
 int refreshThread(){
@@ -133,8 +135,8 @@ int main(int argc, char *argv[])
 
   int showWindow = 1;
   // Instantiate SID and memory grid
-  struct MemoryGrid* memGrid = newMemoryGrid(&memory); 
-  struct SID* sid = newSID(&memory, showWindow);
+  memGrid = newMemoryGrid(&memory); 
+  sid = newSID(&memory, showWindow);
 
   SDL_Thread *refresh_thread = SDL_CreateThread(refreshThread, NULL, NULL);
 
