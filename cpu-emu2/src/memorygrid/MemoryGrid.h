@@ -27,13 +27,13 @@ public:
 	TTF_Font* font;
 
 	int thread_exit = 0;
-	
-	void dispatchEvent(void* ev);
+
+	void dispatchEvent(SDL_Event* event);
 	memory* _mem;
 
 	int loopCounter = 0;
 
-	int tilesPerLine;	
+	int tilesPerLine;
 	int rectWidth = 1;
 	int rectHeight = 1;
 
@@ -45,9 +45,9 @@ public:
 
 	struct Tile{
 		int x = 0;
-		int y = 0;	
+		int y = 0;
 	} hoverTile;
-	
+
 	char inputBuffer[2];
 	int inputBufferPos = 0;
 
@@ -57,7 +57,7 @@ public:
 	MemoryGrid(memory* mem);
 	~MemoryGrid();
 	void init();
-	
+
 	void drawGrid();
 	void handleZoom(int x, int y, int change);
 	uint16_t getCellAtCoordinates(int x, int y);

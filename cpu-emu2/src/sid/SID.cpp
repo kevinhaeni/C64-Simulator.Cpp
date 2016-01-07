@@ -77,167 +77,166 @@ const uint16_t SID::Voice::Envelope::cyclesWhenToChangeEnvelopeCounter_Attack[16
 	abs(8000 * SAMPLING_RATE / 256 / 1000)				//   8 s*1.0MHz/256 = 31250.00
 };
 
-void SID::dispatchEvent(void* ev)
+void SID::dispatchEvent(SDL_Event* event)
 {
-	SDL_Event* event = (SDL_Event*)ev;
-		switch (event->type){
-		case SDL_KEYDOWN:
-		{
-			if (event->key.keysym.scancode == SDL_SCANCODE_SPACE){
-				// Triangle
-				if ((*_mem)[0xD404][0] == '1'){
-					(*_mem)[0xD404][0] = '0';
-					(*_mem)[0xD404][1] = '1'; // Sawtooth
-				}
-				// Sawtooth
-				else if ((*_mem)[0xD404][1] == '1'){
-					(*_mem)[0xD404][1] = '0';
-					(*_mem)[0xD404][2] = '1'; // Rect
-				}
-				// Rect
-				else if ((*_mem)[0xD404][2] == '1'){
-					(*_mem)[0xD404][2] = '0';
-					(*_mem)[0xD404][3] = '1'; // Noise
-				}
-				// Noise
-				else if ((*_mem)[0xD404][3] == '1'){
-					(*_mem)[0xD404][3] = '0';
-					(*_mem)[0xD404][0] = '1'; // Triangle
-				}
+	switch (event->type){
+	case SDL_KEYDOWN:
+	{
+		if (event->key.keysym.scancode == SDL_SCANCODE_SPACE){
+			// Triangle
+			if ((*_mem)[0xD404][0] == '1'){
+				(*_mem)[0xD404][0] = '0';
+				(*_mem)[0xD404][1] = '1'; // Sawtooth
 			}
-			else if (event->key.keysym.scancode == SDL_SCANCODE_ESCAPE){
-				exit();
+			// Sawtooth
+			else if ((*_mem)[0xD404][1] == '1'){
+				(*_mem)[0xD404][1] = '0';
+				(*_mem)[0xD404][2] = '1'; // Rect
 			}
-			else if (event->key.keysym.scancode == SDL_SCANCODE_LEFT){
-				uint8_t v1_freqLo = readMemory(0xD400);
-				uint8_t v1_freqHi = readMemory(0xD401);
-				uint16_t v1_freq = Utils::makeWord(v1_freqLo, v1_freqHi) - 0xA0;
-
-				uint8_t newLowByte = v1_freq & 0x00FF;
-				uint8_t newHighByte = (v1_freq & 0xFF00) >> 8;
-
-				writeMemory(newLowByte, 0xD400);
-				writeMemory(newHighByte, 0xD401);
+			// Rect
+			else if ((*_mem)[0xD404][2] == '1'){
+				(*_mem)[0xD404][2] = '0';
+				(*_mem)[0xD404][3] = '1'; // Noise
 			}
-			else if (event->key.keysym.scancode == SDL_SCANCODE_RIGHT){
-				uint8_t v1_freqLo = readMemory(0xD400);
-				uint8_t v1_freqHi = readMemory(0xD401);
-				uint16_t v1_freq = Utils::makeWord(v1_freqLo, v1_freqHi) + 0xA0;
-
-				uint8_t newLowByte = v1_freq & 0x00FF;
-				uint8_t newHighByte = (v1_freq & 0xFF00) >> 8;
-
-				writeMemory(newLowByte, 0xD400);
-				writeMemory(newHighByte, 0xD401);
+			// Noise
+			else if ((*_mem)[0xD404][3] == '1'){
+				(*_mem)[0xD404][3] = '0';
+				(*_mem)[0xD404][0] = '1'; // Triangle
 			}
-			else if (event->key.keysym.scancode == SDL_SCANCODE_UP){
-				uint8_t activeVolume = readMemoryLower4Bit(0xD418) & 0xFF;
-				uint8_t newVolume = activeVolume + 0x01;
-				writeMemoryLower4Bit(newVolume, 0xD418);
-			}
-			else if (event->key.keysym.scancode == SDL_SCANCODE_DOWN){
-				uint8_t activeVolume = readMemoryLower4Bit(0xD418);
-				writeMemoryLower4Bit(activeVolume - 0x01, 0xD418);
-			}
-
-			else if (event->key.keysym.scancode == SDL_SCANCODE_G){
-				// toggle gate ON
-				//graphPointer = 0;
-				if (keyGpressed == false){
-					voice1.silent = false;
-
-					graphPointer = 0;
-					voice1.audioPosition = 0;
-					voice1.phase = 0;
-					voice1.phaseInc = static_cast<double>(voice1.frequency) / static_cast<double>(SAMPLING_RATE);
-
-					(*_mem)[0xD404][7] = '1';
-					SDL_PauseAudioDevice(dev, 0);        // play
-				}
-				keyGpressed = true;
-			}
-
-			else if (event->key.keysym.scancode == SDL_SCANCODE_E){
-				voice1.envelope.active = !voice1.envelope.active;
-				voice1.silent = true;
-			}
-
-			else if (event->key.keysym.scancode == SDL_SCANCODE_I){
-				if (++active_instrument_index >= instruments.size()){
-					active_instrument_index = 0;
-				}
-				uint8_t i = active_instrument_index;
-				writeMemoryUpper4Bit(instruments[i].attack_index, 0xD405);
-				writeMemoryLower4Bit(instruments[i].decay_index, 0xD405);
-				writeMemoryUpper4Bit(instruments[i].sustain_index, 0xD406);
-				writeMemoryLower4Bit(instruments[i].release_index, 0xD406);
-			}
-
-			else if (event->key.keysym.scancode == SDL_SCANCODE_P){
-				if ((*_mem)[0xD404][1] == '1'){
-					uint8_t v1_pwLo = readMemory(0xD402);
-					uint8_t v1_pwHi = readMemory(0xD403);
-					uint16_t v1_pw = (Utils::makeWord(v1_pwLo, v1_pwHi) + 400) & 0xFFF;
-
-					uint8_t newLowByte = v1_pw & 0x00FF;
-					uint8_t newHighByte = (v1_pw & 0xFF00) >> 8;
-
-					writeMemory(newLowByte, 0xD402);
-					writeMemory(newHighByte, 0xD403);
-				}
-			}
-			else if (event->key.keysym.scancode == SDL_SCANCODE_O){
-				if ((*_mem)[0xD404][1] == '1'){
-					uint8_t v1_pwLo = readMemory(0xD402);
-					uint8_t v1_pwHi = readMemory(0xD403);
-					uint16_t v1_pw = (Utils::makeWord(v1_pwLo, v1_pwHi) - 400) & 0xFFF;
-
-					uint8_t newLowByte = v1_pw & 0x00FF;
-					uint8_t newHighByte = (v1_pw & 0xFF00) >> 8;
-
-					writeMemory(newLowByte, 0xD402);
-					writeMemory(newHighByte, 0xD403);
-				}
-			}
-			else if (event->key.keysym.scancode == SDL_SCANCODE_S){
-				if ((*_mem)[0xD404][6] == '1'){
-					(*_mem)[0xD404][6] = '0';
-				}
-				else{
-					(*_mem)[0xD404][6] = '1';
-				}
-			}
-			else if (event->key.keysym.scancode == SDL_SCANCODE_R){
-				if ((*_mem)[0xD404][5] == '1'){
-					(*_mem)[0xD404][5] = '0';
-				}
-				else{
-					(*_mem)[0xD404][5] = '1';
-				}
-			}
-			break;
 		}
-
-		case SDL_QUIT:
-		{
+		else if (event->key.keysym.scancode == SDL_SCANCODE_ESCAPE){
 			exit();
-			return;
 		}
-		case SDL_KEYUP:
-		{
-			if (event->key.keysym.scancode == SDL_SCANCODE_G){
-				// toggle gate OFF
-				(*_mem)[0xD404][7] = '0';
-				keyGpressed = false;
+		else if (event->key.keysym.scancode == SDL_SCANCODE_LEFT){
+			uint8_t v1_freqLo = readMemory(0xD400);
+			uint8_t v1_freqHi = readMemory(0xD401);
+			uint16_t v1_freq = Utils::makeWord(v1_freqLo, v1_freqHi) - 0xA0;
 
-				SDL_Delay(1000);
+			uint8_t newLowByte = v1_freq & 0x00FF;
+			uint8_t newHighByte = (v1_freq & 0xFF00) >> 8;
 
-//				drawGraph();
+			writeMemory(newLowByte, 0xD400);
+			writeMemory(newHighByte, 0xD401);
+		}
+		else if (event->key.keysym.scancode == SDL_SCANCODE_RIGHT){
+			uint8_t v1_freqLo = readMemory(0xD400);
+			uint8_t v1_freqHi = readMemory(0xD401);
+			uint16_t v1_freq = Utils::makeWord(v1_freqLo, v1_freqHi) + 0xA0;
+
+			uint8_t newLowByte = v1_freq & 0x00FF;
+			uint8_t newHighByte = (v1_freq & 0xFF00) >> 8;
+
+			writeMemory(newLowByte, 0xD400);
+			writeMemory(newHighByte, 0xD401);
+		}
+		else if (event->key.keysym.scancode == SDL_SCANCODE_UP){
+			uint8_t activeVolume = readMemoryLower4Bit(0xD418) & 0xFF;
+			uint8_t newVolume = activeVolume + 0x01;
+			writeMemoryLower4Bit(newVolume, 0xD418);
+		}
+		else if (event->key.keysym.scancode == SDL_SCANCODE_DOWN){
+			uint8_t activeVolume = readMemoryLower4Bit(0xD418);
+			writeMemoryLower4Bit(activeVolume - 0x01, 0xD418);
+		}
+
+		else if (event->key.keysym.scancode == SDL_SCANCODE_G){
+			// toggle gate ON
+			//graphPointer = 0;
+			if (keyGpressed == false){
+				voice1.silent = false;
+
+				graphPointer = 0;
+				voice1.audioPosition = 0;
+				voice1.phase = 0;
+				voice1.phaseInc = static_cast<double>(voice1.frequency) / static_cast<double>(SAMPLING_RATE);
+
+				(*_mem)[0xD404][7] = '1';
+				SDL_PauseAudioDevice(dev, 0);        // play
+			}
+			keyGpressed = true;
+		}
+
+		else if (event->key.keysym.scancode == SDL_SCANCODE_E){
+			voice1.envelope.active = !voice1.envelope.active;
+			voice1.silent = true;
+		}
+
+		else if (event->key.keysym.scancode == SDL_SCANCODE_I){
+			if (++active_instrument_index >= instruments.size()){
+				active_instrument_index = 0;
+			}
+			uint8_t i = active_instrument_index;
+			writeMemoryUpper4Bit(instruments[i].attack_index, 0xD405);
+			writeMemoryLower4Bit(instruments[i].decay_index, 0xD405);
+			writeMemoryUpper4Bit(instruments[i].sustain_index, 0xD406);
+			writeMemoryLower4Bit(instruments[i].release_index, 0xD406);
+		}
+
+		else if (event->key.keysym.scancode == SDL_SCANCODE_P){
+			if ((*_mem)[0xD404][1] == '1'){
+				uint8_t v1_pwLo = readMemory(0xD402);
+				uint8_t v1_pwHi = readMemory(0xD403);
+				uint16_t v1_pw = (Utils::makeWord(v1_pwLo, v1_pwHi) + 400) & 0xFFF;
+
+				uint8_t newLowByte = v1_pw & 0x00FF;
+				uint8_t newHighByte = (v1_pw & 0xFF00) >> 8;
+
+				writeMemory(newLowByte, 0xD402);
+				writeMemory(newHighByte, 0xD403);
 			}
 		}
-		default: /* unhandled event */
-			break;
-		}	
+		else if (event->key.keysym.scancode == SDL_SCANCODE_O){
+			if ((*_mem)[0xD404][1] == '1'){
+				uint8_t v1_pwLo = readMemory(0xD402);
+				uint8_t v1_pwHi = readMemory(0xD403);
+				uint16_t v1_pw = (Utils::makeWord(v1_pwLo, v1_pwHi) - 400) & 0xFFF;
+
+				uint8_t newLowByte = v1_pw & 0x00FF;
+				uint8_t newHighByte = (v1_pw & 0xFF00) >> 8;
+
+				writeMemory(newLowByte, 0xD402);
+				writeMemory(newHighByte, 0xD403);
+			}
+		}
+		else if (event->key.keysym.scancode == SDL_SCANCODE_S){
+			if ((*_mem)[0xD404][6] == '1'){
+				(*_mem)[0xD404][6] = '0';
+			}
+			else{
+				(*_mem)[0xD404][6] = '1';
+			}
+		}
+		else if (event->key.keysym.scancode == SDL_SCANCODE_R){
+			if ((*_mem)[0xD404][5] == '1'){
+				(*_mem)[0xD404][5] = '0';
+			}
+			else{
+				(*_mem)[0xD404][5] = '1';
+			}
+		}
+		break;
+	}
+
+	case SDL_QUIT:
+	{
+		exit();
+		return;
+	}
+	case SDL_KEYUP:
+	{
+		if (event->key.keysym.scancode == SDL_SCANCODE_G){
+			// toggle gate OFF
+			(*_mem)[0xD404][7] = '0';
+			keyGpressed = false;
+
+			SDL_Delay(1000);
+
+			//				drawGraph();
+		}
+	}
+	default: /* unhandled event */
+		break;
+	}
 
 }
 
@@ -245,6 +244,35 @@ void SID::dispatchEvent(void* ev)
 int sidThreadFunc(void *pointer){
 	SID* sid = static_cast<SID*>(pointer);
 	sid->init();
+
+	auto SIDRefreshInterval = 200;
+	// main loop
+	while (true){
+		sid->updateRegisters();
+
+		// Poll and dispatch SDL_Events
+		SDL_Event event;
+		while (SDL_PollEvent(&event)) {
+			if (event.window.windowID == SDL_GetWindowID(sid->window))
+			{
+				sid->dispatchEvent(&event);
+			}
+
+		}
+
+		SDL_Delay(20);
+
+		SIDRefreshInterval += 20;
+		if (SIDRefreshInterval >= 200){
+
+			sid->drawGraph();		// Redraw MemoryGrid
+			SIDRefreshInterval = 0;
+		}
+
+
+	}
+
+	return 0;
 
 	return 0;
 }
@@ -260,9 +288,10 @@ void SID::writeMemory(uint8_t value, uint16_t addr) const{
 
 	//std::cout <<  "Write Memory" << std::endl << "Before: " << readMemory(addr) << std::endl;
 	for (int i = 7; i >= 0; i--){
-		if(value & 0x01){
+		if (value & 0x01){
 			(*_mem)[addr][i] = '1';
-		}else{
+		}
+		else{
 			(*_mem)[addr][i] = '0';
 		}
 		value >>= 1;
@@ -293,8 +322,8 @@ uint8_t SID::readMemory(uint16_t addr) const
 {
 	uint8_t val = 0;
 	for (int i = 7; i >= 0; i--){
-		if((*_mem)[addr][i] == '1'){
-			val += pow(2,7-i);
+		if ((*_mem)[addr][i] == '1'){
+			val += pow(2, 7 - i);
 		}
 	}
 	return val;
@@ -326,7 +355,7 @@ uint16_t SID::readMemoryVoiceFrequency(uint16_t addr) const{
 
 double SID::readMemoryVoicePWN(uint16_t addr) const{
 	// sid calculates with values 0-4096, we use pwn as 0.0-1.0
-	double pwn = ((double)(readMemory2Register(addr) & 0x0FFF)/ 4096.0);
+	double pwn = ((double)(readMemory2Register(addr) & 0x0FFF) / 4096.0);
 	return pwn;
 }
 
@@ -335,7 +364,7 @@ void SID::updateRegisters()
 {
 	// Volume
 	// returns 0-15, our system works with volume 0-127, so we need to multiply with 9
-	volume = 9* readMemoryLower4Bit(0xD418);
+	volume = 9 * readMemoryLower4Bit(0xD418);
 
 
 	//
@@ -422,7 +451,7 @@ void SID::setVoiceFromControlReg(Voice* voice, char reg[]){
 	if (reg[3] == '1')
 		voice->waveForm = Voice::WaveForm::TRIANGLE;
 	//if (v1_control[4] != 0)
-		// Test: Not emulated
+	// Test: Not emulated
 	if (reg[5] == '1')
 		voice->ring = true;
 	else
@@ -447,9 +476,9 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 
 	for (int i = 0; i < length; i++){
 
-		if (sid->voice1.silent & sid->voice2.silent & sid->voice3.silent )
+		if (sid->voice1.silent & sid->voice2.silent & sid->voice3.silent)
 			stream[i] = sid->getSpec()->silence;
-			// silence in uint8 is represented by the value 128
+		// silence in uint8 is represented by the value 128
 		else
 		{
 			// ***** SYNC
@@ -480,13 +509,13 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 			// ***** RING MODE
 			// ring bit set and the Waveform is Triangle
 			if (sid->voice1.isRing()){
-				if(waveValue3 < 0.0){ waveValue1 *= -1.0;}
+				if (waveValue3 < 0.0){ waveValue1 *= -1.0; }
 			}
 			if (sid->voice2.isRing()){
-				if(waveValue1 < 0.0){ waveValue2 *= -1.0;}
+				if (waveValue1 < 0.0){ waveValue2 *= -1.0; }
 			}
 			if (sid->voice3.isRing()){
-				if(waveValue2 < 0.0){ waveValue3 *= -1.0;}
+				if (waveValue2 < 0.0){ waveValue3 *= -1.0; }
 			}
 
 			// ***** ENVELOPES
@@ -517,22 +546,23 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 			{
 				if (sid->graphPointer < sid->graphBufferSize){
 					sid->graphBuffer[sid->graphPointer++] = finalVoice1;
-				} else
+				}
+				else
 				{
 					//SDL_PauseAudioDevice(dev, 1);      // play					
 
 					//sid->voice1.audioPosition = 0;
 					//sid->voice1.phaseInc = static_cast<double>(voice1.frequency) / static_cast<double>(SAMPLING_RATE);
-//					sid->refreshCounter++;
-//					if (sid->refreshCounter >= sid->refreshInterval)
-//					{
-////						sid->drawGraph();
-//						sid->graphPointer = 0;
-//					}					
+					//					sid->refreshCounter++;
+					//					if (sid->refreshCounter >= sid->refreshInterval)
+					//					{
+					////						sid->drawGraph();
+					//						sid->graphPointer = 0;
+					//					}					
 				}
 
-			
-			}			
+
+			}
 
 #ifdef DEBUG
 			// write buffer value to logfile for debugging purposes
@@ -544,23 +574,10 @@ void SDLAudioCallback(void *data, Uint8 *buffer, int length){
 }
 
 
-SID::SID(memory* mem, bool showWindow)
+SID::SID(memory* mem, bool window)
 {
-	this->showWindow = showWindow;
+	this->showWindow = window;
 	this->_mem = mem;
-
-	if (showWindow){
-		// Create an application window with the following settings:
-		window = SDL_CreateWindow(
-			"SID Window",              // window title
-			SDL_WINDOWPOS_UNDEFINED,           // initial x position
-			SDL_WINDOWPOS_UNDEFINED,           // initial y position
-			1980,                      // width, in pixels
-			255,                     // height, in pixels
-			SDL_WINDOW_SHOWN                  // flags - see below
-			);
-	}
-	renderer = SDL_CreateRenderer(window, 0, SDL_RENDERER_ACCELERATED);
 
 	// memory dump
 	//for(int i = 54272; i <= 55000; i++){
@@ -569,7 +586,7 @@ SID::SID(memory* mem, bool showWindow)
 
 	// spawn thread
 	SDL_Thread *refresh_thread = SDL_CreateThread(sidThreadFunc, NULL, this);
-    //this->init();
+	//this->init();
 }
 
 SDL_AudioSpec* SID::getSpec(){
@@ -609,6 +626,18 @@ void SID::init()
 		SDL_PauseAudio(1);
 	}
 
+	// Create an application window with the following settings:
+	if (showWindow){
+		window = SDL_CreateWindow(
+			"SID Window",              // window title
+			SDL_WINDOWPOS_UNDEFINED,           // initial x position
+			SDL_WINDOWPOS_UNDEFINED,           // initial y position
+			1980,                      // width, in pixels
+			255,                     // height, in pixels
+			SDL_WINDOW_SHOWN                  // flags - see below
+			);
+	}
+	renderer = SDL_CreateRenderer(window, 0, SDL_RENDERER_ACCELERATED);
 	// ***** Predefined instruments, not relevant for SID, just for testing purposes *****
 	// Xylophone, Triangle
 	Instrument * i1 = new Instrument("Piano (Pulse)", 0, 9, 0, 0);
@@ -621,8 +650,19 @@ void SID::init()
 	instruments.push_back(*i2);
 	instruments.push_back(*i3);
 
-	// Initialization, Testdata
-	//Voice 1
+
+	// Check if the window was successfully created
+
+	if (window == nullptr && showWindow) {
+		// In case the window could not be created...
+		printf("Could not create window: %s\n", SDL_GetError());
+		return;
+	}
+	else{
+
+
+		// Initialization, Testdata
+		//Voice 1
 		// Frequency
 		writeMemory(0xE0, 0xD400);
 		writeMemory(0x1C, 0xD401);
@@ -633,7 +673,7 @@ void SID::init()
 		writeMemory(0x1C, 0xD403);
 
 
-	// Voice 2, Frequency
+		// Voice 2, Frequency
 		writeMemory(0x70, 0xD407);
 		writeMemory(0x0E, 0xD408);
 		(*_mem)[0xD40B][1] = '1';
@@ -642,7 +682,7 @@ void SID::init()
 		writeMemory(0xE0, 0xD409);
 		writeMemory(0x1C, 0xD40A);
 
-	// Voice 3, Frequency
+		// Voice 3, Frequency
 		writeMemory(0x88, 0xD40E);
 		writeMemory(0x37, 0xD40F);
 		(*_mem)[0xD412][1] = '1';
@@ -651,32 +691,28 @@ void SID::init()
 		writeMemory(0xE0, 0xD410);
 		writeMemory(0x1C, 0xD411);
 
-	writeMemoryLower4Bit(0x87, 0xD418);
+		writeMemoryLower4Bit(0x87, 0xD418);
 
 
-	updateRegisters();
-	if (showWindow)
-	{
-		// Init Graph parameters
-		graphBuffer = new uint8_t[graphBufferSize];
-		graphPointer = 0;
-	}		
+		updateRegisters();
+		if (showWindow)
+		{
+			// Init Graph parameters
+			graphBuffer = new uint8_t[graphBufferSize];
+			graphPointer = 0;
+		}
 
-	SDL_PauseAudioDevice(dev, 0);        // play
+		SDL_PauseAudioDevice(dev, 0);        // play
 
-	return;
-
+		return;
+	}
 }
 
 
-void* SID::getWindow(){
-
-	return (void*)window;
-}
 
 void SID::drawGraph()
 {
-	
+
 	if (renderer == nullptr)
 		return;
 
@@ -744,31 +780,31 @@ void SID::drawGraph()
 
 	std::string waveform;
 	switch (voice1.waveForm){
-		case Voice::WaveForm::SINE:{
-			waveform = "Sine";
-			w = 48;
-			break;
-		}
-		case Voice::WaveForm::RECT:{
-			waveform = "Rect";
-			w = 48;
-			break;
-		}
-		case Voice::WaveForm::TRIANGLE:{
-			waveform = "Triangle";
-			w = 48 * 2;
-			break;
-		}
-		case Voice::WaveForm::SAWTOOTH:{
-			waveform = "Sawtooth";
-			w = 48 * 2;
-			break;
-		}
-		case Voice::WaveForm::NOISE:{
-			waveform = "Noise";
-			w = 48 * 2;
-			break;
-		}
+	case Voice::WaveForm::SINE:{
+		waveform = "Sine";
+		w = 48;
+		break;
+	}
+	case Voice::WaveForm::RECT:{
+		waveform = "Rect";
+		w = 48;
+		break;
+	}
+	case Voice::WaveForm::TRIANGLE:{
+		waveform = "Triangle";
+		w = 48 * 2;
+		break;
+	}
+	case Voice::WaveForm::SAWTOOTH:{
+		waveform = "Sawtooth";
+		w = 48 * 2;
+		break;
+	}
+	case Voice::WaveForm::NOISE:{
+		waveform = "Noise";
+		w = 48 * 2;
+		break;
+	}
 	}
 
 	std::string amp = "Amp = " + std::to_string(this->volume);
@@ -855,7 +891,7 @@ double SID::Voice::getEnvelopeValue(){
 		// 440hz -> we change the envelope 440times per second
 
 		//if (stepCounter % stepsPerPeriod == 0){
-		float rounded_up_phase = ceilf(fmod(phase,1) * 100) / 100;
+		float rounded_up_phase = ceilf(fmod(phase, 1) * 100) / 100;
 		if (fmod(rounded_up_phase, 1) >= 0.99){
 			envelope.envelope_counter_forWave = envelope.get_envelope_counter();
 		}
@@ -891,7 +927,7 @@ double SID::Voice::getWaveValue(){
 	{
 		//if (fmod(static_cast<double>(audioPosition), stepsPerPeriod) < pwn * stepsPerPeriod)
 		if (fmod(phase, stepsPerPeriod*phaseInc) < pwn * stepsPerPeriod * phaseInc){
-			sample =  1;
+			sample = 1;
 		}
 		else{
 			sample = -1;
@@ -899,7 +935,7 @@ double SID::Voice::getWaveValue(){
 		break;
 	}
 	case SAWTOOTH:
-	{		
+	{
 		//return  amp * env * (fmod((maxWaveValue / stepsPerPeriod * static_cast<double>(audioPosition)), maxWaveValue) - maxWaveValue / 2) + 128;
 		sample = -2 / M_PI * atan(cotan(phase*M_PI));
 		break;
@@ -908,7 +944,7 @@ double SID::Voice::getWaveValue(){
 	{
 		// sine-to-triangle equation from wikipedia (https://en.wikipedia.org/wiki/Triangle_wave)
 		double sinevalue = sin(2 * M_PI * phase);
-		sample =  2 / M_PI * asin(sinevalue);
+		sample = 2 / M_PI * asin(sinevalue);
 		break;
 	}
 	case NOISE:
@@ -1044,13 +1080,13 @@ void SID::resetGraphBuffer(){
 uint8_t SID::Filter::calcLowPass(Voice* voice)
 {
 	// fc = 1 / 2 * PI * RC
-	double RC = 1.0/(cutoff *2*3.14);
-	double dt = 1.0/ 44100;
-	double alpha = dt/(RC+dt);
+	double RC = 1.0 / (cutoff * 2 * 3.14);
+	double dt = 1.0 / 44100;
+	double alpha = dt / (RC + dt);
 
 	uint8_t smoothedValue;
 	smoothedValue = voice->getPreviousWaveValue() -
-			(alpha * (voice->getPreviousWaveValue() - voice->getActiveWaveValue()));
+		(alpha * (voice->getPreviousWaveValue() - voice->getActiveWaveValue()));
 
 	return smoothedValue;
 }
@@ -1058,29 +1094,28 @@ uint8_t SID::Filter::calcLowPass(Voice* voice)
 /*
 void  SID::Filter::calcHighPass()
 {
-	int n;
-	double mm;
+int n;
+double mm;
 
-	for(n = 0; n < m_num_taps; n++){
-		mm = n - (m_num_taps - 1.0) / 2.0;
-		if( mm == 0.0 ) m_taps[n] = 1.0 - m_lambda / M_PI;
-		else m_taps[n] = -sin( mm * m_lambda ) / (mm * M_PI);
-	}
+for(n = 0; n < m_num_taps; n++){
+mm = n - (m_num_taps - 1.0) / 2.0;
+if( mm == 0.0 ) m_taps[n] = 1.0 - m_lambda / M_PI;
+else m_taps[n] = -sin( mm * m_lambda ) / (mm * M_PI);
+}
 
-	return;
+return;
 }
 
 void  SID::Filter::calcBandPass()
 {
-	int n;
-	double mm;
+int n;
+double mm;
 
-	for(n = 0; n < m_num_taps; n++){
-		mm = n - (m_num_taps - 1.0) / 2.0;
-		if( mm == 0.0 ) m_taps[n] = (m_phi - m_lambda) / M_PI;
-		else m_taps[n] = (   sin( mm * m_phi ) -
-		                     sin( mm * m_lambda )   ) / (mm * M_PI);
-	}
-	return;
+for(n = 0; n < m_num_taps; n++){
+mm = n - (m_num_taps - 1.0) / 2.0;
+if( mm == 0.0 ) m_taps[n] = (m_phi - m_lambda) / M_PI;
+else m_taps[n] = (   sin( mm * m_phi ) -
+sin( mm * m_lambda )   ) / (mm * M_PI);
+}
+return;
 }*/
-
