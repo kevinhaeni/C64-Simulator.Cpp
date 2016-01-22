@@ -41,7 +41,7 @@ struct _vic* vic;
 struct _6510_cpu cpu;
 char memory[0x10000][9];
 struct MemoryGrid* memGrid;
-struct SID sid;
+struct SID* sid;
 
 void intHandler(int dummy) {
   SDL_Quit();
